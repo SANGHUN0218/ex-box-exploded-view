@@ -3823,12 +3823,28 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       }
       : (pt, m) => ({ p: V(...(pt.slot ? pt.slot[m] : def.layout[m](pt))), q: Q(...def.types[pt.t].rest), s: 1 });
     const union = f => parts.reduce((b, pt) => b.union(boxAt(pt, f(pt))), new THREE.Box3());
+    // 부품 상자들의 모서리를 좌표 한 줄로 모아 둔다. 카메라 거리를 정할 때 이 점들을 하나하나 재면
+    // 전체를 큰 상자 하나로 칠 때보다 정확하다 (긴 배를 옆에서 볼 때 쓸데없이 멀어지지 않는다)
+    const cloud = (...fs) => {
+      const a = [];
+      for (const pt of parts) for (const f of fs) {
+        const b = boxAt(pt, f(pt));
+        for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) a.push(x, y, z);
+      }
+      return new Float32Array(a);
+    };
+    // 분해·조립 도중 부품이 가장 바깥으로 불룩하게 나가는 자리 (경로 a + 4s(1−s)(B−a) + s³(o−a)의 한가운데)
+    const via = m => pt => ({ p: pt.B.clone().add(pose(pt, m).p.clone().sub(pt.A.p).multiplyScalar(.125)), q: pt.A.q, s: 1 });
     return {
       def, root, parts, pose,
       objs: parts.map(pt => pt.obj),
       order: def.order.flatMap(k => parts.filter(p => p.key === k)),
       abox: union(pt => pt.A),
       lbox: { wide: union(pt => pose(pt, 'wide')), tall: union(pt => pose(pt, 'tall')) },
+      apts: cloud(pt => pt.A),
+      lpts: { wide: cloud(pt => pose(pt, 'wide')), tall: cloud(pt => pose(pt, 'tall')) },
+      // 움직이는 동안 쓰는 점들: 조립 자리 + 분해 자리 + 지나가는 자리를 모두 담아야 중간에 안 잘린다
+      mpts: { wide: cloud(pt => pt.A, pt => pose(pt, 'wide'), via('wide')), tall: cloud(pt => pt.A, pt => pose(pt, 'tall'), via('tall')) },
     };
   }
   const DEFS = { ship: productShip, offshore: productOffshore, chem: productChem, is: productIS, exd: productExd, ep: productEp };
@@ -3836,6 +3852,9 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   let cur = null, field = null;
   const C = pt => cur.pose(pt, mode);
   const isField = b => !!(b && b.def.box);
+  // 부품이 다 같이 움직이는(분해·조립) 동안은 이 시각까지 카메라가 넉넉히 물러나 있는다
+  let moveUntil = 0;
+  const markMove = (dur, stagger, n) => { moveUntil = performance.now() + dur + stagger * n + 120; };
 
   // ---------- 움직임 ----------
   let state = 'assembled', focused = null, hovered = null, down = null, cam = null;
@@ -3879,21 +3898,37 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const h = hostOf(key), ps = built[SITES[key].field].pose(h);
     return V(...SITES[key].at).sub(h.c).applyQuaternion(ps.q).add(ps.p);
   }
+  // 모아 둔 점들을 지금 각도로 돌려 하나하나 재서, 전부 화면 안에 들어오는 카메라 거리를 구한다.
+  // (보는 점 o가 회전축이자 화면 한가운데, 카메라는 거기서 +z 쪽으로 d만큼 떨어진 자리)
+  // 납작한 판으로 치고 계산하면 카메라 쪽으로 튀어나온 부분이 원근 때문에 크게 보여 잘린다 — 옆으로 돌린 배의 뱃머리가 그랬다.
+  const fv = V(), fq = new THREE.Quaternion();
+  function fitPts(pts, o, q, my, mx, a) {
+    const fy = my / TAN, fx = mx / (TAN * a);
+    let d = 0;
+    for (let i = 0; i < pts.length; i += 3) {
+      const p = fv.set(pts[i] - o.x, pts[i + 1] - o.y, pts[i + 2] - o.z).applyQuaternion(q);
+      d = Math.max(d, Math.abs(p.x) * fx + p.z, Math.abs(p.y) * fy + p.z, p.z + .6);   // 마지막 항: 카메라가 모델 속으로 들어가지 않게
+    }
+    return d;
+  }
+  // 상자를 가운데(c) 기준으로 그 각도만큼 돌린 것 (화면에서 차지하는 크기를 대강 볼 때 씀)
+  const turnBox = (b, c, rot) => b.clone().translate(c.clone().negate()).applyMatrix4(rotM.makeRotationFromEuler(rot));
   function camGoal(st = state) {
     if (st === 'site') {
       const P = sitePoint(site), tall = camera.aspect < .85, fh = 2.4, fw = 3.4;
       const dist = Math.max(fh / (2 * TAN), fw / (2 * TAN * camera.aspect));
       return { d: P.z + dist, x: P.x, y: P.y - (tall ? fh * .2 : 0), z: P.z };
     }
-    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 크기를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다)
-    const b = st === 'assembled' ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
-    const s = b.clone().translate(c.clone().negate()).applyMatrix4(rotM.makeRotationFromEuler(stage.rotation)).getSize(V());
+    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 상자를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다)
+    const asm = st === 'assembled', b = asm ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
+    const s = turnBox(b, c, stage.rotation).getSize(V());
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로, 조금 멀리서 보고 장면을 위로 올린다
-    const card = st !== 'assembled' && isField(cur);
-    const [my, mx] = st === 'assembled' ? [1.5, 1.35] : card ? [1.55, 1.15] : [1.36, 1.1];
-    // 옆으로 돌려 깊이가 길어졌을 때 카메라가 모델 속으로 들어가지 않도록 최소 거리를 둔다
-    const fit = Math.max(s.y * my / (2 * TAN), s.x * mx / (2 * TAN * camera.aspect), s.z / 2 + .6);
-    return { d: fit + c.z, x: c.x, y: c.y - (card ? s.y * .07 : 0), z: 0 };
+    const card = !asm && isField(cur);
+    const [my, mx] = asm ? [1.5, 1.35] : card ? [1.55, 1.15] : [1.36, 1.1];
+    const look = V(c.x, c.y - (card ? s.y * .07 : 0), 0);
+    // 부품이 이동하는 동안에는 지나가는 자리까지 담을 만큼 물러나 있는다 (안 그러면 조립되며 날아드는 부품이 화면 밖에서 잘린다)
+    const pts = performance.now() < moveUntil ? cur.mpts[mode] : asm ? cur.apts : cur.lpts[mode];
+    return { d: fitPts(pts, look, fq.setFromEuler(stage.rotation), my, mx, camera.aspect), x: look.x, y: look.y, z: 0 };
   }
   const zoomGoal = g => zoom ? { x: g.x + zoom.x, y: g.y + zoom.y, z: g.z + zoom.z, d: g.z + zoom.z + (g.d - g.z) * zoom.r } : g;
   // 부품을 화면 가운데 앞쪽으로 가져오는 자리. 돌려 놓은 각도(orbit)를 거꾸로 적용해서,
@@ -3939,6 +3974,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     state = 'exploded';
     hovered = null;
     const du = cur.def.dur || 1650, st = cur.def.stagger || 11;
+    markMove(du, st, cur.order.length);
     // 돌기는 반해체 자리를 지나 옆으로 벌어진 뒤에 (붙어 있을 때 돌면 이웃 부품을 긁는다)
     cur.order.forEach((pt, i) => tween(pt, C(pt), { dur: du, delay: i * st, via: pt.B, rot: [.55, 1] }));
     ui();
@@ -3948,6 +3984,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     state = 'assembled';
     focused = hovered = site = null;
     const du = (cur.def.dur || 1650) * .9, st = (cur.def.stagger || 11) * .9;
+    markMove(du, st, cur.order.length);
     // 조립은 거꾸로: 벌어져 있을 때 먼저 제 방향으로 돌고, 그다음 곧게 들어간다
     [...cur.order].reverse().forEach((pt, i) => tween(pt, pt.A, { dur: du, delay: i * st, via: pt.B, rot: [0, .45] }));
     ui();
@@ -4182,6 +4219,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       focused = hovered = null;
       state = 'assembled';
       const list = [...cur.order].reverse();
+      markMove(900, 4, list.length);
       list.forEach((pt, i) => tween(pt, pt.A, { dur: 900, delay: i * 4, via: pt.B, rot: [0, .45] }));
       wait = reduced ? 0 : 750 + list.length * 4;
       ui();
@@ -4240,10 +4278,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   // 칸 하나에 현장 하나가 꽉 차게 담기는 카메라. 넓은 화면은 아래 이름표 자리를 비우고,
   // 세로 화면은 왼쪽에 이름표를 두고 현장은 오른쪽 60% 안에 담는다
   function panelCam(i, zoom = 1) {
-    const r = panelRect(i), a = r.w / r.h, b = built[FIELD_KEYS[i]].abox, s = b.getSize(V()), c = b.getCenter(V()), wide = !tallMQ.matches;
-    const fit = (wide ? Math.max(s.y * 1.9 / (2 * TAN), s.x * 1.12 / (2 * TAN * a)) : Math.max(s.y * 1.35 / (2 * TAN), s.x * 1.2 / (.6 * 2 * TAN * a))) * zoom;
-    const vh = 2 * TAN * fit;
-    return { d: fit + c.z, x: c.x - (wide ? 0 : vh * a * .18), y: c.y - vh * (wide ? .03 : 0), z: 0 };
+    const r = panelRect(i), a = r.w / r.h, f = built[FIELD_KEYS[i]], b = f.abox, s = b.getSize(V()), c = b.getCenter(V()), wide = !tallMQ.matches;
+    const [my, mx] = wide ? [1.9, 1.12] : [1.35, 1.2 / .6];
+    const vh = 2 * TAN * Math.max(s.y * my / (2 * TAN), s.x * mx / (2 * TAN * a)) * zoom;   // 이름표 자리를 비우는 데 쓰는 화면 높이
+    const ps = panelState[i], look = V(c.x - (wide ? 0 : vh * a * .18), c.y - (wide ? vh * .03 : 0), 0);
+    // 칸도 마우스를 따라 기울어지므로, 기울인 각도로 재서 현장이 칸 밖으로 나가지 않게 한다
+    return { d: fitPts(f.apts, look, fq.setFromEuler(eu.set(ps.rx, ps.ry, 0)), my, mx, a) * zoom, x: look.x, y: look.y, z: 0 };
   }
   // 캔버스의 한 구역(r)에 현장 하나만 그린다. c = 카메라 {d, x, y, z}, rx·ry = 그 현장의 기울기
   function soloRender(root, r, c, rx, ry) {
