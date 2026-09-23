@@ -3851,7 +3851,11 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   let zoom = null, zoomAt = -1e9;
   const HOME = { title: '산업 현장별 방폭박스', note: '현장을 골라 들어가면 분해해서 방폭박스를 찾아갈 수 있어요' };
   const spin = { x: 0, y: 0 }, look = { x: 0, y: 0 };
-  const lookQ = new THREE.Quaternion(), wob = new THREE.Quaternion(), ID = new THREE.Quaternion(), eu = new THREE.Euler(), pivot = V(), tmp = V();
+  // 끌어서 돌려 보기: orbit = 끌어서 돌린 각도, orbited = 한 번이라도 돌렸는지 (돌린 뒤에는 마우스 위치만 따라가던 기울임을 꺼서 각도가 흔들리지 않게 한다)
+  const orbit = { x: 0, y: 0 };
+  let orbited = false, tiltFade = 1;
+  const resetOrbit = () => { orbit.x = orbit.y = 0; orbited = false; };
+  const lookQ = new THREE.Quaternion(), wob = new THREE.Quaternion(), ID = new THREE.Quaternion(), eu = new THREE.Euler(), pivot = V(), tmp = V(), rotM = new THREE.Matrix4();
   const k = n => 1 - Math.exp(-n * dt);
 
   const hostOf = key => built[SITES[key].field].parts.find(p => p.key === SITES[key].host);
@@ -3868,11 +3872,14 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       const dist = Math.max(fh / (2 * TAN), fw / (2 * TAN * camera.aspect));
       return { d: P.z + dist, x: P.x, y: P.y - (tall ? fh * .2 : 0), z: P.z };
     }
-    const b = st === 'assembled' ? cur.abox : cur.lbox[mode], s = b.getSize(V()), c = b.getCenter(V());
+    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 크기를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다)
+    const b = st === 'assembled' ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
+    const s = b.clone().translate(c.clone().negate()).applyMatrix4(rotM.makeRotationFromEuler(stage.rotation)).getSize(V());
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로, 조금 멀리서 보고 장면을 위로 올린다
     const card = st !== 'assembled' && isField(cur);
     const [my, mx] = st === 'assembled' ? [1.5, 1.35] : card ? [1.55, 1.15] : [1.36, 1.1];
-    const fit = Math.max(s.y * my / (2 * TAN), s.x * mx / (2 * TAN * camera.aspect));
+    // 옆으로 돌려 깊이가 길어졌을 때 카메라가 모델 속으로 들어가지 않도록 최소 거리를 둔다
+    const fit = Math.max(s.y * my / (2 * TAN), s.x * mx / (2 * TAN * camera.aspect), s.z / 2 + .6);
     return { d: fit + c.z, x: c.x, y: c.y - (card ? s.y * .07 : 0), z: 0 };
   }
   const zoomGoal = g => zoom ? { x: g.x + zoom.x, y: g.y + zoom.y, z: g.z + zoom.z, d: g.z + zoom.z + (g.d - g.z) * zoom.r } : g;
@@ -4058,6 +4065,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     state = 'assembled';
     focused = hovered = site = null;
     rest(cur);
+    resetOrbit();
     if (cam) cam.d = camGoal().d * (reduced ? 1 : 1.35);
     if (!reduced) stage.rotation.y = -.7;
     header();
@@ -4067,6 +4075,9 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   // ---------- 현장 흐름: 분해된 현장 → 설치 장소 확대 → 박스를 화면 가운데로 → 박스 분해 ----------
   function goSite(key) {
     if (!isField(cur) || state === 'assembled' || handoff) return;
+    // 설치 장소로 들어갈 때는 많이 돌려 둔 각도를 박스가 보이는 범위로 되돌린다
+    orbit.y = clamp(orbit.y, -.85, .85);
+    orbit.x = clamp(orbit.x, -.45, .45);
     site = key;
     state = 'site';
     hovered = null;
@@ -4083,6 +4094,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   // 설치 장소의 박스가 현장에서 떨어져 나와 화면 가운데로 날아오고, 현장은 서서히 사라진다
   function enterProduct() {
     if (state !== 'site' || handoff) return;
+    resetOrbit();
     const b = built[site];
     hostOf(site).nest = null;
     stage.attach(b.root);
@@ -4099,6 +4111,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   function backToSite(then) {
     const b = cur, key = b.def.key;
     if (isField(cur) || !SITES[key]) return;
+    resetOrbit();
     if (handoff) finishHandoff();
     const fkey = SITES[key].field, hidden = !field || field !== built[fkey] || !field.root.visible;
     if (field && field !== built[fkey]) field.root.visible = false;
@@ -4233,6 +4246,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   function showMain() {
     homeRun++;
     homing = false;
+    resetOrbit();
     if (handoff) finishHandoff();
     // 세 현장 모두 조립된 모습으로, 박스는 각 현장의 제자리에
     for (const key of FIELD_KEYS) { const f = ensureField(key); rest(f); setAll(f, 1); }
@@ -4262,6 +4276,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   // 반대로: 화면 전체였던 현장이 제 칸으로 줄어들고, 나머지 두 칸이 드러난다
   function toMain() {
     if (homeOn || trans || !isField(cur)) return;
+    resetOrbit();
     for (const key of FIELD_KEYS) if (key !== cur.def.key) { const f = ensureField(key); rest(f); setAll(f, 1); }
     focused = hovered = site = null;
     trans = { i: FIELD_KEYS.indexOf(cur.def.key), dir: -1, t0: performance.now(), dur: reduced ? 1 : 950, from: { ...cam } };
@@ -4311,13 +4326,13 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const f = isField(cur), s = f && state === 'site' && !homing && SITES[site];
     document.body.className = state + (f ? ' field' : '');
     $('act').textContent = state === 'assembled' ? '분해하기' : '다시 조립';
-    $('hint').textContent = (f ? cur.def.hint : state === 'assembled' ? '박스를 클릭하면 분해돼요' : '부품을 클릭하면 가운데로 가져와 둘러볼 수 있어요') + (fine ? ' · 휠로 확대·축소' : '');
+    $('hint').textContent = (f ? cur.def.hint : state === 'assembled' ? '박스를 클릭하면 분해돼요' : '부품을 클릭하면 가운데로 가져와 둘러볼 수 있어요') + (fine ? ' · 끌어서 돌리기 · 휠로 확대·축소' : ' · 끌어서 돌리기');
     $('info').hidden = !focused && !s;
     $('tip').hidden = true;
     // 현장마다 박스 자리가 하나라서, 장소를 볼 때는 이전·다음 버튼을 숨긴다
     $('prev').hidden = $('next').hidden = !!s;
     $('back').textContent = s ? '현장 전체' : '전체 부품';
-    $('i-how').textContent = s ? '박스를 클릭하면 화면 가운데로 크게 가져와요. 빈 곳을 누르면 현장 전체로 돌아가요.' : '마우스를 움직이거나 드래그해서 둘러보세요. 빈 곳을 누르면 돌아가요.';
+    $('i-how').textContent = s ? '박스를 클릭하면 화면 가운데로 크게 가져와요. 빈 곳을 끌면 돌려 볼 수 있고, 빈 곳을 누르면 현장 전체로 돌아가요.' : '마우스를 움직이거나 드래그해서 둘러보세요. 빈 곳을 누르면 돌아가요.';
     if (s) {
       $('i-no').textContent = 'Ex';
       $('i-count').textContent = s.place;
@@ -4442,9 +4457,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const near = clamp((cam.d - cam.z) * .06, .02, 2.5);
     if (Math.abs(camera.near - near) > .01) { camera.near = near; camera.updateProjectionMatrix(); }
 
+    // 돌리기: 끌어서 돌린 각도(orbit) + 마우스 위치에 따른 살짝 기울임. 부품 하나를 볼 때와 칸 전환 중에는 돌린 각도를 쓰지 않는다(부품이 화면 가운데에 똑바로 오도록)
+    tiltFade += ((orbited ? 0 : 1) - tiltFade) * k(3);
     const amt = reduced || state === 'focus' || (trans && trans.dir < 0) ? [0, 0] : state === 'assembled' ? [.55, .3] : state === 'site' ? [.08, .05] : [.12, .07];
-    stage.rotation.y += ((px - .5) * amt[0] - stage.rotation.y) * k(3);
-    stage.rotation.x += ((py - .5) * amt[1] - stage.rotation.x) * k(3);
+    const useOrbit = state !== 'focus' && !trans, rk = down && down.drag ? k(20) : k(3);
+    stage.rotation.y += ((useOrbit ? orbit.y : 0) + (px - .5) * amt[0] * tiltFade - stage.rotation.y) * rk;
+    stage.rotation.x += ((useOrbit ? orbit.x : 0) + (py - .5) * amt[1] * tiltFade - stage.rotation.x) * rk;
     // 보고 있는 지점을 축으로 기울여서, 확대한 곳이 화면 밖으로 밀려나지 않게 한다
     pivot.set(cam.x, cam.y, cam.z);
     stage.position.copy(pivot).sub(tmp.copy(pivot).applyEuler(stage.rotation));
@@ -4517,17 +4535,30 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     py = e.clientY / innerHeight;
     const tip = $('tip');
     if (homeOn || trans) return;
-    if (state === 'focus') {
-      if (down) {
-        if (!down.drag && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.drag = true;
-        if (down.drag) {
-          spin.y += (e.clientX - down.lx) * .008;
-          spin.x = clamp(spin.x + (e.clientY - down.ly) * .006, -1.3, 1.3);
-        }
+    // 끌기: 부품 하나를 볼 때는 그 부품을 돌리고, 그 밖에는 현장·박스 전체를 돌린다 (좌우는 끝없이, 위아래는 ±66°)
+    if (down) {
+      if (!down.drag && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.drag = true;
+      if (down.drag) {
+        const dx = e.clientX - down.lx, dy = e.clientY - down.ly;
         down.lx = e.clientX;
         down.ly = e.clientY;
+        if (state === 'focus') {
+          spin.y += dx * .008;
+          spin.x = clamp(spin.x + dy * .006, -1.3, 1.3);
+        } else {
+          // 좌우는 끝없이 돌아간다. 다만 설치 장소를 볼 때는 박스가 벽 뒤로 숨지 않을 만큼만
+          const ly = state === 'site' ? .85 : 1e4, lx = state === 'site' ? .45 : 1.15;
+          orbit.y = clamp(orbit.y + dx * .008, -ly, ly);
+          orbit.x = clamp(orbit.x + dy * .006, -lx, lx);
+          orbited = true;
+        }
+        canvas.style.cursor = 'grabbing';
+        tip.hidden = true;
+        return;
       }
-      canvas.style.cursor = down && down.drag ? 'grabbing' : onFocused(e) ? 'grab' : 'zoom-out';
+    }
+    if (state === 'focus') {
+      canvas.style.cursor = onFocused(e) ? 'grab' : 'zoom-out';
       tip.hidden = true;
       return;
     }
@@ -4538,7 +4569,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       const label = state === 'assembled' ? h && '클릭해서 분해하기'
         : state === 'exploded' ? h && (sk ? `${name} · ${SITES[sk].ko}` : name)
           : boxHover ? '클릭해서 가까이 보기' : h && name;
-      canvas.style.cursor = (state === 'assembled' ? h : state === 'exploded' ? sk : boxHover) ? 'pointer' : 'default';
+      canvas.style.cursor = (state === 'assembled' ? h : state === 'exploded' ? sk : boxHover) ? 'pointer' : 'grab';
       tip.hidden = !label;
       if (label) {
         tip.textContent = label;
@@ -4548,7 +4579,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       return;
     }
     hovered = pick(e);
-    canvas.style.cursor = hovered ? 'pointer' : 'default';
+    canvas.style.cursor = hovered ? 'pointer' : 'grab';
     tip.hidden = !hovered;
     if (hovered) {
       tip.textContent = state === 'assembled' ? '클릭해서 분해하기' : cur.def.types[hovered.t].ko;
