@@ -5295,7 +5295,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   }
   // 이스터에그 시계: 누르기·휠·키·마우스 움직임이 있으면 처음부터 다시 센다 (보던 이스터에그는 사라진다)
   addEventListener('pointerdown', poke, { capture: true, passive: true });
-  let escCount = 0, escAt = 0;   // 개발자 명령: 스페이스바 5연타로 이스터에그 바로 실행
+  let escCount = 0, escAt = 0;   // 개발자 명령: 왼쪽 Ctrl 5연타로 이스터에그 바로 실행
 
   const pin = $('pin');
   function placePin() {
@@ -5585,18 +5585,16 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       return;
     }
     if (el.closest('#picker') || homeOn || trans) return;
-    // 개발자 명령: 스페이스바를 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
-    // 연타 중(2~5번째)에는 스페이스의 원래 동작(분해하기 등)을 막아 화면 상태가 바뀌지 않게 한다
-    if (e.key === ' ') {
+    // 개발자 명령: 왼쪽 Ctrl을 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
+    if (e.code === 'ControlLeft') {
       const now = performance.now();
       escCount = now - escAt < 1000 ? escCount + 1 : 1;
       escAt = now;
       if (escCount >= 5) {
         escCount = 0;
-        e.preventDefault();
         if (isField(cur) && state === 'assembled' && !egg) { delete eggSeen[cur.def.key]; startEgg(cur.def.key); }
-        return;
-      } else if (escCount >= 2) { e.preventDefault(); return; }
+      }
+      return;
     }
     if ((e.key === 'Enter' || e.key === ' ') && !el.closest('button')) {
       e.preventDefault();
