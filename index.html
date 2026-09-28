@@ -459,6 +459,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 <div class="pins" id="pins" aria-hidden="true"><span class="pin" id="pin">Ex</span></div>
 
 <div class="tip" id="tip" hidden></div>
+<div id="egg-debug" style="position:fixed;left:8px;bottom:8px;z-index:999;font:12px monospace;background:#000;color:#0f0;padding:4px 8px;border-radius:4px;pointer-events:none"></div>
+<script>window.EGG_DEBUG = true;</script>
 <p class="fail" id="fail" hidden>3D 화면을 불러오지 못했어요. 인터넷 연결을 확인하거나 다른 브라우저로 열어 주세요.</p>
 
 <!-- 녹음 소리(뱃고동 · 자동차 경적 mp3)를 base64로 담아 둔 곳. 페이지 안에서 풀어 쓴다 (SFX의 clips) -->
@@ -5367,6 +5369,14 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     }
     if (field && field.root.visible) animateField(field, t);
     // 이스터에그: 조립된 현장에서 30초 동안 아무것도 안 하면 시작 (움직임 줄이기 설정이면 하지 않는다)
+    // [DEBUG] 테스트용 카운트다운 표시 — 확인 끝나면 이 블록과 아래 #egg-debug div를 지울 것
+    if (window.EGG_DEBUG) {
+      const dbg = document.getElementById('egg-debug');
+      if (dbg) {
+        const can = !reduced && isField(cur) && state === 'assembled' && !homeOn && !trans && !handoff && !menuOpen() && !eggSeen[cur.def.key];
+        dbg.textContent = egg ? 'EGG RUNNING: ' + egg.key : !can ? 'blocked (reduced/not-field/not-assembled/menu/seen)' : 'egg in ' + Math.max(0, (EGG_IDLE - (now - idleAt)) / 1000).toFixed(1) + 's';
+      }
+    }
     if (!egg && !reduced && isField(cur) && state === 'assembled' && !homeOn && !trans && !handoff && !menuOpen() && !eggSeen[cur.def.key] && now - idleAt > EGG_IDLE) startEgg(cur.def.key);
     if (egg) stepEgg(now);
     for (let i = eggOut.length - 1; i >= 0; i--) {
