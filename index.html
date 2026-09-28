@@ -4160,6 +4160,99 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         }
       },
     };
+    // 음이름 → 주파수 ('A4' = 440Hz, '#' = 반음 올림)
+    const hz = n => 440 * 2 ** (('C D EF G A B'.indexOf(n[0]) + (n[1] === '#') - 9 + (+n.slice(-1) - 4) * 12) / 12);
+    // 이스터에그(선박)의 잔잔한 켈틱 선율 — 새로 지은 곡(유명 영화 주제곡을 옮긴 것이 아님). 틴 휘슬(사인 + 숨소리, 떨림, 꾸밈음) + 느린 현악 화음, 약 17초
+    function tune(k, t, b) {
+      const c = k.c, beat = 60 / 88, lead = gain(c, 1), pad = gain(c, 1);
+      const mel = [['A5', 3], ['B5', 1], ['A5', 1], ['F#5', 1], ['E5', 2], ['D5', 1], ['E5', 3],
+        ['F#5', 1], ['A5', 1], ['B5', 1], ['D6', 2], ['B5', 1], ['A5', 1], ['F#5', 1], ['E5', 1], ['D5', 3]];
+      const up = { D5: 'E5', E5: 'F#5', 'F#5': 'A5', A5: 'B5', B5: 'D6', D6: 'E6' };
+      let s = t;
+      for (const [n, d] of mel) {
+        const len = d * beat, f = hz(n), end = s + len + .15, o = osc(c, 'sine', f, s, end), o2 = osc(c, 'triangle', f, s, end), g = gain(c), vib = osc(c, 'sine', 5.4, s, end), vd = gain(c, 0);
+        if (d >= 2) { o.frequency.setValueAtTime(hz(up[n]), s); o.frequency.setValueAtTime(f, s + .06); o2.frequency.setValueAtTime(hz(up[n]), s); o2.frequency.setValueAtTime(f, s + .06); }   // 꾸밈음: 한 음 위를 살짝 스치고
+        vd.gain.setValueAtTime(0, s);
+        vd.gain.linearRampToValueAtTime(f * .006 * Math.min(1, d / 2), s + len);   // 긴 음일수록 떨림이 점점 커진다
+        vib.connect(vd).connect(o.frequency);
+        vd.connect(o2.frequency);
+        o.connect(g);
+        o2.connect(gain(c, .12)).connect(g);
+        const n1 = noise(k, s, end), bp = filter(c, 'bandpass', f, 6), ng = gain(c, .05);   // 숨소리
+        n1.connect(bp).connect(ng).connect(g);
+        g.gain.setValueAtTime(0, s);
+        g.gain.linearRampToValueAtTime(.09, s + .05);
+        g.gain.setValueAtTime(.09 * (d >= 3 ? .8 : 1), s + len - .05);
+        g.gain.linearRampToValueAtTime(0, s + len + .12);
+        g.connect(lead);
+        s += len;
+      }
+      // 현악 화음: 마디(3박)마다 D · D · A · A · Bm · G · A · D, 톱니파 둘을 살짝 어긋나게 겹쳐 부드럽게 거른다
+      const chords = [['D3', 'A3', 'D4', 'F#4'], ['D3', 'A3', 'D4', 'F#4'], ['A2', 'E3', 'A3', 'C#4'], ['A2', 'E3', 'A3', 'C#4'],
+        ['B2', 'F#3', 'B3', 'D4'], ['G2', 'D3', 'G3', 'B3'], ['A2', 'E3', 'A3', 'C#4'], ['D3', 'A3', 'D4', 'F#4']];
+      const lp = filter(c, 'lowpass', 900, .5);
+      chords.forEach((ch, i) => {
+        const s0 = t + i * 3 * beat, e0 = s0 + 3 * beat + (i === chords.length - 1 ? 2.5 : .6), g = gain(c);
+        for (const n of ch) for (const dt of [-6, 6]) { const o = osc(c, 'sawtooth', hz(n), s0, e0 + .1); o.detune.value = dt; o.connect(g); }
+        g.gain.setValueAtTime(0, s0);
+        g.gain.linearRampToValueAtTime(.01, s0 + .7);
+        g.gain.setValueAtTime(.01, e0 - (i === chords.length - 1 ? 2.4 : .5));
+        g.gain.linearRampToValueAtTime(0, e0);
+        g.connect(lp);
+      });
+      lp.connect(pad);
+      out(k, lead, .75, .6, 0, b);
+      out(k, pad, .7, .55, 0, b);
+    }
+    // 계속 나는 소리(움직이는 것에 붙는다): set(세기, 좌우, 빠르기)를 매 장면 불러 따라가게 하고, stop()으로 서서히 끈다
+    // heli = 헬리콥터(날개가 공기를 치는 "두두두" + 낮은 쿵쿵 + 터빈의 높은 윙), siren = 경찰 사이렌(빠르게 오르내림), engine = 스포츠카 엔진
+    function makeVoice(k, kind) {
+      const c = k.c, t = c.currentTime, v = gain(c), src = [], pitched = [];
+      const loop = () => { const s = c.createBufferSource(); s.buffer = k.noise; s.loop = true; src.push(s); return s; };
+      const tone = (type, f) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; src.push(o); pitched.push(o); return o; };
+      if (kind === 'heli') {
+        // 작은 스피커로도 들리게 "두두두"(380Hz 근처 · 900Hz 근처 소음)를 앞세우고, 낮은 쿵쿵은 조금만
+        const lfo = tone('square', 5.6), chop = gain(c, .5), thump = gain(c, .5), bp = filter(c, 'bandpass', 380, .9), bp2 = filter(c, 'bandpass', 900, 1.2), low = tone('sine', 58);
+        lfo.connect(gain(c, .5)).connect(chop.gain);
+        lfo.connect(gain(c, .5)).connect(thump.gain);
+        const n = loop();
+        n.connect(bp).connect(gain(c, 2.2)).connect(chop);
+        n.connect(bp2).connect(gain(c, .9)).connect(chop);
+        chop.connect(v);
+        low.connect(gain(c, .18)).connect(thump).connect(v);
+        tone('sine', 1150).connect(gain(c, .025)).connect(v);
+        tone('sine', 2310).connect(gain(c, .01)).connect(v);
+      } else if (kind === 'siren') {
+        const sweep = tone('triangle', 2.8), lp = filter(c, 'lowpass', 2600, .7), base = 1000 + Math.random() * 120;
+        for (const r of [1, 1.005]) { const o = tone('sawtooth', base * r); sweep.connect(gain(c, 380)).connect(o.frequency); o.connect(lp); }
+        lp.connect(gain(c, .4)).connect(v);
+      } else {
+        const lp = filter(c, 'lowpass', 1100, .8);
+        for (const [f, a] of [[92, .3], [184, .18], [93.3, .3]]) tone('sawtooth', f).connect(gain(c, a)).connect(lp);
+        loop().connect(filter(c, 'lowpass', 500, .7)).connect(gain(c, .2)).connect(lp);
+        lp.connect(v);
+      }
+      const p = c.createStereoPanner ? c.createStereoPanner() : gain(c, 1);
+      v.connect(p);
+      out(k, p, 1, .3, 0, k.main);
+      v.gain.value = 0;
+      src.forEach(s => s.start(t));
+      return {
+        set(vol, pan, rate = 1) {
+          const now = c.currentTime;
+          v.gain.setTargetAtTime(vol, now, .06);
+          if (p.pan) p.pan.setTargetAtTime(clamp(pan, -1, 1), now, .06);
+          for (const o of pitched) o.detune.setTargetAtTime(1200 * Math.log2(rate), now, .06);   // 빠르기: 헬리콥터는 날개 속도, 차는 엔진 회전·다가오고 멀어지는 음높이
+        },
+        stop(fade = .8) {
+          const now = c.currentTime;
+          v.gain.cancelScheduledValues(now);
+          v.gain.setValueAtTime(v.gain.value, now);
+          v.gain.linearRampToValueAtTime(0, now + fade);
+          src.forEach(s => s.stop(now + fade + .05));
+        },
+      };
+    }
     // 부품 하나의 소리: 재질(pt.snd)과 크기로 고른다. 금속 나사·볼트·너트·캡은 풀리는 딸깍 세 번이 먼저
     function partSound(k, t, b, pt, v, pan) {
       if (pt.snd === 'metal' && /screw|bolt|nut|cap/i.test(pt.key)) {
@@ -4231,7 +4324,19 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     }
     const resume = () => { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); };
     return {
-      kit, R, queue, bed, loaded, clips,   // 검사 도구(sound.js)가 소리를 따로 뽑아 볼 때 쓴다
+      kit, R, queue, bed, loaded, clips, tune, makeVoice,   // 검사 도구(sound.js)가 소리를 따로 뽑아 볼 때 쓴다
+      // 이스터에그 음악: 사용자가 넣은 음원(#snd-data의 "bgm")이 있으면 그것을(앞뒤 무음 자르기·페이드), 없으면 새로 지은 켈틱 선율
+      music() {
+        const k = ready();
+        if (!k) return;
+        const b = chan(k, 'egg'), t = k.c.currentTime + .05;
+        if (clips.bgm) clip(k, t, b, 'bgm', .12, 0, 1, 1.5, 3, .25);
+        else tune(k, t, b);
+      },
+      hush() { const k = ready(); if (k) chan(k, 'egg'); },
+      // 움직이는 것에 붙는 소리. 소리를 못 내는 상태(첫 누름 전·끔)면 아무것도 안 하는 대역을 돌려준다
+      voice(kind) { const k = ready(); return k ? makeVoice(k, kind) : { set() {}, stop() {} }; },
+      thump(v = .4) { const k = ready(); if (k) R.thud(k, k.c.currentTime + .02, k.main, v); },
       get on() { return on; },
       wake() {
         if (!on || !AC) return;
@@ -4561,6 +4666,10 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     header();
     ui();
     SFX.enter(key);   // 현장이면 대표 소리 (선박 = 뱃고동, 해양플랜트 = 플레어 불길, 화학공장 = 경적), 박스면 하던 소리만 끈다
+    // 다른 화면으로 오면 이스터에그 물체(착륙해 있던 헬리콥터 등)를 치우고, 이 현장의 이스터에그를 다시 볼 수 있게
+    for (const kk in eggMade) eggMade[kk].root.visible = false;
+    eggOut.length = 0;
+    delete eggSeen[key];
   }
 
   // ---------- 현장 흐름: 분해된 현장 → 설치 장소 확대 → 박스를 화면 가운데로 → 박스 분해 ----------
@@ -4823,6 +4932,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     zoom = null;
     zoomAt = -1e9;
     pan.set(0, 0, 0);
+    idleAt = performance.now();   // 화면이 바뀌면 이스터에그 시계도 처음부터 (보던 이스터에그는 사라진다)
+    if (egg) endEgg(false);
     SFX.scene(homeOn ? 'home' : isField(cur) ? cur.def.key : 'box');
     if (homeOn) {
       document.body.className = 'mainview';
@@ -4929,6 +5040,263 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       if (f < .99) c.traverse(o => { if (o.isMesh) { o.material.opacity *= f; o.material.transparent = true; o.material.depthWrite = false; } });
     }
   }
+  // ---------- 이스터에그: 현장에 들어와 30초 동안 아무것도 안 하면 ----------
+  // 선박 = 뱃머리에 두 사람(여자는 두 팔을 활짝 벌리고 남자는 뒤에서 허리를 감싼, 영화의 그 자세) + 잔잔한 켈틱 선율
+  // 해양플랜트 = 헬리콥터가 멀리서 날아와 헬기 갑판에 착륙 / 화학공장 = 스포츠카를 쫓는 경찰차 세 대가 앞 도로를 두 번 가로지른다
+  // 조립된 현장에서만 시작하고, 누르거나 움직이면(poke) 곧바로 사라진다. 끝까지 본 현장은 다시 들어오기 전까지 되풀이하지 않는다
+  const EGG_IDLE = 30000;
+  let idleAt = performance.now(), egg = null, eggCalm = 0;
+  const eggSeen = {}, eggMade = {}, eggOut = [];
+  function poke() { idleAt = performance.now(); if (egg) endEgg(false); }
+  const eggMat = (hex, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: col(hex), roughness: .55 }, o));
+  // 이스터에그 물체: 고를 수 없게(클릭·마우스 올림은 현장 부품으로 간다) + 화면 맞춤 계산에서 뺀다
+  function inert(g) { g.traverse(o => { if (o.isMesh) { o.raycast = () => {}; o.userData.noBounds = true; } }); return g; }
+  // 서서히 나타나고 사라지기 (a = 0 ~ 1). keepAlpha = 투명도를 스스로 정하는 것(빠르게 도는 로터의 흐릿한 원판)
+  function fadeTo(g, a) {
+    g.visible = a > .005;
+    g.traverse(o => { if (o.isMesh && !o.userData.keepAlpha) { o.material.opacity = a; o.material.transparent = a < .999; } });
+  }
+  const limb = (a, b, r, m) => mesh(strut(a, b, r, 10), m);
+  const ball = (r, x, y, z, m, sy = 1) => mesh(new THREE.SphereGeometry(r, 16, 12).scale(1, sy, 1).translate(x, y, z), m);
+  // 뱃머리의 두 사람 (발 = 원점, 앞 = +x). 키 약 .34 — 배 난간 높이(.2)에 맞춘 크기
+  function makeCouple() {
+    const skin = eggMat('#e9c2a6'), dress = eggMat('#3d4a6b'), hairW = eggMat('#7a2e1a', { roughness: .8 }), shirt = eggMat('#efece4'), pants = eggMat('#4a3b2f'), hairM = eggMat('#c8a15a', { roughness: .8 });
+    // 여자: 아래로 퍼진 치마 · 윗옷 · 목 · 머리 · 바람에 날리는 머리칼 · 어깨에서 도는 두 팔
+    const hair = limb(V(0, 0, 0), V(-.06, -.035, 0), .014, hairW);
+    hair.position.set(-.018, .33, 0);
+    const w = group(
+      mesh(lathe([[.001, 0], [.07, 0], [.058, .09], [.04, .19], [.001, .19]], 20).scale(1, 1, .85), dress),
+      mesh(lathe([[.001, .19], [.04, .19], [.042, .245], [.03, .285], [.001, .29]], 16).scale(1, 1, .85), dress),
+      limb(V(0, .28, 0), V(0, .305, 0), .011, skin),
+      ball(.026, .003, .325, 0, skin),
+      ball(.029, -.006, .331, 0, hairW),
+      hair);
+    const arms = [-1, 1].map(s => {
+      const a = group(limb(V(0, 0, 0), V(0, 0, s * .125), .0095, skin), ball(.012, 0, 0, s * .128, skin));
+      a.position.set(0, .272, s * .033);
+      w.add(a);
+      return a;
+    });
+    // 남자: 다리 · 흰 셔츠 · 목 · 머리 · 머리칼 · 여자의 허리를 감싼 두 팔 (여자 바로 뒤, 머리가 어깨 옆으로 보이게 조금 옆으로)
+    const m = group(
+      ...[-1, 1].map(s => limb(V(0, 0, s * .018), V(0, .17, s * .018), .015, pants)),
+      mesh(lathe([[.001, .165], [.048, .165], [.052, .25], [.036, .295], [.001, .3]], 16).scale(1, 1, .8), shirt),
+      limb(V(0, .29, 0), V(0, .315, 0), .012, skin),
+      ball(.027, .003, .338, 0, skin),
+      ball(.029, -.004, .35, 0, hairM, .75),
+      ...[-1, 1].map(s => limb(V(0, .275, s * .045), V(.085, .2, s * .04), .011, shirt)));
+    m.position.set(-.09, 0, -.012);
+    const couple = group(w, m);
+    couple.position.set(7.72, DK + .03, 0);   // 갑판 위, 선수 끝 난간(x ≈ 7.97) 바로 뒤 · 양쪽 닻줄 사이
+    return { root: inert(group(couple)), arms, w, hair };
+  }
+  // 헬리콥터 (스키드 바닥 = 원점, 앞 = +x): 몸통 · 조종석 유리 · 꼬리 붐 · 꼬리 날개 · 수평 꼬리날개 · 꼬리 로터 · 주 로터(+ 빠르게 돌 때 흐릿한 원판) · 스키드
+  function makeHeli() {
+    const body = eggMat('#c8372d', { roughness: .4, metalness: .2 }), white = eggMat('#f0eee8', { roughness: .45 }), glass = eggMat('#1d2730', { roughness: .1, metalness: .6 });
+    const metal = eggMat('#5d646b', { roughness: .45, metalness: .5 }), blade = eggMat('#26282c', { roughness: .5 });
+    const rotor = group(...[0, 1, 2, 3].map(i => mesh(new THREE.BoxGeometry(.74, .012, .05).translate(.39, 0, 0), blade, null, Q(0, i * Math.PI / 2, 0))), mesh(new THREE.CylinderGeometry(.04, .04, .03, 12), metal));
+    rotor.position.set(.03, .7, 0);
+    const blur = mesh(new THREE.CircleGeometry(.76, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: col('#26282c'), transparent: true, opacity: 0, depthWrite: false }));
+    blur.position.set(.03, .712, 0);
+    blur.userData.keepAlpha = true;
+    const tail = group(...[0, 1].map(i => mesh(new THREE.BoxGeometry(.014, .22, .035), blade, null, Q(0, 0, i * Math.PI / 2))));
+    tail.position.set(-1.2, .6, .035);
+    const g = group(
+      mesh(lathe([[.001, -.5], [.1, -.47], [.17, -.35], [.2, -.1], [.19, .2], [.13, .4], [.06, .52], [.001, .55]], 24).rotateZ(-Math.PI / 2).scale(1, 1, .8).translate(0, .4, 0), body),
+      mesh(new THREE.SphereGeometry(.17, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.25, .8, .75).translate(.28, .44, 0), glass),
+      mesh(new THREE.CylinderGeometry(.035, .07, .76, 12).rotateZ(Math.PI / 2).translate(-.82, .46, 0), body),
+      mesh(new THREE.CylinderGeometry(.052, .052, .1, 12).rotateZ(Math.PI / 2).translate(-.62, .46, 0), white),
+      mesh(new THREE.BoxGeometry(.18, .24, .016).translate(-1.18, .56, 0), body),
+      mesh(new THREE.BoxGeometry(.09, .012, .28).translate(-1.02, .46, 0), white),
+      mesh(new THREE.CylinderGeometry(.025, .03, .12, 10).translate(.03, .63, 0), metal),
+      ...[-1, 1].flatMap(s => [
+        mesh(new THREE.CylinderGeometry(.013, .013, .95, 8).rotateZ(Math.PI / 2).translate(.02, .015, s * .17), metal),
+        ...[.24, -.22].map(x => mesh(strut(V(x, .015, s * .17), V(x * .85, .26, s * .09), .012, 6), metal)),
+      ]),
+      rotor, blur, tail);
+    return { root: inert(group(g)), g, rotor, tail, blur };
+  }
+  // 추격전 차들 (바퀴 바닥 = 원점, 앞 = +x): 빨간 스포츠카 1 + 경찰차 3 (남색 아래 몸체 · 흰 지붕과 옆 띠 · 지붕 경광등 빨강/파랑 + 번쩍이는 빛).
+  // 경찰차는 지나가는 흰 차들과 한눈에 구별되게 어둡게. 차마다 재질을 따로(하나씩 서서히 사라지게)
+  function makeChase() {
+    const kit = () => ({ lamp: FM.lamp.clone(), tail: FM.taillight.clone(), tire: eggMat('#1c1d20', { roughness: .7 }), glass: eggMat('#1d2730', { roughness: .1, metalness: .6 }) });
+    const wheels = (m, xs, r, z) => xs.flatMap(x => [-1, 1].map(s => mesh(new THREE.CylinderGeometry(r, r, .03, 14).rotateX(Math.PI / 2).translate(x, r, s * z), m)));
+    const s = kit(), red = eggMat('#d42a1e', { roughness: .3, metalness: .4 });
+    const sport = group(
+      mesh(rbox(.46, .07, .2, .03, .01).translate(0, .07, 0), red),
+      mesh(rbox(.2, .055, .16, .025, .008).translate(-.04, .125, 0), s.glass),
+      mesh(new THREE.BoxGeometry(.06, .012, .19).translate(-.21, .148, 0), red),
+      ...[-1, 1].map(z => mesh(new THREE.BoxGeometry(.012, .035, .012).translate(-.21, .125, z * .07), s.glass)),
+      ...wheels(s.tire, [-.15, .15], .038, .09),
+      ...[-1, 1].map(z => mesh(new THREE.BoxGeometry(.01, .015, .04).translate(.231, .075, z * .065), s.lamp)),
+      ...[-1, 1].map(z => mesh(new THREE.BoxGeometry(.01, .015, .045).translate(-.231, .08, z * .065), s.tail)));
+    const cars = [{ g: inert(sport), delay: 0, v: 3.4 }];
+    const flash = hex => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col(hex), transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending })); s.scale.setScalar(.2); s.raycast = () => {}; return s; };
+    [.55, 1.0, 1.4].forEach((delay, i) => {
+      const v = car(0, 0), p = kit(), white = eggMat('#f1f0ec', { roughness: .35, metalness: .3 }), navy = eggMat('#1d2c4f', { roughness: .35, metalness: .35 });
+      const rl = mesh(new THREE.BoxGeometry(.055, .025, .065).translate(-.02, .22, -.036), new THREE.MeshBasicMaterial({ color: col('#ff2b2b'), toneMapped: false }));
+      const bl = mesh(new THREE.BoxGeometry(.055, .025, .065).translate(-.02, .22, .036), new THREE.MeshBasicMaterial({ color: col('#2b6bff'), toneMapped: false }));
+      const rg = flash('#ff3030'), bg = flash('#3070ff');
+      rg.position.set(-.02, .23, -.04);
+      bg.position.set(-.02, .23, .04);
+      const g = group(mesh(merge([v.body[0]]), navy), mesh(merge([v.body[1]]), white), mesh(merge(v.glass), p.glass), mesh(merge(v.wheel), p.tire),
+        mesh(new THREE.BoxGeometry(.402, .02, .192).translate(0, .09, 0), white),
+        mesh(new THREE.BoxGeometry(.13, .012, .15).translate(-.02, .206, 0), p.tire), rl, bl, rg, bg, mesh(merge(v.head), p.lamp), mesh(merge(v.tail), p.tail));
+      cars.push({ g: inert(g), delay, v: 3.3, rl, bl, rg, bg, ph: i * 1.3 });
+    });
+    return { root: group(...cars.map(c => c.g)), cars };
+  }
+  const wp = V(), ndcP = V();
+  // 소리 자리: 화면 가로 위치(−1 ~ 1)와 카메라까지 거리
+  const hear = o => { o.getWorldPosition(wp); const d = wp.distanceTo(camera.position); ndcP.copy(wp).project(camera); return { x: clamp(ndcP.x, -1.2, 1.2), d }; };
+  const bz = (u, p0, p1, p2, p3, out) => out.set(0, 0, 0).addScaledVector(p0, (1 - u) ** 3).addScaledVector(p1, 3 * (1 - u) ** 2 * u).addScaledVector(p2, 3 * (1 - u) * u * u).addScaledVector(p3, u ** 3);
+  const EGG = {
+    ship: {
+      host: 'deck/plate', make: makeCouple, look: () => V(7.66, DK + .2, 0), zoom: .1, zoomTall: .06,   // 세로 화면은 배를 폭에 맞춰 멀리서 보므로 더 다가간다
+      start(e) { fadeTo(e.made.root, 0); e.yaw0 = orbit.y; },
+      step(e, t) {
+        const m = e.made, u = ease(clamp((t - 2.6) / 2.2, 0, 1));
+        if (!e.music && t > .8) { e.music = true; SFX.music(); }
+        // 카메라가 두 사람 앞쪽 비스듬히(약 35°)로 천천히 돌아간다 — 옆으로 벌린 두 팔이 화면에서 활짝 보이게
+        orbit.y = e.yaw0 - (e.back ? 0 : .54 * ease(clamp(t / 4, 0, 1)));
+        fadeTo(m.root, clamp((t - 1.2) / 1, 0, 1) * clamp((20.5 - t) / 1, 0, 1));
+        // 두 팔을 아래에서 천천히 들어 옆으로 활짝 (조금 뒤로 젖히고 살짝 위로), 바람을 맞으며 앞으로 살짝 기울고 머리칼이 날린다
+        m.arms.forEach((a, i) => { const s = i ? 1 : -1; a.rotation.set(s * (Math.PI / 2 * (1 - u) - .12 * u), -s * .3 * u, 0); });
+        m.w.rotation.z = -.07 * u;
+        m.hair.rotation.z = .12 * Math.sin(t * 7.3) + .05 * Math.sin(t * 13.1);
+        if (t > 19.2 && !e.back) { e.back = true; zoom = null; eggCalm = performance.now() + 3500; }
+        return t < 20.6;
+      },
+      stop(e) { SFX.hush(); orbit.y = e.yaw0; },
+    },
+    offshore: {
+      host: 'helideck/deck', make: makeHeli, zoom: .55,
+      look: h => V(h.c.x, h.c.y + h.box.max.y + .6, h.c.z),
+      start(e) {
+        const h = e.host, P = V(h.c.x, h.c.y + h.box.max.y, h.c.z);   // 헬기 갑판 윗면 가운데
+        e.path = [V(7, 4.5, -5), V(3.5, 3.2, -2.5), V(1.4, 1.5, -.5), V(0, 1.15, 0)].map(v => v.add(P));
+        e.pad = P;
+        e.pos = V();
+        e.dir = V();
+        e.yaw = e.roll = 0;
+        e.snd = SFX.voice('heli');
+        fadeTo(e.made.root, 0);
+      },
+      step(e, t, dt) {
+        const m = e.made, [S, C1, C2, H] = e.path, P = e.pad;
+        let pitch = 0, roll = 0, yaw = e.yaw;
+        if (t < 6.5) {
+          // 다가오기: 곡선을 따라 점점 느려지며, 가는 쪽으로 머리를 두고 앞으로 숙였다가 끝에서 들어 올린다(속도를 줄이려고). 도는 만큼 옆으로 기운다
+          const s = t / 6.5, u = 1 - (1 - s) ** 2;
+          bz(u, S, C1, C2, H, e.pos);
+          e.dir.copy(C1).sub(S).multiplyScalar(3 * (1 - u) ** 2).addScaledVector(C2.clone().sub(C1), 6 * (1 - u) * u).addScaledVector(H.clone().sub(C2), 3 * u * u);
+          yaw = Math.atan2(-e.dir.z, e.dir.x);
+          pitch = -.2 + .26 * clamp((s - .5) / .5, 0, 1) ** 2;
+          roll = clamp(-(yaw - e.yaw) / Math.max(dt, .001) * .35, -.35, .35);
+        } else if (t < 7.7) {
+          e.pos.copy(H).add(V(0, .02 * Math.sin(t * 2.3), .015 * Math.sin(t * 1.7)));   // 제자리 비행
+          pitch = .06 * (1 - (t - 6.5) / 1.2);
+        } else if (t < 10.3) {
+          const p = ease((t - 7.7) / 2.6);
+          e.pos.lerpVectors(H, P, p).add(V(0, 0, .01 * Math.sin(t * 1.9) * (1 - p)));   // 곧게 내려앉기
+        } else {
+          e.pos.copy(P);
+          if (!e.landed) { e.landed = true; SFX.thump(.3); }
+        }
+        e.roll += (roll - e.roll) * Math.min(1, dt * 4);
+        e.yaw = yaw;
+        m.g.position.copy(e.pos);
+        m.g.rotation.set(e.roll, yaw, pitch, 'YZX');
+        // 로터: 내려앉은 뒤 서서히 멈춘다. 빠를 때는 흐릿한 원판이 보인다
+        const sp = t < 10.8 ? 1 : Math.max(0, 1 - (t - 10.8) / 4.5), a = clamp(t / .6, 0, 1);
+        m.rotor.rotation.y += dt * 24 * sp;
+        m.tail.rotation.z += dt * 60 * sp;
+        m.blur.material.opacity = .18 * clamp((sp - .35) / .4, 0, 1) * a;
+        fadeTo(m.root, a);
+        // 소리: 가까울수록 크게(착륙 자리까지의 거리 기준), 화면 가로 위치로 좌우, 날개가 느려지면 두두두도 느려진다
+        const h = hear(m.g);
+        e.dPad = e.dPad || stage.localToWorld(P.clone().applyQuaternion(field.def.asm.q).add(field.def.asm.p)).distanceTo(camera.position);
+        e.snd.set(.55 * clamp(e.dPad / h.d, 0, 1.3) ** 1.5 * sp ** .7 * clamp(t, 0, 1), h.x * .8, .55 + .45 * sp);
+        return t < 15.5;
+      },
+      stop(e) { e.snd.stop(1.2); },
+    },
+    chem: {
+      host: 'ground/road', make: makeChase, look: () => V(-6, .1, 3.65), zoom: .45,
+      start(e) {
+        e.snd = e.made.cars.map((c, i) => SFX.voice(i ? 'siren' : 'engine'));
+        e.last = e.made.cars.map(() => 0);
+        e.made.cars.forEach(c => fadeTo(c.g, 0));
+        e.made.root.visible = true;
+      },
+      step(e, t, dt) {
+        // 두 번 지나간다: 왼쪽 → 오른쪽(.6초부터), 오른쪽 → 왼쪽(7.6초부터). 도로 가운데 줄(z 3.65)을 달려 양쪽 차선의 차들 사이를 지나간다
+        let sx = 0, n = 0, run = 1;
+        e.made.cars.forEach((c, i) => {
+          let x = null, dir = 1;
+          for (const [t0, d] of [[.6, 1], [7.6, -1]]) {
+            const tt = t - t0 - c.delay;
+            if (tt >= 0 && tt * c.v <= 15.2) { x = d * (-7.6 + tt * c.v); dir = d; }
+          }
+          const f = x === null ? 0 : clamp((7.4 - .15 - Math.abs(x)) / .5, 0, 1);   // 부지 끝(출입구 밖)에서는 서서히 사라진다
+          fadeTo(c.g, f);
+          if (x !== null) {
+            c.g.position.set(x, .003 * Math.sin(t * 17 + i), 3.65);
+            c.g.rotation.y = (dir > 0 ? 0 : Math.PI) + .02 * Math.sin(t * 3.1 + i);
+            if (f > .01) { sx += x; n++; run = dir; }
+          }
+          if (c.rl) {
+            const on = Math.sin(t * 25 + c.ph) > 0;
+            c.rl.visible = c.rg.visible = on;
+            c.bl.visible = c.bg.visible = !on;
+            c.rg.material.opacity = c.bg.material.opacity = .9 * f;
+          }
+          // 소리: 화면 가운데 가까이 지날 때 크게, 좌우로 따라가고, 다가올 때 높게 · 멀어질 때 낮게(도플러)
+          const h = hear(c.g), dop = e.last[i] ? clamp((e.last[i] - h.d) / Math.max(dt, .001) * .015, -.08, .08) : 0;
+          e.last[i] = h.d;
+          e.snd[i].set((i ? .3 : .38) * f * (.25 + .75 * Math.exp(-h.x * h.x * 2.5)), h.x * .85, (i ? 1 : 1.05) * (1 + dop));
+        });
+        // 카메라: 차 무리를 따라간다. 느리게 따라가는 카메라가 뒤처지지 않게 가는 쪽으로 1초만큼 앞을 겨눈다. 차가 없으면 다음에 들어올 쪽 끝에서 기다린다
+        if (t < 13) eggAim(V(n ? clamp(sx / n + run * 3.4, -6, 6) : t < 6 ? -6 : 6, .1, 3.65));
+        else if (!e.back) { e.back = true; zoom = null; eggCalm = performance.now() + 3500; }
+        return t < 14;
+      },
+      stop(e) { e.snd.forEach(s => s.stop(.6)); },
+    },
+  };
+  function startEgg(key) {
+    const E = EGG[key], host = E && field.parts.find(p => p.key === E.host);
+    if (!host) return;
+    const made = eggMade[key] || (eggMade[key] = E.make()), root = made.root;
+    if (root.parent !== host.obj) { host.obj.add(root); root.position.copy(host.c).negate(); }   // 부품 안에서 현장 좌표 그대로 쓰게
+    egg = { key, E, made, host, t0: performance.now() };
+    eggOut.splice(0, eggOut.length);
+    E.start(egg);
+    zoom = { r: camera.aspect < .85 && E.zoomTall || E.zoom, x: 0, y: 0, z: 0 };
+    eggAim(E.look(host));
+  }
+  // 카메라가 볼 곳(현장 좌표 → 무대 좌표)을 정한다. 휠 확대와 같은 방식이라 천천히 다가가고 물러난다
+  function eggAim(Pm) {
+    const Hs = Pm.applyQuaternion(field.def.asm.q).add(field.def.asm.p), g0 = panGoal(camGoal());
+    if (zoom) Object.assign(zoom, { x: Hs.x - g0.x, y: Hs.y - g0.y, z: Hs.z - g0.z });
+  }
+  function stepEgg(now) {
+    if (egg.E.step(egg, (now - egg.t0) / 1000, dt) === false) endEgg(true);
+  }
+  // natural = 끝까지 봤다(착륙한 헬리콥터는 그대로 남는다) / 아니면 끊겼다(서서히 사라진다)
+  function endEgg(natural) {
+    const e = egg;
+    egg = null;
+    e.E.stop(e);
+    zoom = null;
+    eggCalm = natural ? performance.now() + 3500 : 0;
+    if (natural) eggSeen[e.key] = true;
+    if (!natural || e.key !== 'offshore') eggOut.push({ g: e.made.root, a: e.made.root.visible ? 1 : 0 });
+  }
+  // 이스터에그 시계: 누르기·휠·키·마우스 움직임이 있으면 처음부터 다시 센다 (보던 이스터에그는 사라진다)
+  for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, poke, { capture: true, passive: true });
+  addEventListener('pointermove', e => { if (e.movementX || e.movementY) poke(); }, { capture: true, passive: true });
+
   const pin = $('pin');
   function placePin() {
     const key = field.def.box, h = hostOf(key);
@@ -4956,7 +5324,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       for (const key of ['d', 'x', 'y', 'z']) cam[key] = c0[key] + (g[key] - c0[key]) * e;
     } else {
       // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
-      const f = k(down && down.pan ? 20 : now - zoomAt < 600 ? 10 : 2.4);
+      const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : 2.4);   // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다
       cam.d += (g.d - cam.d) * f;
       cam.x += (g.x - cam.x) * f;
       cam.y += (g.y - cam.y) * f;
@@ -4998,6 +5366,15 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       stepHandoff(now);
     }
     if (field && field.root.visible) animateField(field, t);
+    // 이스터에그: 조립된 현장에서 30초 동안 아무것도 안 하면 시작 (움직임 줄이기 설정이면 하지 않는다)
+    if (!egg && !reduced && isField(cur) && state === 'assembled' && !homeOn && !trans && !handoff && !menuOpen() && !eggSeen[cur.def.key] && now - idleAt > EGG_IDLE) startEgg(cur.def.key);
+    if (egg) stepEgg(now);
+    for (let i = eggOut.length - 1; i >= 0; i--) {
+      const o = eggOut[i];
+      o.a -= dt * 2.2;
+      fadeTo(o.g, Math.max(o.a, 0));
+      if (o.a <= 0) eggOut.splice(i, 1);
+    }
     // 칸 전환 중에는 나머지 두 현장도 제 칸에 그려지므로 같이 움직인다 (tick으로 투명도를 먼저 되돌린 뒤)
     if (trans) for (const key of FIELD_KEYS) if (built[key] && built[key] !== field) { tick(built[key], now, t, false); animateField(built[key], t); }
     // 설치 장소에서 박스에 마우스를 올리면 벽에서 살짝 앞으로 나온다
