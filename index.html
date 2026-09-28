@@ -28,7 +28,7 @@ body {
 }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-#view { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+#view { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #view:focus-visible { box-shadow: inset 0 0 0 3px var(--ink); }
 
 .head {
@@ -3930,6 +3930,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   let homeOn = false, homeHover = -1, trans = null, headBottom = 110;
   // 휠 확대: 기본 카메라(camGoal)에서 얼마나 당겼는지. r = 거리 비율(1 = 기본), x·y·z = 바라보는 점이 옮겨 간 양. 화면 상태가 바뀌면(ui) 풀린다
   let zoom = null, zoomAt = -1e9;
+  // 옮기기(분해 화면에서 우클릭 끌기·두 손가락): 바라보는 점을 무대 좌표에서 옮긴 양. 거리는 그대로라 X·Y로만 움직인다. 화면 상태가 바뀌면(ui) 풀린다
+  const pan = V();
   const HOME = { title: '산업 현장별 방폭박스', note: '현장을 골라 들어가면 분해해서 방폭박스를 찾아갈 수 있어요' };
   const spin = { x: 0, y: 0 }, look = { x: 0, y: 0 };
   // 끌어서 돌려 보기: orbit = 끌어서 돌린 각도, orbited = 한 번이라도 돌렸는지 (돌린 뒤에는 마우스 위치만 따라가던 기울임을 꺼서 각도가 흔들리지 않게 한다)
@@ -3993,6 +3995,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     return { d: fitPts(pts, look, fq.setFromEuler(stage.rotation), my, mx, camera.aspect), x: look.x, y: look.y, z: 0 };
   }
   const zoomGoal = g => zoom ? { x: g.x + zoom.x, y: g.y + zoom.y, z: g.z + zoom.z, d: g.z + zoom.z + (g.d - g.z) * zoom.r } : g;
+  // 옮긴 만큼 바라보는 점과 카메라를 함께 옮긴다. 휠 확대는 옮긴 화면을 기준으로 한다
+  const panGoal = g => ({ x: g.x + pan.x, y: g.y + pan.y, z: g.z + pan.z, d: g.d + pan.z });
   // 부품을 화면 가운데 앞쪽으로 가져오는 자리. 돌려 놓은 각도(orbit)를 거꾸로 적용해서,
   // 무대를 원래대로 되감지 않고도 부품이 화면 정면에 똑바로 오게 한다 (되감기며 빙 도는 것을 없앤다)
   function focusPose(pt) {
@@ -4444,6 +4448,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   function ui() {
     zoom = null;
     zoomAt = -1e9;
+    pan.set(0, 0, 0);
     if (homeOn) {
       document.body.className = 'mainview';
       $('info').hidden = $('tip').hidden = true;
@@ -4452,7 +4457,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const f = isField(cur), s = f && state === 'site' && !homing && SITES[site];
     document.body.className = state + (f ? ' field' : '');
     $('act').textContent = state === 'assembled' ? '분해하기' : '다시 조립';
-    $('hint').textContent = (f ? cur.def.hint : state === 'assembled' ? '박스를 클릭하면 분해돼요' : '부품을 클릭하면 가운데로 가져와 둘러볼 수 있어요') + (fine ? ' · 끌어서 돌리기 · 휠로 확대·축소' : ' · 끌어서 돌리기');
+    $('hint').textContent = (f ? cur.def.hint : state === 'assembled' ? '박스를 클릭하면 분해돼요' : '부품을 클릭하면 가운데로 가져와 둘러볼 수 있어요') + (fine ? ' · 끌어서 돌리기 · 휠로 확대·축소' : ' · 끌어서 돌리기')
+      + (state === 'exploded' ? (fine ? ' · 우클릭으로 끌어 옮기기' : ' · 두 손가락으로 옮기기') : '');
     $('info').hidden = !focused && !s;
     $('tip').hidden = true;
     // 현장마다 박스 자리가 하나라서, 장소를 볼 때는 이전·다음 버튼을 숨긴다
@@ -4563,7 +4569,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     dt = Math.min(.05, (now - last) / 1000);
     last = now;
     if (homeOn) { homeFrame(now, t); requestAnimationFrame(frame); return; }
-    const g = zoomGoal(camGoal());
+    const g = zoomGoal(panGoal(camGoal()));
     if (!cam) cam = { d: g.d * (reduced ? 1 : 1.35), x: g.x, y: g.y, z: g.z };
     if (trans) {
       // 칸 ↔ 화면 전체 전환: 카메라도 같은 속도 곡선으로 칸 카메라와 현장 카메라 사이를 오간다
@@ -4574,8 +4580,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       const e = ease(clamp((now - handoff.t0) / handoff.dur, 0, 1)), c0 = handoff.cam;
       for (const key of ['d', 'x', 'y', 'z']) cam[key] = c0[key] + (g[key] - c0[key]) * e;
     } else {
-      // 휠을 돌린 직후에는 빠르게 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
-      const f = k(now - zoomAt < 600 ? 10 : 2.4);
+      // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
+      const f = k(down && down.pan ? 20 : now - zoomAt < 600 ? 10 : 2.4);
       cam.d += (g.d - cam.d) * f;
       cam.x += (g.x - cam.x) * f;
       cam.y += (g.y - cam.y) * f;
@@ -4663,7 +4669,31 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     return pt.def === field.def ? { chunk: pt, box: false } : { chunk: field.parts.find(h => h.nest && h.nest.def === pt.def), box: true };
   }
 
+  // 누르고 있는 포인터들(마우스 하나 또는 손가락 여럿). 옮길 때는 이들의 가운데 점을 따라간다
+  const ptrs = new Map();
+  const mid = () => { let x = 0, y = 0; for (const p of ptrs.values()) { x += p.x; y += p.y; } return { x: x / ptrs.size, y: y / ptrs.size }; };
+  // 옮기기(우클릭 끌기·두 손가락)는 분해된 화면에서만
+  const canPan = () => state === 'exploded' && !trans && !homeOn && !handoff;
+  // 화면에서 끈 만큼(px) 바라보는 점을 반대로 옮긴다. 바라보는 깊이에서 1px = 2·TAN·거리/화면 높이, 돌려 놓은 각도를 풀어 무대 좌표로
+  function panBy(dx, dy) {
+    const s = 2 * TAN * (cam.d - cam.z) / innerHeight, h = cur.lbox[mode].getSize(V()).multiplyScalar(.5);
+    pan.add(V(-dx * s, dy * s, 0).applyQuaternion(stageInv));
+    pan.set(clamp(pan.x, -h.x, h.x), clamp(pan.y, -h.y, h.y), clamp(pan.z, -h.z, h.z));   // 분해 배치 밖으로 나가 모델을 잃어버리지 않게
+    zoomAt = performance.now();   // 손을 뗀 뒤에도 남은 거리를 빨리 따라잡아 미끄러지듯 흐르지 않게
+  }
   canvas.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId);
+    if (p) { p.x = e.clientX; p.y = e.clientY; }
+    // 옮기는 동안에는 마우스 위치로 기울이는 것도 멈춘다 (X·Y로만 움직이게)
+    if (down && (down.pan || down.dead)) {
+      if (down.pan && canPan()) {
+        const m = mid();
+        panBy(m.x - down.lx, m.y - down.ly);
+        down.lx = m.x;
+        down.ly = m.y;
+      }
+      return;
+    }
     px = e.clientX / innerWidth;
     py = e.clientY / innerHeight;
     const tip = $('tip');
@@ -4723,11 +4753,25 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   });
   canvas.addEventListener('pointerdown', e => {
     if (menuOpen()) { setMenu(false); down = null; return; }
-    down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, drag: false };
+    if (e.isPrimary) { ptrs.clear(); down = null; }   // 새로 누르기 시작: 혹시 놓친 손가락 기록이 남아 있어도 비운다
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const m = mid();
+    // 두 번째 손가락이 닿거나 오른쪽 버튼이면 옮기기 (분해 화면이 아니면 아무것도 안 함 = dead). 손가락 수가 바뀌면 기준점을 새로 잡아 튀지 않게
+    if (ptrs.size > 1 || e.button === 2) down = down && down.dead ? down : canPan() ? { pan: true, drag: true, lx: m.x, ly: m.y } : { dead: true, drag: true };
+    else down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, drag: false };
+    if (down.pan) { canvas.style.cursor = 'move'; $('tip').hidden = true; }
     canvas.setPointerCapture(e.pointerId);
   });
+  // 우클릭은 옮기기에 쓰므로 브라우저 메뉴(이미지 복사·저장)를 띄우지 않는다
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('pointerup', e => {
+    ptrs.delete(e.pointerId);
     const d = down;
+    // 손가락이 아직 남아 있으면 옮기기를 이어 간다 (기준점만 남은 손가락으로)
+    if (d && (d.pan || d.dead) && ptrs.size) {
+      if (d.pan) { const m = mid(); d.lx = m.x; d.ly = m.y; }
+      return;
+    }
     down = null;
     if (!d || d.drag || trans || homeOn) return;
     if (state === 'focus') { if (!onFocused(e)) unfocus(); return; }
@@ -4743,7 +4787,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     if (!pt) return;
     if (state === 'assembled') explode(); else focusPart(pt);
   });
-  canvas.addEventListener('pointercancel', () => { down = null; });
+  canvas.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); down = null; });
   canvas.addEventListener('pointerleave', () => {
     if (down) return;
     px = py = .5;
@@ -4773,7 +4817,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const H = stage.worldToLocal(hit ? hit.point : ray.ray.at((cam.d - zf) / -ray.ray.direction.z, V()));
     // 카메라(바라보는 점과 거리)를 무대 좌표에서 H를 중심으로 s배 → 기울기와 상관없이 H는 화면 속 같은 자리에 머문다.
     // 기본 화면에서 벗어난 양은 (1 − r)에 비례해 묶어서, 끝까지 축소하면 기본 화면으로 돌아온다
-    const g0 = camGoal(), g = zoomGoal(g0), D0 = g0.d - g0.z, room = (1 - r) * D0 * TAN * 1.3;
+    const g0 = panGoal(camGoal()), g = zoomGoal(g0), D0 = g0.d - g0.z, room = (1 - r) * D0 * TAN * 1.3;
     zoom = {
       r,
       x: clamp(H.x + s * (g.x - H.x) - g0.x, -room * camera.aspect, room * camera.aspect),
@@ -4828,6 +4872,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     zoom = null;
+    pan.set(0, 0, 0);
     const m = camera.aspect < .85 ? 'tall' : 'wide';
     if (m !== mode) {
       mode = m;
