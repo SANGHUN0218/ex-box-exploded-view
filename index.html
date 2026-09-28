@@ -857,6 +857,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 
   // ---------- 형태 도구 ----------
   function rrect(w, h, r) {
+    r = Math.min(r, w / 2, h / 2);   // 폭의 절반보다 크게 둥글리면 외곽선이 꼬여 면이 뒤집힌다
     const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
     s.moveTo(x + r, y);
     s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
@@ -884,9 +885,11 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     return g.translate(0, 0, -d / 2);
   }
   const rbox = (w, h, d, r = .03, b = .012) => extrude(rrect(w - 2 * b, h - 2 * b, Math.max(r - b, .002)), d, b);
-  const lathe = (pts, seg = 64) => new THREE.LatheGeometry(pts.map(([x, y]) => V2(x, y)), seg);
+  // 반지름 .001 이하 = 축 위의 점 → 정확히 0으로 붙인다 (.001로 두면 축에 바늘구멍이 남아 작은 부품에서 속이 비쳐 보인다)
+  const lathe = (pts, seg = 64) => new THREE.LatheGeometry(pts.map(([x, y]) => V2(x <= .001 ? 0 : x, y)), seg);
   // 구멍 안쪽을 어둡게 보이는 안감(y축 방향). closed = 막힌 구멍(바닥이 어둡게 보임), 아니면 뚫린 구멍
-  const liner = (r, y0, y1, closed = false) => new THREE.CylinderGeometry(r, r, y1 - y0, 32, 1, !closed).translate(0, (y0 + y1) / 2, 0);
+  // seg = 둘레 분할 수. 끝면 고리(lathe)와 딱 맞물려야 할 때는 고리와 같은 수로 준다
+  const liner = (r, y0, y1, closed = false, seg = 32) => new THREE.CylinderGeometry(r, r, y1 - y0, seg, 1, !closed).translate(0, (y0 + y1) / 2, 0);
   const linerZ = (r, z0, z1, closed) => liner(r, z0, z1, closed).rotateX(Math.PI / 2);   // z축 방향 구멍용
   // 모서리를 둥글린 육각 너트 (bevel만큼 구멍이 좁아지므로 미리 넓혀 둔다)
   function hexPrism(r, hole, h, y, bevel = .006) {
@@ -938,6 +941,10 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     }
     return g;
   }
+  // 너트 끝면의 틈 막이 고리: hexPrism 구멍은 모따기만큼 끝면에서 넓어져(구멍 + bevel) 암나사 끝과 사이가 벌어진다.
+  // 암나사를 끝면보다 .0005 안쪽에서 끝내고 그 높이(y)에 고리를 대면, 고리 바깥 가장자리는 모따기 속에 숨고 틈만 막힌다.
+  // dir: −1 = 아래 끝(아래를 봄), +1 = 위 끝(위를 봄)
+  const nutLip = (r, R, y, dir) => lathe(dir < 0 ? [[r, y], [R, y]] : [[R, y], [r, y]], 64);
   // 나사 머리: 윗면에 십자(cross)·일자(slot)·육각(hex) 홈을 실제로 파낸다. 머리 아랫면 = y 0, 위쪽이 +y
   function screwHead(R, H, kind) {
     const fr = R * (kind === 'hex' ? .12 : .22), Rt = R - fr;
@@ -1037,8 +1044,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         steel: merge([
           [h.head],
           [threadGeo({ r, depth, pitch, y0: -len, y1 })],
-          [lathe([[r, y1], [r + depth, y1], [r + depth, .001]], 48)],
-          [lathe([[.001, -len - .008], [r * .75, -len - .008], [r, -len]], 48)],
+          [lathe([[r, y1], [r + depth, y1], [r + depth, .001]], 64)],
+          [lathe([[.001, -len - .008], [r * .75, -len - .008], [r, -len]], 64)],
         ]),
         recess: h.recess,
       };
@@ -1213,7 +1220,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     // 외부 접지 단자(황동): 나사 막대 + 너트 · 와셔 · 너트 (원점 = 보스 끝면, y축 = 바깥쪽)
     const makeEarth = () => group(mesh(memo('isEarth', () => merge([
       [threadGeo({ r: .022, depth: .004, pitch: .012, y0: -.05, y1: .18 })],
-      [lathe([[.022, .18], [.001, .185]], 16)],
+      [lathe([[.022, .18], [.001, .185]], 64)],
+      [lathe([[.001, -.055], [.022, -.05]], 64)],
       [hexPrism(.05, .022, .028, .014, .005)],
       [lathe([[.024, .028], [.064, .028], [.064, .036], [.024, .036], [.024, .028]], 32)],
       [lathe([[.024, .1], [.064, .1], [.064, .108], [.024, .108], [.024, .1]], 32)],
@@ -1282,7 +1290,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     // 케이블 글랜드 부품: y축 = 글랜드 축(위가 바깥쪽), 원점 = 상자 벽 바깥면
     const makeCap = () => group(mesh(memo('cap', () => merge([
       [flutedRing(24, .128, .139, .108, .1, .14)],
-      [lathe([[.128, .19], [.126, .205], [.118, .222], [.104, .238], [.086, .25], [.068, .257], [.058, .256], [.054, .25], [.054, .236], [.064, .23], [.09, .222], [.104, .21], [.108, .19]])],
+      [lathe([[.128, .19], [.126, .205], [.118, .222], [.104, .238], [.086, .25], [.068, .257], [.058, .256], [.054, .25], [.054, .236], [.064, .23], [.09, .222], [.104, .21], [.116, .19]])],
     ])), MAT.plastic));
     const makeSeal = () => group(mesh(memo('seal', () => lathe([[.035, .152], [.066, .152], [.07, .156], [.07, .236], [.066, .24], [.039, .24], [.035, .236], [.035, .152]])), MAT.rubber));
     const makeCage = () => group(mesh(memo('cage', () => {
@@ -1304,7 +1312,9 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const makeORing = () => group(mesh(memo('oring', () => new THREE.TorusGeometry(.118, .012, 20, 96).rotateX(Math.PI / 2).translate(0, .01, 0)), MAT.rubber));
     const makeLockNut = () => group(mesh(memo('lnut', () => merge([
       [hexPrism(.15, .1015, .04, -.105)],
-      [threadGeo({ r: .1, depth: .008, pitch: .018, y0: -.123, y1: -.087, inside: true })],
+      [threadGeo({ r: .1, depth: .008, pitch: .018, y0: -.1245, y1: -.0855, inside: true })],
+      [nutLip(.1, .1085, -.1245, -1)],
+      [nutLip(.1, .1085, -.0855, 1)],
     ])), MAT.plastic));
 
     // hero = 가운데로 불렀을 때 기본 각도, rest = 분해 배치에서의 각도
@@ -1531,45 +1541,49 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     // 내압 케이블 글랜드 (y축 = 글랜드 축, 위가 바깥쪽, 원점 = 윗벽 바깥면): 황동 몸통(긴 나사산이 입구에 깊게 물린다) · 고무 실 · 백 너트
     const makeDGBody = () => group(mesh(memo('exGBody', () => merge([
       [threadGeo({ r: .094, depth: .007, pitch: .022, y0: -.14, y1: 0 })],
-      [lathe([[.06, -.14], [.094, -.14]], 40)],
+      [lathe([[.06, -.14], [.094, -.14]], 64)],
       [hexPrism(.15, .06, .07, .035, .008)],
       [threadGeo({ r: .1, depth: .007, pitch: .022, y0: .07, y1: .17 })],
-      [lathe([[.1, .17], [.082, .17], [.082, .07], [.06, .07], [.06, -.14]], 40)],
+      [lathe([[.1, .17], [.082, .17], [.082, .07], [.06, .07], [.06, -.14]], 64)],
     ])), MAT.brass));
     const makeDGSeal = () => group(mesh(memo('exGSeal', () => lathe([[.046, .09], [.074, .09], [.078, .095], [.078, .185], [.074, .19], [.05, .19], [.046, .185], [.046, .09]], 32)), MAT.rubber));
     const makeDGNut = () => group(mesh(memo('exGNut', () => merge([
       [hexPrism(.16, .107, .12, .17, .008)],
-      [threadGeo({ r: .107, depth: .007, pitch: .022, y0: .11, y1: .21, inside: true })],
+      [threadGeo({ r: .107, depth: .007, pitch: .022, y0: .1105, y1: .21, inside: true })],
+      [nutLip(.107, .116, .1105, -1)],
       [lathe([[.13, .23], [.13, .245], [.12, .255], [.05, .255], [.05, .215], [.107, .215]], 40)],
     ])), MAT.brass));
     // 막음 마개: 쓰지 않는 입구를 막는 육각 마개 + 머리 밑 고무 와셔
     const makeDPlug = () => group(
       mesh(memo('exPlug', () => merge([
         [threadGeo({ r: .094, depth: .007, pitch: .022, y0: -.13, y1: -.008 })],
-        [lathe([[.001, -.13], [.094, -.13]], 40)],
+        [lathe([[.001, -.13], [.094, -.13]], 64)],
         [hexPrism(.13, 0, .06, .03, .008)],
         [lathe([[.06, .06], [.05, .068], [.001, .07]], 32)],
       ])), MAT.brass),
       mesh(memo('exPlugWasher', () => lathe([[.1, -.008], [.125, -.008], [.125, 0], [.1, 0], [.1, -.008]], 40)), MAT.rubber));
-    // 브리더 드레인: 육각 몸통 + 가운데 금속 필터(어두운 원통) + 뚜껑 (원점 = 보스 끝면, y축 = 바깥쪽)
+    // 브리더 드레인: 육각 몸통 + 가운데 금속 필터(어두운 원통) + 뚜껑 (원점 = 보스 끝면, y축 = 바깥쪽). 나사 끝은 공기가 드나드는 구멍
     const makeDBreather = () => group(
       mesh(memo('exBreather', () => merge([
         [threadGeo({ r: .038, depth: .005, pitch: .014, y0: -.05, y1: 0 })],
+        [lathe([[.021, -.05], [.038, -.05]], 64)],
         [hexPrism(.07, 0, .045, .0225, .006)],
         [lathe([[.05, .125], [.062, .125], [.062, .14], [.045, .153], [.001, .156]], 32)],
       ])), MAT.steel),
-      mesh(memo('exBreatherEl', () => new THREE.CylinderGeometry(.05, .05, .08, 24).translate(0, .085, 0)), MAT.recess));
+      mesh(memo('exBreatherBore', () => liner(.022, -.05, -.004, true)), MAT.lining),
+      mesh(memo('exBreatherEl', () => new THREE.CylinderGeometry(.05, .05, .08, 32).translate(0, .085, 0)), MAT.recess));
     // 아이볼트: 나사 + 받침 목 + 고리 (원점 = 보스 윗면)
     const makeEye = () => group(mesh(memo('exEye', () => merge([
       [threadGeo({ r: .033, depth: .005, pitch: .014, y0: -.06, y1: 0 })],
-      [lathe([[.033, -.06], [.001, -.066]], 24)],
-      [lathe([[.033, 0], [.075, 0], [.075, .025], [.045, .04], [.04, .062]], 40)],
+      [lathe([[.001, -.066], [.033, -.06]], 64)],
+      [lathe([[.033, 0], [.075, 0], [.075, .025], [.045, .04], [.04, .062], [.001, .062]], 64)],
       [new THREE.TorusGeometry(.085, .026, 16, 48), at(0, .16, 0)],
     ])), MAT.steel));
     // 외부 접지 단자: 나사 막대 + 너트 · 와셔 · 너트 (원점 = 보스 끝면, y축 = 바깥쪽)
     const makeDEarth = () => group(mesh(memo('exEarth', () => merge([
       [threadGeo({ r: .024, depth: .004, pitch: .012, y0: -.05, y1: .2 })],
-      [lathe([[.024, .2], [.001, .205]], 16)],
+      [lathe([[.024, .2], [.001, .205]], 64)],
+      [lathe([[.001, -.055], [.024, -.05]], 64)],
       [hexPrism(.055, .024, .03, .015, .005)],
       [lathe([[.026, .03], [.07, .03], [.07, .04], [.026, .04], [.026, .03]], 32)],
       [lathe([[.026, .11], [.07, .11], [.07, .12], [.026, .12], [.026, .11]], 32)],
@@ -1719,7 +1733,9 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         const y = u < e ? u * tight : u > turns - e ? L - (turns - u) * tight : e * tight + (u - e) * active;
         pts.push(V(Math.cos(a) * r, y0 + y, Math.sin(a) * r));
       }
-      return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n * 2, wire, 10, false);
+      // 관(TubeGeometry)은 양 끝이 뚫려 있어 철사 끝을 공으로 막는다. 공을 4% 키워야 관 끝 10각형을 빈틈없이 덮는다
+      const ball = new THREE.SphereGeometry(wire * 1.04, 16, 12);
+      return merge([[new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n * 2, wire, 10, false)], [ball, TM(pts[0])], [ball, TM(pts[n])]]);
     }
     const holesAt = (pts, z, r = .012) => inst(CIRCLE, MAT.hole, pts.map(([x, y]) => TM(V(x, y, z), undefined, r)));
     function lobedRing(inner, hole) {
@@ -1744,6 +1760,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         ...EX.map(x => [lathe([[.07, 0], [.11, 0], [.12, .02], [.12, .12], [.1, .14], [.07, .14]], 48), TM(V(x, -BH / 2 + .01, EZ), down)]),
         [lathe([[.04, 0], [.062, 0], [.062, .045], [.04, .045], [.04, 0]], 32), at(VT[0], BH / 2 - .01, VT[1])],
         [threadGeo({ r: .018, depth: .004, pitch: .01, y0: 0, y1: .12 }), TM(stud, toZ)],
+        [lathe([[.018, .12], [.001, .12]], 16), TM(stud, toZ)],
         [hexPrism(.045, .018, .025, .07, .004), TM(stud, toZ)],
         ...STUDS.map(([x, y]) => [threadGeo({ r: .018, depth: .004, pitch: .01, y0: 0, y1: .12 }), TM(V(x, y, -BD + ST), toZ)]),
         ...STUDS.map(([x, y]) => [lathe([[.018, .12], [.001, .12]], 16), TM(V(x, y, -BD + ST), toZ)]),
@@ -1759,24 +1776,28 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const makeVent = () => group(
       mesh(memo('epVent', () => merge([
         [threadGeo({ r: .038, depth: .004, pitch: .012, y0: -.04, y1: 0 })],
+        [lathe([[.021, -.04], [.038, -.04]], 64)],
         [hexPrism(.064, 0, .04, .02, .005)],
         ...Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2; return [new THREE.BoxGeometry(.012, .07, .012), TM(V(Math.cos(a) * .046, .075, Math.sin(a) * .046), Q(0, -a, 0))]; }),
         [lathe([[.04, .11], [.066, .11], [.066, .124], [.052, .14], [.03, .148], [.001, .15]], 32)],
       ])), MAT.steel),
+      mesh(memo('epVentBore', () => liner(.022, -.04, -.004, true)), MAT.lining),
       mesh(memo('epVentMesh', () => new THREE.CylinderGeometry(.042, .042, .07, 24).translate(0, .075, 0)), MAT.recess));
     // 케이블 글랜드 (y축 = 글랜드 축, 위가 바깥쪽, 원점 = 입구 허브 끝면): 몸통(허브에 나사로 들어감) · 고무 실 · 돔 캡 너트
     const makeGBody = () => group(mesh(memo('epGBody', () => merge([
       [threadGeo({ r: .066, depth: .006, pitch: .018, y0: -.13, y1: 0 })],
-      [lathe([[.045, -.13], [.066, -.13]], 32)],
+      [lathe([[.045, -.13], [.066, -.13]], 64)],
       [hexPrism(.11, .06, .05, .025, .006)],
       [threadGeo({ r: .07, depth: .006, pitch: .018, y0: .05, y1: .12 })],
-      [lathe([[.07, .12], [.057, .12], [.057, .05], [.045, .05], [.045, -.13]], 32)],
+      [lathe([[.07, .12], [.057, .12], [.057, .05], [.045, .05], [.045, -.13]], 64)],
     ])), MAT.steel));
     const makeGSeal = () => group(mesh(memo('epGSeal', () => lathe([[.03, .08], [.05, .08], [.054, .085], [.054, .15], [.05, .155], [.033, .155], [.03, .15], [.03, .08]], 32)), MAT.rubber));
     const makeGCap = () => group(mesh(memo('epGCap', () => merge([
       [hexPrism(.1, .078, .07, .115, .006)],
-      [threadGeo({ r: .076, depth: .006, pitch: .018, y0: .08, y1: .15, inside: true })],
-      [lathe([[.1, .15], [.095, .168], [.078, .186], [.055, .197], [.036, .2], [.034, .192], [.034, .155], [.076, .155]], 40)],
+      [threadGeo({ r: .076, depth: .006, pitch: .018, y0: .0805, y1: .15, inside: true })],
+      [nutLip(.076, .085, .0805, -1)],
+      // 돔 가장자리(.1)가 육각의 평평한 면(.087)보다 바깥이라, 돔 밑면을 닫지 않으면 그 사이로 돔 속이 비친다
+      [lathe([[.076, .15], [.1, .15], [.095, .168], [.078, .186], [.055, .197], [.036, .2], [.034, .192], [.034, .155], [.076, .155], [.076, .15]], 64)],
     ])), MAT.steel));
 
     // ---- 안쪽: 폭발성 가스로부터 보호하는 전기 장비 (마운팅 플레이트 위에 DIN 레일 3줄, 배선 덕트, 압력 스위치) ----
@@ -1792,7 +1813,9 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       mesh(memo('epMPlateHoles', () => merge(STUDS.map(([x, y]) => [linerZ(.029, -.015, .015), at(x, y, 0)]))), MAT.lining));
     const makeMNut = () => group(mesh(memo('epMNut', () => merge([
       [hexPrism(.05, .02, .03, 0, .005)],
-      [threadGeo({ r: .02, depth: .004, pitch: .01, y0: -.015, y1: .015, inside: true })],
+      [threadGeo({ r: .02, depth: .004, pitch: .01, y0: -.0145, y1: .0145, inside: true })],
+      [nutLip(.02, .026, -.0145, -1)],
+      [nutLip(.02, .026, .0145, 1)],
     ])), MAT.steel));
     // DIN 레일에 끼우는 기기들: 원점 = 뒷면 가운데(레일 윗면에 닿는 자리), 앞이 +z
     const makePsu = () => group(
@@ -1823,7 +1846,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         [new THREE.CylinderGeometry(.13, .13, .12, 40).rotateX(Math.PI / 2), at(0, 0, .14)],
         [lathe([[.13, 0], [.12, .02], [.08, .035], [.001, .04]], 40).rotateX(Math.PI / 2), at(0, 0, .2)],
       ])), MAT.alu),
-      mesh(memo('epPswPort', () => merge([[hexPrism(.035, .016, .05, 0, .004), at(0, -.155, .14)], [lathe([[.016, .03], [.016, -.03]], 16), at(0, -.155, .14)]])), MAT.steel),
+      mesh(memo('epPswPort', () => hexPrism(.035, .016, .05, 0, .004).translate(0, -.155, .14)), MAT.steel),
       mesh(memo('epPswPortBore', () => liner(.015, -.185, -.13, true).translate(0, 0, .14)), MAT.lining));
     // 배선 덕트: 아래(가로)와 오른쪽(세로)이 ㄴ자로 만난다 [가운데 x, 가운데 y, 길이, 폭], 깊이 .3
     const DL = [.0625, -1.45, 2.475, .3], DS = [1.2, .3, 3.2, .2], DD = .3;
@@ -1855,12 +1878,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       mesh(memo('epIP', () => rbox(2.6, .7, .01, .04, .003)), MAT.red),
       mesh(memo('epIPLines', () => lines([[0, .26, 2.2, .06], [-.05, .15, 2.1, .02], [-.05, .09, 2.1, .02], [-.05, .03, 2.1, .02], [-.05, -.03, 2.1, .02], [-.05, -.09, 2.1, .02], [-.05, -.15, 2.1, .02], [.45, -.26, 1.1, .08]], .0052)), MAT.inkW),
       holesAt([[-1.22, .27], [-1.22, -.27], [1.22, .27], [1.22, -.27]], .0052));
-    const makeRivet = () => group(mesh(memo('rivet', () => lathe([[.03, 0], [.024, .014], [.001, .02]], 24)), MAT.alu));
+    const makeRivet = () => group(mesh(memo('rivet', () => lathe([[.001, 0], [.03, 0], [.024, .014], [.001, .02]], 24)), MAT.alu));
     // 압력 게이지
     // 케이스 뒤쪽에는 압력을 재는 관 연결구(포트) 2개
     const makeGCase = () => group(
       mesh(memo('epGCase', () => lathe([[.001, -.45], [.57, -.45], [.6, -.42], [.6, 0], [.7, 0], [.72, .02], [.72, .05], [.61, .05], [.6, .04], [.6, -.03], [.001, -.03]], 96)), MAT.plastic),
-      mesh(memo('epGPorts', () => merge([-.22, .22].map(x => [lathe([[.018, -.56], [.035, -.56], [.035, -.45]], 32), at(x, 0, 0)]))), MAT.steel),
+      mesh(memo('epGPorts', () => merge([-.22, .22].map(x => [lathe([[.016, -.56], [.035, -.56], [.035, -.45]], 32), at(x, 0, 0)]))), MAT.steel),
       mesh(memo('epGPortBores', () => merge([-.22, .22].map(x => [liner(.017, -.561, -.45, true), at(x, 0, 0)]))), MAT.lining));
     // 눈금판은 두께가 있는 알루미늄 판: 앞면(눈금 인쇄) + 옆면 + 뒷면, 가운데 바늘 축 구멍, 뒷면 고정 핀 2개
     const makeGDial = () => group(
@@ -1896,7 +1919,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       mesh(memo('epKCap', () => merge([
         [flutedRing(18, .19, .2, 0, .2, .22)],
         [lathe([[.19, .32], [.185, .335], [.15, .35], [.001, .355]], 64)],
-        [lathe([[.001, .12], [.225, .12], [.232, .126], [.232, .138], [.2, .146]], 64)],
+        [lathe([[.001, .12], [.225, .12], [.232, .126], [.232, .138], [.19, .146]], 64)],
       ])), MAT.plastic),
       mesh(memo('epKIndex', () => new THREE.BoxGeometry(.018, .006, .13).translate(0, .353, -.1)), MAT.inkW),
       inst(CIRCLE, MAT.hole, [TM(V(0, .2, .201), undefined, .018)]));
@@ -1904,12 +1927,14 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       [threadGeo({ r: .062, depth: .006, pitch: .02, y0: -.12, y1: .12 })],
       [new THREE.CylinderGeometry(.03, .03, .2, 24).translate(0, .22, 0)],
       [new THREE.CylinderGeometry(.03, .03, .28, 24).translate(0, -.26, 0)],
-      [lathe([[.03, -.12], [.062, -.12]], 32)],
-      [lathe([[.062, .12], [.03, .12]], 32)],
+      [lathe([[.029, -.12], [.062, -.12]], 64)],
+      [lathe([[.062, .12], [.029, .12]], 64)],
     ])), MAT.steel));
     const makeKNut = () => group(mesh(memo('epKNut', () => merge([
       [hexPrism(.11, .0715, .045, .0225)],
-      [threadGeo({ r: .07, depth: .006, pitch: .02, y0: 0, y1: .045, inside: true })],
+      [threadGeo({ r: .07, depth: .006, pitch: .02, y0: .0005, y1: .0445, inside: true })],
+      [nutLip(.07, .0785, .0005, -1)],
+      [nutLip(.07, .0785, .0445, 1)],
     ])), MAT.steel));
     const makeKSpring = () => group(mesh(memo('epKSpring', () => helix(.075, .01, -.38, -.14, 5)), MAT.steel));
     // 다이어프램 레귤레이터 (y축 = 레귤레이터 축, 원점 = 커버 앞면)
@@ -1922,12 +1947,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         return merge([
           [flat(plate, .12, .06, .012)],
           [flat(lobedRing(.41, .045 + .01), .1, .17, .01)],
-          [lathe([[.045, .12], [.1, .12], [.1, .165], [.09, .18], [.045, .18]], 48)],
+          [lathe([[.045, .12], [.1, .12], [.1, .165], [.09, .18], [.045, .18], [.045, .12]], 48)],
           ...[0, 1, 2].map(i => [rbox(.2, .03, .03, .006, .004), TM(V(0, .135, 0), Q(0, Math.PI / 6 + i * Math.PI * 2 / 3, 0)).multiply(at(.26, 0, 0))]),
-          [lathe([[.045, -.3], [.4, -.3], [.42, -.28], [.42, 0]], 64)],
+          [lathe([[.045, -.3], [.4, -.3], [.42, -.28], [.42, 0], [.045, 0], [.045, -.3]], 64)],
           ...[0, 1, 2, 3].map(i => [rbox(.04, .26, .05, .01, .006), TM(V(0, -.14, 0), Q(0, Math.PI / 4 + i * Math.PI / 2, 0)).multiply(at(.43, 0, 0))]),
-          [lathe([[.075, 0], [.075, .16], [.042, .16]], 48).rotateZ(-Math.PI / 2).translate(.5, PORT, -.1)],
-          [lathe([[.075, 0], [.075, .14]], 48).rotateZ(-Math.PI / 2).translate(.5, PORT, .12)],
+          [lathe([[.075, 0], [.075, .16], [.039, .16]], 48).rotateZ(-Math.PI / 2).translate(.5, PORT, -.1)],
+          [lathe([[.075, 0], [.075, .14], [.001, .14]], 48).rotateZ(-Math.PI / 2).translate(.5, PORT, .12)],
           [hexPrism(.06, 0, .04, .16, .004).rotateZ(-Math.PI / 2).translate(.5, PORT, .12)],
         ]);
       }), MAT.alu),
@@ -1959,14 +1984,16 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
       mesh(memo('epStem', () => merge([
         [new THREE.CylinderGeometry(.022, .022, .48, 24).translate(0, .04, 0)],
         [threadGeo({ r: .018, depth: .005, pitch: .012, y0: .28, y1: .42 })],
-        [lathe([[.018, .42], [.001, .42]], 24)],
+        [lathe([[.018, .42], [.001, .42]], 64)],
         [lathe([[.02, .188], [.09, .188], [.095, .198], [.09, .208], [.02, .208]], 48)],
       ])), MAT.steel),
       mesh(memo('epStemSeat', () => new THREE.TorusGeometry(.07, .008, 10, 48).rotateX(Math.PI / 2).translate(0, .186, 0)), MAT.rubber));
     // 스템 너트: 따로 풀어야 다이어프램 판·다이어프램이 스템에서 빠진다
     const makeRNut = () => group(mesh(memo('epStemNut', () => merge([
       [hexPrism(.04, .02, .03, .295, .004)],
-      [threadGeo({ r: .0195, depth: .004, pitch: .012, y0: .28, y1: .31, inside: true })],
+      [threadGeo({ r: .0195, depth: .004, pitch: .012, y0: .2805, y1: .3095, inside: true })],
+      [nutLip(.0195, .025, .2805, -1)],
+      [nutLip(.0195, .025, .3095, 1)],
     ])), MAT.steel));
     // 커버: 속이 빈 뚜껑(안쪽에 스프링이 들어가는 방) + 앞면 둥근 명판
     const makeRCover = () => group(
@@ -1975,7 +2002,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         s.holes.push(circle(.44 + .012));
         return merge([
           [flat(s, .12, .3, .012)],
-          [lathe([[.5, .36], [.49, .4], [.46, .44], [.44, .452], [.001, .452], [.001, .42], [.4, .42], [.425, .4], [.44, .36]], 64)],
+          [lathe([[.44, .36], [.5, .36], [.49, .4], [.46, .44], [.44, .452], [.001, .452], [.001, .42], [.4, .42], [.425, .4], [.44, .36]], 64)],
         ]);
       }), MAT.plastic),
       mesh(memo('epRLabel', () => new THREE.CircleGeometry(.34, 64).rotateX(-Math.PI / 2).translate(0, .453, 0)), MAT.steel),
@@ -1986,13 +2013,15 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     const makeFitting = () => group(
       mesh(memo('epFitting', () => alongX(merge([
         [threadGeo({ r: .042, depth: .006, pitch: .014, y0: -.12, y1: -.03 })],
-        [lathe([[.029, -.12], [.042, -.12]], 32)],
+        [lathe([[.028, -.12], [.042, -.12]], 64)],
         [lathe([[.045, -.05], [.045, -.02]], 32)],
         [hexPrism(.078, .03, .07, .005, .005)],
         [lathe([[.05, .035], [.05, .06]], 32)],
         [hexPrism(.066, .038, .06, .085, .005)],
+        // 끝면 구멍(.043)과 안감(.028) 사이 고리: 없으면 그 틈으로 관 속을 지나 반대쪽까지 비쳐 보인다
+        [lathe([[.044, .1145], [.028, .1145]], 64)],
       ]))), MAT.steel),
-      mesh(memo('epFittingBore', () => alongX(liner(.028, -.12, .115))), MAT.lining));
+      mesh(memo('epFittingBore', () => alongX(liner(.028, -.12, .115, false, 64))), MAT.lining));
     // 튜브: 끝이 피팅·체크 밸브의 끝면에 맞닿는다 (파고들어 있으면 분해할 때 서로 긁는다)
     const tubePath = () => memo('epTubePath', () => {
       const P = (x, y) => V(x, y, 0), path = new THREE.CurvePath();
@@ -2008,7 +2037,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         [new THREE.TubeGeometry(tubePath(), 200, .032, 20, false)],
         ...[[.895, .1], [.92, -.74]].map(([x, y]) => [new THREE.RingGeometry(.022, .032, 20).rotateY(-Math.PI / 2), at(x, y, 0)]),
       ])), MAT.steel),
-      mesh(memo('epTubeBore', () => new THREE.TubeGeometry(tubePath(), 200, .022, 12, false)), MAT.lining));
+      mesh(memo('epTubeBore', () => new THREE.TubeGeometry(tubePath(), 200, .022, 20, false)), MAT.lining));
     // 체크 밸브: 가운데 띠에 흐름 방향 화살표
     const makeCheckValve = () => group(
       mesh(memo('epCheck', () => alongX(merge([
@@ -2024,10 +2053,10 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
         [threadGeo({ r: .042, depth: .006, pitch: .014, y0: -.11, y1: -.02 })],
         [threadGeo({ r: .042, depth: .006, pitch: .014, y0: .02, y1: .11 })],
         [hexPrism(.06, .03, .04, 0, .004)],
-        [lathe([[.029, -.11], [.042, -.11]], 32)],
-        [lathe([[.042, .11], [.029, .11]], 32)],
+        [lathe([[.028, -.11], [.042, -.11]], 64)],
+        [lathe([[.042, .11], [.028, .11]], 64)],
       ]))), MAT.steel),
-      mesh(memo('epNippleBore', () => alongX(liner(.028, -.11, .11))), MAT.lining));
+      mesh(memo('epNippleBore', () => alongX(liner(.028, -.11, .11, false, 64))), MAT.lining));
 
     const types = [
       { key: 'body', build: makeBody, ko: '본체', en: 'Enclosure Body', desc: '안쪽을 깨끗한 공기로 채워 바깥보다 압력을 조금 높게 유지하는 상자예요. 그래서 바깥의 폭발성 가스가 안으로 들어오지 못합니다.', hero: [.35, .55, 0], rest: [.2, -.35, 0] },
