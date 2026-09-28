@@ -5045,7 +5045,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   // ---------- 이스터에그: 현장에 들어와 30초 동안 아무것도 안 하면 ----------
   // 선박 = 뱃머리에 두 사람(여자는 두 팔을 활짝 벌리고 남자는 뒤에서 허리를 감싼, 영화의 그 자세) + 잔잔한 켈틱 선율
   // 해양플랜트 = 헬리콥터가 멀리서 날아와 헬기 갑판에 착륙 / 화학공장 = 스포츠카를 쫓는 경찰차 세 대가 앞 도로를 두 번 가로지른다
-  // 조립된 현장에서만 시작하고, 누르거나 움직이면(poke) 곧바로 사라진다. 끝까지 본 현장은 다시 들어오기 전까지 되풀이하지 않는다
+  // 조립된 현장에서만 시작하고, 클릭(누르기)하면 곧바로 사라진다. 끝까지 본 현장은 다시 들어오기 전까지 되풀이하지 않는다
   const EGG_IDLE = 30000;
   let idleAt = performance.now(), egg = null, eggCalm = 0;
   const eggSeen = {}, eggMade = {}, eggOut = [];
@@ -5296,8 +5296,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
     if (!natural || e.key !== 'offshore') eggOut.push({ g: e.made.root, a: e.made.root.visible ? 1 : 0 });
   }
   // 이스터에그 시계: 누르기·휠·키·마우스 움직임이 있으면 처음부터 다시 센다 (보던 이스터에그는 사라진다)
-  for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, poke, { capture: true, passive: true });
-  addEventListener('pointermove', e => { if (e.movementX || e.movementY) poke(); }, { capture: true, passive: true });
+  addEventListener('pointerdown', poke, { capture: true, passive: true });
 
   const pin = $('pin');
   function placePin() {
