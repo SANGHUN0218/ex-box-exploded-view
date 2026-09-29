@@ -417,7 +417,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
    3열 × 4줄. 줄 = 윗선(두께 W/12, 끝까지) + 밑단(두께 W/24, 왼쪽부터 칸마다 정해진 길이 --p). 크기 비율은 최종 로고 그림(열 폭 206 : 열 사이 17 : 윗선 16 : 밑단 8 : 줄 사이 9)을 따른다.
    열은 60ms, 줄은 35ms씩 살짝 늦게 시작해 물결처럼 이어진다.
    조각은 처음부터 다 자란 크기로 두고 transform(늘이기 scale)만 움직인다: 그래야 3D 장면을 짓느라 브라우저가 바쁜 동안에도 로고가 멈추지 않는다 */
-.brand-mark { --W: 96px; display: flex; gap: calc(var(--W) / 12); }
+.brand-mark { --W: 48px; display: flex; gap: calc(var(--W) / 12); }
 .brand-mark .col { display: flex; flex-direction: column; gap: calc(var(--W) / 24); }
 .brand-mark .cell { position: relative; width: var(--W); height: calc(var(--W) / 8); }
 .brand-mark .cell::before,
@@ -445,7 +445,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 /* 불러오기가 2.4초를 넘기면 글자가 천천히 숨 쉬듯 깜빡인다 */
 .loading p { margin: 0; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); animation: load-pulse 1.2s ease-in-out 2.4s infinite alternate both; }
 @keyframes load-pulse { to { opacity: .35; } }
-@media (max-width: 480px) { .brand-mark { --W: 72px; } }
+@media (max-width: 480px) { .brand-mark { --W: 36px; } }
 @media (prefers-reduced-motion: reduce) {
   .brand-mark .cell::before, .brand-mark .cell::after, .loading p { animation: none; }
   .loading.hide { transition: none; }
