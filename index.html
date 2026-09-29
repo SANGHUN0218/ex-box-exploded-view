@@ -1,75 +1,373 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- 테마: 전에 다크를 골랐으면 화면을 그리기 전에 바로 다크로 (라이트로 그렸다가 바뀌며 번쩍이지 않게). 바꾸기는 오른쪽 아래 테마 버튼 -->
-<script>try { if (localStorage.getItem('exbox-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) { /* 저장소를 못 쓰는 환경이면 라이트 */ }</script>
+<!-- 테마·글꼴: 전에 고른 것을 화면을 그리기 전에 바로 적용한다 (기본으로 그렸다가 바뀌며 번쩍이지 않게). 고르기는 오른쪽 아래 스타일 버튼 -->
+<script>
+try {
+  let t = localStorage.getItem('exbox-theme'), f = localStorage.getItem('exbox-font');
+  if (t === 'dark') t = 'charcoal';   // 라이트/다크 두 가지뿐이던 때 저장한 값
+  if (t && t !== 'light' && t !== 'studio' && /^[a-z]+$/.test(t)) document.documentElement.dataset.theme = t;
+  if (f && /^[a-z0-9]+$/.test(f)) document.documentElement.dataset.font = f;
+} catch (e) { /* 저장소를 못 쓰는 환경이면 기본(스튜디오) */ }
+</script>
 <title>선박 현장 분해도</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <!-- 글꼴(IBM Plex)은 아래 loader 스크립트가 부른다: 여기 두면 글꼴 파일 목록을 받을 때까지 화면을 아예 안 그려 첫 화면이 하얗게 기다린다 -->
 <style>
-/* 색은 모두 여기서: 라이트(기본)와 다크(:root[data-theme="dark"]) 두 벌. 화면 쪽 규칙은 이 이름만 쓴다 */
-:root {
-  --ink: #16171A;              /* 글자·진한 버튼 */
-  --on-ink: #fff;              /* 진한 버튼(ink 바탕) 위 글자 */
-  --ink-hover: #2B2D32;        /* 진한 버튼에 마우스 올림 */
+/* ===================== 디자인 토큰 =====================
+   테마마다 바뀌는 것은 모두 이 이름들이다 — 색 · 모양(둥글기·테두리·그림자·흐림) · 글꼴(본문·제목·라벨) · 바탕(무늬 포함).
+   화면 쪽 규칙은 이 이름만 쓴다. [data-theme="…"]는 페이지(html)에도, 테마 고르기 카드에도 붙어서 카드가 그 테마의 축소판으로 그려진다.
+   1) 기본값(= 스튜디오)은 :root와 모든 [data-theme]에 깔고, 2) 각 테마가 다른 것만 덮는다 */
+:root, [data-theme] {
+  /* 색 */
+  --ink: #16171A;              /* 글자·진한 판 */
+  --on-ink: #fff;              /* 진한 판(ink) 위 글자 */
+  --ink-hover: #2B2D32;
   --muted: #66655F;            /* 흐린 글자 */
-  --glass: rgb(255 255 255 / .74);   /* 반투명 판(버튼·안내·카드) */
-  --solid: rgb(255 255 255 / .9);    /* 거의 불투명한 판(메뉴) */
+  --glass: rgb(255 255 255 / .74);   /* 떠 있는 판(버튼·안내·카드) */
+  --solid: rgb(255 255 255 / .9);    /* 거의 불투명한 판(메뉴·스타일 창) */
   --card: rgb(255 255 255 / .84);    /* 박스 선택 카드 */
   --btn: rgb(255 255 255 / .85);     /* 카드 안 버튼 */
   --lift: #fff;                      /* 마우스를 올리면 밝아지는 바탕 */
-  --hover: rgb(22 23 26 / .05);      /* 메뉴 항목 올림 */
+  --hover: rgb(22 23 26 / .05);
   --panel-hover: rgb(255 255 255 / .18);
   --edge: rgb(22 23 26 / .1);        /* 테두리 */
   --sh: 22 23 26;                    /* 그림자 색(rgb 세 값) */
   --sh-k: 1;                         /* 그림자 진하기 배율 */
   --ring: rgb(255 255 255 / .75);    /* 핀 둘레 */
-  --accent: #F2B300;
-  --bg: radial-gradient(ellipse at 50% 42%, #F9F8F4 0%, #E7E5DF 60%, #D6D3CB 100%);
-  --bg-dark: radial-gradient(ellipse at 50% 42%, #2F2E2B 0%, #201F1D 60%, #161614 100%);
-  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  background: #D6D3CB;
+  --accent: #F2B300;                 /* 포인트(Ex 동그라미 등) */
+  --on-accent: #16171A;
+  --accent-soft: rgb(242 179 0 / .14);
+  --badge-bd: #16171A;
+  --act-bg: var(--ink);              /* 주 버튼(분해하기) */
+  --act-fg: var(--on-ink);
+  --act-bd: transparent;
+  --act-hover: var(--ink-hover);
+  --crumb-bg: var(--glass);          /* 보조 버튼(처음으로 등) */
+  --crumb-fg: var(--ink);
+  --hint-bg: var(--glass);           /* 아래 안내 */
+  --hint-fg: var(--ink);
+  --bg: radial-gradient(ellipse at 50% 42%, #F9F8F4 0%, #E7E5DF 60%, #D6D3CB 100%);   /* 화면 바탕(여러 겹·무늬 가능) */
+  --base: #D6D3CB;                   /* 바탕의 기본 색 */
+  /* 모양 */
+  --r-pill: 999px;             /* 알약 버튼 */
+  --r-card: 16px;              /* 카드·메뉴 */
+  --r-small: 9px;              /* 작은 네모 버튼 */
+  --r-dot: 50%;                /* Ex 동그라미·핀·아이콘 버튼 */
+  --bw: 1px;                   /* 테두리 두께 */
+  --blur: 12px;                /* 뒤 흐림 */
+  --sat: 100%;                 /* 뒤 채도 */
+  --sh-card: 0 16px 40px rgb(var(--sh) / calc(.12 * var(--sh-k)));
+  --sh-btn: 0 8px 20px rgb(var(--sh) / calc(.2 * var(--sh-k)));
+  --sh-pop: 0 18px 40px rgb(var(--sh) / calc(.14 * var(--sh-k)));
+  /* 글꼴 (글꼴 고르기에서 하나를 고르면 :root[data-font]가 세 가지를 모두 덮는다) */
+  --f-body: var(--sans);
+  --f-display: var(--sans);
+  --f-label: var(--mono);
+  --t-w: 700;                  /* 제목 굵기 (굵기가 하나뿐인 제목체는 400: 가짜 굵게 방지) */
+  --t-ls: -.02em;              /* 제목 자간 */
+  --l-tt: uppercase;           /* 작은 라벨 대소문자 */
+  --l-ls: .14em;               /* 작은 라벨 자간 */
+  --l-w: 500;
+  --glow: none;                /* 글자 번짐(컨트롤룸·신스웨이브) */
   color-scheme: light;
 }
-/* 다크: 라이트의 따뜻한 회백색을 그대로 어둡게 옮긴 숯색. 노랑(accent)은 그대로 */
-:root[data-theme="dark"] {
-  --ink: #ECEAE4;
-  --on-ink: #16171A;
-  --ink-hover: #fff;
-  --muted: #A29F97;
-  --glass: rgb(40 39 36 / .86);      /* 밝은 벽 위에 떠도 글자가 흐려지지 않게 라이트보다 덜 비친다 */
-  --solid: rgb(36 35 33 / .95);
-  --card: rgb(40 39 36 / .88);
-  --btn: rgb(255 255 255 / .06);
-  --lift: rgb(255 255 255 / .14);
-  --hover: rgb(255 255 255 / .07);
-  --panel-hover: rgb(255 255 255 / .035);
-  --edge: rgb(255 255 255 / .13);
-  --sh: 0 0 0;
-  --sh-k: 3;
-  --ring: rgb(24 24 22 / .8);
-  background: #161614;
+:root {
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --kr: "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;           /* 한글 대체 글꼴 */
+  --krs: "AppleMyungjo", "Batang", serif;                                          /* 한글 명조 대체 */
+  /* 종이 결(잔 알갱이)과 한지 섬유(가로로 긴 결): 코드로 그린 무늬(SVG), 밝은 바탕 위에 아주 옅게 */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --fibers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .16' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .1 -.02'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+/* ===================== 테마 16가지 =====================
+   색만 바꾸지 않는다: 모양 언어(둥글기·테두리·그림자·흐림), 글꼴 짝, 바탕 재료(무늬·빛), 3D 재질과 조명(JS의 THEMES)을 한 벌로 */
+
+/* 차콜 — 스튜디오의 밤: 라이트의 따뜻한 회백색을 그대로 어둡게 옮긴 숯색 */
+[data-theme="charcoal"] {
+  --ink: #ECEAE4; --on-ink: #16171A; --ink-hover: #fff; --muted: #A29F97;
+  --glass: rgb(40 39 36 / .86); --solid: rgb(36 35 33 / .95); --card: rgb(40 39 36 / .88); --btn: rgb(255 255 255 / .06);
+  --lift: rgb(255 255 255 / .14); --hover: rgb(255 255 255 / .07); --panel-hover: rgb(255 255 255 / .035);
+  --edge: rgb(255 255 255 / .13); --sh: 0 0 0; --sh-k: 3; --ring: rgb(24 24 22 / .8);
+  --bg: radial-gradient(ellipse at 50% 42%, #2F2E2B 0%, #201F1D 60%, #161614 100%); --base: #161614;
   color-scheme: dark;
 }
-/* 테마를 바꾸는 0.7초 동안만: 모든 색이 한꺼번에 천천히 바뀐다 (JS가 잠깐 .theme-anim을 붙임 — 깜빡이지 않게) */
-:root.theme-anim *, :root.theme-anim *::before, :root.theme-anim *::after {
-  transition: color .7s ease, background-color .7s ease, border-color .7s ease, box-shadow .7s ease, fill .7s ease, stroke .7s ease, opacity .7s ease, transform .5s cubic-bezier(.2, .8, .2, 1) !important;
+/* 비전 — 공간에 떠 있는 유리 (Apple visionOS·iOS의 재질 참고): 아주 강한 뒤 흐림+채도, 밝은 머리카락 테두리, 큰 둥글기, 시스템 파랑 버튼 */
+[data-theme="vision"] {
+  --ink: #1D1D1F; --on-ink: #fff; --ink-hover: #000; --muted: #6E6E73;
+  --glass: rgb(255 255 255 / .46); --solid: rgb(250 250 253 / .68); --card: rgb(255 255 255 / .52); --btn: rgb(255 255 255 / .55);
+  --lift: rgb(255 255 255 / .82); --hover: rgb(0 0 0 / .045); --panel-hover: rgb(255 255 255 / .22);
+  --edge: rgb(255 255 255 / .78); --sh: 40 56 92; --sh-k: 1.15; --ring: rgb(255 255 255 / .9);
+  --accent: #0A84FF; --on-accent: #fff; --accent-soft: rgb(10 132 255 / .12); --badge-bd: rgb(255 255 255 / .95);
+  --act-bg: #0A84FF; --act-fg: #fff; --act-hover: #0071E3;
+  --bg: radial-gradient(55% 45% at 16% 10%, #D6E2FF 0%, transparent 70%), radial-gradient(45% 42% at 90% 16%, #FFDDEB 0%, transparent 70%),
+        radial-gradient(60% 55% at 72% 96%, #D7F5EA 0%, transparent 70%), linear-gradient(180deg, #F4F5FA 0%, #E6E9F2 100%);
+  --base: #ECEFF5;
+  --r-card: 26px; --r-small: 14px; --blur: 30px; --sat: 180%;
+  --sh-card: 0 24px 60px rgb(var(--sh) / .16), inset 0 1px 0 rgb(255 255 255 / .75);
+  --sh-btn: 0 8px 22px rgb(10 132 255 / .32);
+  --sh-pop: 0 30px 70px rgb(var(--sh) / .2), inset 0 1px 0 rgb(255 255 255 / .75);
+  --f-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Noto Sans KR", var(--kr);
+  --f-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Apple SD Gothic Neo", "Noto Sans KR", var(--kr);
+  --f-label: var(--f-body);
+  --t-ls: -.025em; --l-tt: none; --l-ls: .01em; --l-w: 600;
 }
+/* 머티리얼 — 톤이 있는 부드러운 면 (Google Material 3 참고): 테두리·흐림 대신 톤 차이와 낮은 그림자, 28px 큰 카드, 보라 주 버튼 */
+[data-theme="material"] {
+  --ink: #1D1B20; --on-ink: #fff; --ink-hover: #322F35; --muted: #49454F;
+  --glass: #F3EDF7; --solid: #F3EDF7; --card: #F7F2FA; --btn: #E8DEF8;
+  --lift: #E8DEF8; --hover: rgb(103 80 164 / .08); --panel-hover: rgb(103 80 164 / .05);
+  --edge: #CAC4D0; --sh: 0 0 0; --ring: #FEF7FF;
+  --accent: #6750A4; --on-accent: #fff; --accent-soft: #E8DEF8; --badge-bd: #6750A4;
+  --act-bg: #6750A4; --act-fg: #fff; --act-hover: #7965AF;
+  --crumb-bg: #E8DEF8; --crumb-fg: #1D192B; --hint-bg: #E6E0E9;
+  --bg: radial-gradient(70% 50% at 50% 0%, #F2E9FF 0%, transparent 70%), linear-gradient(180deg, #FEF7FF 0%, #F5EFF8 100%);
+  --base: #F7F2FA;
+  --r-card: 28px; --r-small: 12px; --bw: 0px; --blur: 0px;
+  --sh-card: 0 1px 2px rgb(0 0 0 / .3), 0 2px 6px 2px rgb(0 0 0 / .15);
+  --sh-btn: 0 1px 2px rgb(0 0 0 / .3), 0 1px 3px 1px rgb(0 0 0 / .15);
+  --sh-pop: 0 4px 8px 3px rgb(0 0 0 / .15), 0 1px 3px rgb(0 0 0 / .3);
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Noto Sans KR', var(--kr); --f-label: 'Noto Sans KR', var(--kr);
+  --t-w: 500; --t-ls: 0; --l-tt: none; --l-ls: .03em;
+}
+/* 플루언트 — 아크릴과 미카 (Microsoft Fluent 2 참고): 바탕색이 비치는 반투명 판, 알갱이 결, 4·8px 둥글기, 아랫면이 더 진한 테두리 */
+[data-theme="fluent"] {
+  --ink: #1B1B1B; --on-ink: #fff; --ink-hover: #2B2B2B; --muted: #5F5F5F;
+  --glass: rgb(251 251 251 / .74); --solid: rgb(249 249 249 / .9); --card: rgb(255 255 255 / .78); --btn: rgb(255 255 255 / .72);
+  --lift: rgb(255 255 255 / .95); --hover: rgb(0 0 0 / .04); --panel-hover: rgb(255 255 255 / .28);
+  --edge: rgb(0 0 0 / .075); --sh: 0 0 0; --ring: #fff;
+  --accent: #0F6CBD; --on-accent: #fff; --accent-soft: rgb(15 108 189 / .1); --badge-bd: #0F6CBD;
+  --act-bg: #0F6CBD; --act-fg: #fff; --act-hover: #115EA3;
+  --bg: var(--noise), radial-gradient(80% 65% at 0% 0%, #D7E3F4 0%, transparent 62%), radial-gradient(70% 60% at 100% 100%, #EEDDEB 0%, transparent 62%), #F1F1F2;
+  --base: #F1F1F2;
+  --r-pill: 5px; --r-card: 8px; --r-small: 4px; --blur: 30px; --sat: 125%;
+  --sh-card: 0 8px 16px rgb(0 0 0 / .14), 0 0 2px rgb(0 0 0 / .12);
+  --sh-btn: 0 1px 2px rgb(0 0 0 / .14), 0 0 2px rgb(0 0 0 / .12);
+  --sh-pop: 0 14px 28px rgb(0 0 0 / .14), 0 0 8px rgb(0 0 0 / .12);
+  --f-body: 'Segoe UI Variable Text', 'Segoe UI', 'Malgun Gothic', 'Noto Sans KR', var(--kr);
+  --f-display: 'Segoe UI Variable Display', 'Segoe UI', 'Malgun Gothic', 'Noto Sans KR', var(--kr);
+  --f-label: 'Segoe UI Variable Small', 'Segoe UI', 'Malgun Gothic', 'Noto Sans KR', var(--kr);
+  --t-w: 600; --t-ls: 0; --l-tt: none; --l-ls: 0; --l-w: 400;
+}
+/* 카본 — 엔터프라이즈 제품 화면 (IBM Carbon Design System g100 참고): 각진 모서리, 층으로 나눈 회색, 파랑 60 주 버튼, 가는 제목, Plex 글꼴 */
+[data-theme="carbon"] {
+  --ink: #F4F4F4; --on-ink: #161616; --ink-hover: #fff; --muted: #A8A8A8;
+  --glass: #262626; --solid: #262626; --card: #262626; --btn: #393939;
+  --lift: #333333; --hover: #333333; --panel-hover: rgb(255 255 255 / .04);
+  --edge: #393939; --sh: 0 0 0; --sh-k: 2; --ring: #161616;
+  --accent: #0F62FE; --on-accent: #fff; --accent-soft: rgb(15 98 254 / .24); --badge-bd: #0F62FE;
+  --act-bg: #0F62FE; --act-fg: #fff; --act-hover: #0050E6;
+  --bg: linear-gradient(90deg, rgb(255 255 255 / .025) 1px, transparent 1px) 0 0 / calc(100% / 16) 100%, #161616;
+  --base: #161616;
+  --r-pill: 0; --r-card: 0; --r-small: 0; --r-dot: 0; --blur: 0px;
+  --sh-card: 0 2px 6px rgb(0 0 0 / .3); --sh-btn: none; --sh-pop: 0 2px 6px rgb(0 0 0 / .3);
+  --f-body: 'IBM Plex Sans KR', var(--kr); --f-display: 'IBM Plex Sans KR', var(--kr); --f-label: var(--mono);
+  --t-w: 400; --t-ls: 0; --l-tt: none; --l-ls: .02em; --l-w: 400;
+  color-scheme: dark;
+}
+/* 블루프린트 — 설계 도면: 청사진 파랑 위 모눈(24px·96px), 흰 머리카락 선, 각진 모서리, 속이 빈 버튼, 고정폭 글꼴과 넓은 자간의 대문자 주석 */
+[data-theme="blueprint"] {
+  --ink: #EAF2FF; --on-ink: #0B3B8C; --ink-hover: #fff; --muted: #A9C2EC;
+  --glass: rgb(9 50 122 / .74); --solid: rgb(9 46 112 / .96); --card: rgb(9 50 122 / .82); --btn: rgb(255 255 255 / .06);
+  --lift: rgb(255 255 255 / .12); --hover: rgb(255 255 255 / .08); --panel-hover: rgb(255 255 255 / .05);
+  --edge: rgb(234 242 255 / .55); --sh: 2 18 50; --sh-k: 2; --ring: #0B3B8C;
+  --accent: #FFE066; --on-accent: #0B2A66; --accent-soft: rgb(255 224 102 / .16); --badge-bd: #FFE066;
+  --act-bg: transparent; --act-fg: #EAF2FF; --act-bd: #EAF2FF; --act-hover: rgb(234 242 255 / .16);
+  --bg: linear-gradient(rgb(234 242 255 / .12) 1px, transparent 1px) 0 0 / 96px 96px, linear-gradient(90deg, rgb(234 242 255 / .12) 1px, transparent 1px) 0 0 / 96px 96px,
+        linear-gradient(rgb(234 242 255 / .055) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgb(234 242 255 / .055) 1px, transparent 1px) 0 0 / 24px 24px,
+        radial-gradient(ellipse at 50% 45%, #1552B4 0%, #0B3B8C 55%, #072A66 100%);
+  --base: #0B3B8C;
+  --r-pill: 0; --r-card: 0; --r-small: 0; --r-dot: 0; --blur: 3px;
+  --sh-card: none; --sh-btn: none; --sh-pop: 0 0 0 1px rgb(234 242 255 / .18);
+  --f-body: 'Nanum Gothic Coding', ui-monospace, monospace; --f-display: 'Nanum Gothic Coding', ui-monospace, monospace; --f-label: 'Nanum Gothic Coding', ui-monospace, monospace;
+  --t-ls: .02em; --l-ls: .22em; --l-w: 400;
+  color-scheme: dark;
+}
+/* 컨트롤룸 — 산업 제어실 모니터(CRT 인광): 검은 화면 위 초록 글자와 번짐, 가로 주사선, 대괄호 버튼 [ 분해하기 ], 고정폭 */
+[data-theme="control"] {
+  --ink: #8CFFB0; --on-ink: #021008; --ink-hover: #C2FFD5; --muted: #45B872;
+  --glass: rgb(2 16 8 / .82); --solid: rgb(2 14 7 / .96); --card: rgb(2 16 8 / .86); --btn: rgb(140 255 176 / .06);
+  --lift: rgb(140 255 176 / .14); --hover: rgb(140 255 176 / .1); --panel-hover: rgb(140 255 176 / .04);
+  --edge: rgb(140 255 176 / .38); --sh: 0 0 0; --sh-k: 2; --ring: #021008;
+  --accent: #D4FF3C; --on-accent: #021008; --accent-soft: rgb(212 255 60 / .14); --badge-bd: #D4FF3C;
+  --act-bg: transparent; --act-fg: #8CFFB0; --act-bd: #8CFFB0; --act-hover: rgb(140 255 176 / .16);
+  --bg: repeating-linear-gradient(0deg, rgb(0 0 0 / .32) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 45%, #0C2D17 0%, #04130A 55%, #010603 100%);
+  --base: #010603;
+  --r-pill: 2px; --r-card: 3px; --r-small: 2px; --r-dot: 2px; --blur: 2px;
+  --sh-card: 0 0 22px rgb(140 255 176 / .12), inset 0 0 18px rgb(140 255 176 / .05);
+  --sh-btn: 0 0 12px rgb(140 255 176 / .28);
+  --sh-pop: 0 0 30px rgb(140 255 176 / .15);
+  --f-body: 'Nanum Gothic Coding', ui-monospace, monospace; --f-display: 'Nanum Gothic Coding', ui-monospace, monospace; --f-label: 'Nanum Gothic Coding', ui-monospace, monospace;
+  --t-ls: .02em; --l-ls: .18em; --l-w: 400;
+  --glow: 0 0 8px rgb(140 255 176 / .55);
+  color-scheme: dark;
+}
+/* 세이프티 — 방폭 현장의 안전 표지: 콘크리트 바탕 위아래 경고 줄무늬, 두꺼운 검은 테두리의 표지판 카드, 안전 노랑 버튼, 굵은 제목체 */
+[data-theme="safety"] {
+  --ink: #141414; --on-ink: #FFC400; --ink-hover: #000; --muted: #4E4A44;
+  --glass: #F4F1EA; --solid: #F4F1EA; --card: #F4F1EA; --btn: #fff;
+  --lift: #fff; --hover: rgb(20 20 20 / .06); --panel-hover: rgb(255 196 0 / .14);
+  --edge: #141414; --sh: 20 20 20; --ring: #FFC400;
+  --accent: #FFC400; --on-accent: #141414; --accent-soft: rgb(255 196 0 / .3); --badge-bd: #141414;
+  --act-bg: #FFC400; --act-fg: #141414; --act-bd: #141414; --act-hover: #FFD23F;
+  --hint-bg: #FFC400;
+  --bg: repeating-linear-gradient(-45deg, #141414 0 14px, #FFC400 14px 28px) top / 100% 10px no-repeat,
+        repeating-linear-gradient(-45deg, #141414 0 14px, #FFC400 14px 28px) bottom / 100% 10px no-repeat,
+        var(--noise), radial-gradient(ellipse at 50% 40%, #DAD6CD 0%, #C5C0B5 60%, #ABA599 100%);
+  --base: #C5C0B5;
+  --r-pill: 6px; --r-card: 6px; --r-small: 4px; --bw: 2px; --blur: 0px;
+  --sh-card: 0 4px 0 rgb(20 20 20 / .3); --sh-btn: 0 3px 0 #141414; --sh-pop: 0 5px 0 rgb(20 20 20 / .3);
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Black Han Sans', var(--kr); --f-label: var(--mono);
+  --t-w: 400; --t-ls: .01em; --l-ls: .12em; --l-w: 600;
+}
+/* 브루탈 — 굵은 선과 날것의 색 (네오 브루탈리즘 웹 참고): 두꺼운 검은 테두리, 흐림 없는 딱딱한 그림자, 누르면 그림자만큼 눌리는 버튼 */
+[data-theme="brutal"] {
+  --ink: #0A0A0A; --on-ink: #fff; --ink-hover: #000; --muted: #3B3B3B;
+  --glass: #fff; --solid: #fff; --card: #fff; --btn: #fff;
+  --lift: #FFE3F6; --hover: #FFE3F6; --panel-hover: rgb(255 144 232 / .2);
+  --edge: #0A0A0A; --sh: 10 10 10; --ring: #0A0A0A;
+  --accent: #FF90E8; --on-accent: #0A0A0A; --accent-soft: #FFE0F7; --badge-bd: #0A0A0A;
+  --act-bg: #FFC900; --act-fg: #0A0A0A; --act-bd: #0A0A0A; --act-hover: #FFD84D;
+  --hint-bg: #FF90E8;
+  --bg: radial-gradient(rgb(10 10 10 / .13) 1.2px, transparent 1.7px) 0 0 / 22px 22px, #FFF1D9;
+  --base: #FFF1D9;
+  --r-pill: 8px; --r-card: 10px; --r-small: 6px; --bw: 2.5px; --blur: 0px;
+  --sh-card: 6px 6px 0 #0A0A0A; --sh-btn: 4px 4px 0 #0A0A0A; --sh-pop: 7px 7px 0 #0A0A0A;
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Black Han Sans', var(--kr); --f-label: var(--mono);
+  --t-w: 400; --t-ls: 0; --l-ls: .1em; --l-w: 600;
+}
+/* 스위스 — 국제 타이포그래피 양식: 흰 종이와 12단 격자, 검정과 빨강 하나, 그림자·둥글기 없음, 크고 빽빽한 제목. 3D는 흑백(빨강만 남는다) */
+[data-theme="swiss"] {
+  --ink: #000; --on-ink: #fff; --ink-hover: #E30613; --muted: #5A5A5A;
+  --glass: #fff; --solid: #fff; --card: #fff; --btn: #fff;
+  --lift: #F0F0F0; --hover: #F0F0F0; --panel-hover: rgb(0 0 0 / .03);
+  --edge: #000; --sh: 0 0 0; --sh-k: 0; --ring: #fff;
+  --accent: #E30613; --on-accent: #fff; --accent-soft: rgb(227 6 19 / .1); --badge-bd: #E30613;
+  --act-bg: #E30613; --act-fg: #fff; --act-hover: #000;
+  --hint-bg: #000; --hint-fg: #fff;
+  --bg: repeating-linear-gradient(90deg, rgb(0 0 0 / .05) 0 1px, transparent 1px calc(100% / 12)), #fff;
+  --base: #fff;
+  --r-pill: 0; --r-card: 0; --r-small: 0; --r-dot: 0; --blur: 0px;
+  --sh-card: none; --sh-btn: none; --sh-pop: none;
+  --f-body: "Helvetica Neue", Helvetica, Arial, 'Noto Sans KR', var(--kr);
+  --f-display: "Helvetica Neue", Helvetica, Arial, 'Noto Sans KR', var(--kr);
+  --f-label: "Helvetica Neue", Helvetica, Arial, 'Noto Sans KR', var(--kr);
+  --t-w: 800; --t-ls: -.04em; --l-ls: .06em; --l-w: 700;
+}
+/* 매거진 — 종이 위 세리프 (잡지 에디토리얼 참고): 따뜻한 종이 결, 명조 본문과 제목, 가는 괘선, 넓은 자간의 작은 산세리프 라벨 */
+[data-theme="editorial"] {
+  --ink: #1F1B16; --on-ink: #F7F2E8; --ink-hover: #3A332A; --muted: #6E6558;
+  --glass: rgb(250 246 238 / .92); --solid: #FAF6EE; --card: #FAF6EE; --btn: #FFFDF8;
+  --lift: #FFFDF8; --hover: rgb(31 27 22 / .05); --panel-hover: rgb(255 255 255 / .22);
+  --edge: rgb(31 27 22 / .24); --sh: 60 45 25; --sh-k: .8; --ring: #F4EFE6;
+  --accent: #9C2B1A; --on-accent: #fff; --accent-soft: rgb(156 43 26 / .1); --badge-bd: #9C2B1A;
+  --bg: var(--noise), radial-gradient(ellipse at 50% 38%, #FBF7EF 0%, #F1EADD 62%, #E3D8C5 100%);
+  --base: #F1EADD;
+  --r-pill: 2px; --r-card: 3px; --r-small: 2px; --blur: 0px;
+  --sh-card: 0 1px 0 rgb(31 27 22 / .06), 0 14px 30px rgb(60 45 25 / .1);
+  --sh-btn: none; --sh-pop: 0 16px 34px rgb(60 45 25 / .14);
+  --f-body: 'Noto Serif KR', var(--krs); --f-display: 'Noto Serif KR', var(--krs); --f-label: 'Noto Sans KR', var(--kr);
+  --t-w: 700; --t-ls: -.01em; --l-ls: .26em; --l-w: 500;
+}
+/* 한지 — 먹과 한지와 낙관: 섬유 결이 보이는 한지, 아래로 번지는 먹, 인주 빨강의 네모난 도장, 붓 명조 제목과 바탕체 본문 */
+[data-theme="hanji"] {
+  --ink: #1A1712; --on-ink: #FBF6EC; --ink-hover: #3A3228; --muted: #6D6453;
+  --glass: rgb(248 243 232 / .92); --solid: #F8F3E8; --card: #F8F3E8; --btn: #FDFAF3;
+  --lift: #FDFAF3; --hover: rgb(26 23 18 / .05); --panel-hover: rgb(255 255 255 / .18);
+  --edge: rgb(26 23 18 / .3); --sh: 70 55 30; --sh-k: .7; --ring: #EFE7D6;
+  --accent: #B3262B; --on-accent: #FBF6EC; --accent-soft: rgb(179 38 43 / .1); --badge-bd: #B3262B;
+  --act-bg: #B3262B; --act-fg: #FBF6EC; --act-hover: #951E23;
+  --bg: var(--fibers), var(--noise), radial-gradient(120% 70% at 50% 115%, rgb(26 23 18 / .16) 0%, transparent 62%),
+        radial-gradient(ellipse at 50% 35%, #F8F2E5 0%, #EDE4D1 65%, #DFD2B8 100%);
+  --base: #EDE4D1;
+  --r-pill: 3px; --r-card: 2px; --r-small: 2px; --r-dot: 3px; --blur: 0px;
+  --sh-card: 0 10px 26px rgb(70 55 30 / .1); --sh-btn: none; --sh-pop: 0 14px 30px rgb(70 55 30 / .14);
+  --f-body: 'Gowun Batang', var(--krs); --f-display: 'Song Myung', var(--krs); --f-label: 'Gowun Batang', var(--krs);
+  --t-w: 400; --t-ls: .02em; --l-tt: none; --l-ls: .3em; --l-w: 400;
+}
+/* 신스웨이브 — 네온 지평선 (80년대 신스웨이브): 보라 밤하늘과 가로줄 해, 발밑의 원근 격자 바닥(.fx), 분홍 테두리의 빛 번짐, 미래형 제목체 */
+[data-theme="synthwave"] {
+  --ink: #FDF3FF; --on-ink: #12002A; --ink-hover: #fff; --muted: #C8A6FF;
+  --glass: rgb(26 6 52 / .62); --solid: rgb(22 5 44 / .94); --card: rgb(26 6 52 / .72); --btn: rgb(255 255 255 / .06);
+  --lift: rgb(255 42 150 / .22); --hover: rgb(255 42 150 / .14); --panel-hover: rgb(255 42 150 / .06);
+  --edge: rgb(255 70 170 / .6); --sh: 255 42 150; --ring: #1A0634;
+  --accent: #00E5FF; --on-accent: #12002A; --accent-soft: rgb(0 229 255 / .14); --badge-bd: #00E5FF;
+  --act-bg: linear-gradient(90deg, #FF2A95, #FF7A2A); --act-fg: #fff; --act-hover: linear-gradient(90deg, #FF4FAA, #FF9150);
+  /* 위에서부터: 땅(지평선 64% 아래가 해의 아랫부분을 가린다) · 해 아랫쪽의 가로 틈 · 해(지평선에 걸침) · 지평선 빛 · 하늘 */
+  --bg: linear-gradient(180deg, transparent 0 64%, #12032A 64%, #0A021C 100%),
+        repeating-linear-gradient(180deg, transparent 0 7px, #4A0E5E 7px 11px) 50% calc(64% - 21.6px) / 250px 60px no-repeat,
+        radial-gradient(circle at 50% 64%, #FFE14D 0 40px, #FF5A8A 118px, transparent 119px),
+        radial-gradient(90% 40% at 50% 64%, rgb(255 42 149 / .45) 0%, transparent 70%),
+        linear-gradient(180deg, #07011A 0%, #1B0642 40%, #4A0E5E 64%, #4A0E5E 100%);
+  --base: #0A021C;
+  --r-card: 12px; --r-small: 8px; --blur: 10px; --sat: 140%;
+  --sh-card: 0 0 26px rgb(255 42 150 / .32), 0 0 2px rgb(255 42 150 / .8);
+  --sh-btn: 0 0 18px rgb(255 42 150 / .6);
+  --sh-pop: 0 0 40px rgb(255 42 150 / .35);
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Orbit', var(--kr); --f-label: 'Orbit', var(--kr);
+  --t-w: 400; --t-ls: .04em; --l-ls: .24em; --l-w: 400;
+  --glow: 0 0 12px rgb(0 229 255 / .7);
+  color-scheme: dark;
+}
+/* 소프트 — 점토처럼 부드러운 (뉴모피즘·클레이 렌더 참고): 바탕과 같은 색의 판을 밝은 빛·어두운 그림자 두 개로 부풀림, 테두리 없음. 3D도 점토 */
+[data-theme="soft"] {
+  --ink: #3A4254; --on-ink: #fff; --ink-hover: #2B3242; --muted: #7C869A;
+  --glass: #E4E9F0; --solid: #E4E9F0; --card: #E4E9F0; --btn: #E4E9F0;
+  --lift: #ECF0F6; --hover: rgb(58 66 84 / .05); --panel-hover: rgb(255 255 255 / .22);
+  --edge: transparent; --sh: 163 177 198; --ring: #E4E9F0;
+  --accent: #5B7CFA; --on-accent: #fff; --accent-soft: rgb(91 124 250 / .14); --badge-bd: #E4E9F0;
+  --act-bg: #5B7CFA; --act-fg: #fff; --act-hover: #4A6BEF;
+  --bg: linear-gradient(145deg, #EDF1F7 0%, #DCE2EB 100%);
+  --base: #E4E9F0;
+  --r-card: 24px; --r-small: 14px; --bw: 0px; --blur: 0px;
+  --sh-card: 10px 10px 22px rgb(163 177 198 / .7), -10px -10px 22px rgb(255 255 255 / .9);
+  --sh-btn: 6px 6px 14px rgb(163 177 198 / .65), -6px -6px 14px rgb(255 255 255 / .9);
+  --sh-pop: 14px 14px 30px rgb(163 177 198 / .7), -12px -12px 26px rgb(255 255 255 / .85);
+  --f-body: 'Gowun Dodum', var(--kr); --f-display: 'Gowun Dodum', var(--kr); --f-label: 'Gowun Dodum', var(--kr);
+  --t-w: 400; --t-ls: 0; --l-tt: none; --l-ls: .08em; --l-w: 400;
+}
+/* 바우하우스 — 원·삼각·사각과 삼원색: 크림 바탕 위 빨간 원·파란 사분원·노란 삼각, 두꺼운 검은 선, 각진 버튼, 기하학 제목체 */
+[data-theme="bauhaus"] {
+  --ink: #111; --on-ink: #fff; --ink-hover: #111; --muted: #4B4B4B;
+  --glass: #FAF3E3; --solid: #FAF3E3; --card: #FAF3E3; --btn: #fff;
+  --lift: #F2C12E; --hover: rgb(17 17 17 / .06); --panel-hover: rgb(242 193 46 / .16);
+  --edge: #111; --sh: 17 17 17; --ring: #F1E6D0;
+  --accent: #D2372C; --on-accent: #fff; --accent-soft: rgb(210 55 44 / .12); --badge-bd: #111;
+  --act-bg: #1E4E8C; --act-fg: #fff; --act-hover: #D2372C;
+  --crumb-bg: #F2C12E; --hint-bg: #1E4E8C; --hint-fg: #fff;
+  --bg: radial-gradient(circle at 88% 20%, #D2372C 0 86px, transparent 87px),
+        radial-gradient(circle at 0 52%, #1E4E8C 0 150px, transparent 151px),   /* 왼쪽 가장자리 가운데 — 아래쪽 이름표·카드와 겹치지 않게 */
+        linear-gradient(to top left, #F2C12E 0 49.6%, transparent 50%) 100% 100% / 190px 190px no-repeat,
+        #F1E6D0;
+  --base: #F1E6D0;
+  --r-pill: 0; --r-card: 0; --r-small: 0; --bw: 2px; --blur: 0px;
+  --sh-card: none; --sh-btn: none; --sh-pop: none;
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Do Hyeon', var(--kr); --f-label: 'Do Hyeon', var(--kr);
+  --t-w: 400; --t-ls: 0; --l-ls: .12em; --l-w: 400;
+}
+
+/* 테마를 바꿀 때: 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·둥글기·무늬까지 한꺼번에 부드럽게).
+   그 기능이 없는 브라우저는 .theme-anim을 잠깐 붙여 색만이라도 0.7초에 걸쳐 바뀌게 한다 */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .6s; animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+:root.theme-anim *, :root.theme-anim *::before, :root.theme-anim *::after {
+  transition: color .7s ease, background-color .7s ease, border-color .7s ease, box-shadow .7s ease, fill .7s ease, stroke .7s ease, opacity .7s ease, border-radius .7s ease, transform .5s cubic-bezier(.2, .8, .2, 1) !important;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
-/* 바탕: 라이트·다크 그러데이션을 두 겹으로 깔아 두고 다크 겹의 투명도만 바꾼다 (그러데이션은 그 자체로는 부드럽게 바뀌지 않으므로) */
-body::before, body::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-body::before { background: var(--bg); }
-body::after { background: var(--bg-dark); opacity: 0; }
-:root[data-theme="dark"] body::after { opacity: 1; }
+html { background: var(--base); }
+/* 바탕: 테마의 --bg(여러 겹·무늬). 테마만의 장식(도면 테두리·신스웨이브 격자 바닥)은 .fx가 그린다 — 둘 다 3D 캔버스 뒤 */
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--bg); background-color: var(--base); }
+.fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
 body {
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  font: 400 15px/1.6 var(--sans);
+  font: 400 15px/1.6 var(--f-body);
   word-break: keep-all;
   -webkit-font-smoothing: antialiased;
 }
@@ -93,9 +391,9 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .head > :first-child { min-width: 0; }
 .eyebrow {
   margin: 0 0 8px;
-  font: 500 11px/1 var(--mono);
-  letter-spacing: .14em;
-  text-transform: uppercase;
+  font: var(--l-w) 11px/1 var(--f-label);
+  letter-spacing: var(--l-ls);
+  text-transform: var(--l-tt);
   color: var(--muted);
   white-space: nowrap;   /* 좁은 화면에서 두 줄로 꺾이지 않고 끝을 …로 */
   overflow: hidden;
@@ -110,11 +408,13 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   padding: 0;
   border: 0;
   background: none;
+  font-family: var(--f-display);
   font-size: clamp(22px, 2.6vw, 32px);
-  font-weight: 700;
+  font-weight: var(--t-w);
   line-height: 1.15;
-  letter-spacing: -.02em;
+  letter-spacing: var(--t-ls);
   text-align: left;
+  text-shadow: var(--glow);
   cursor: pointer;
 }
 .chev {
@@ -124,9 +424,10 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   width: 28px;
   height: 28px;
   margin: -4px 0 0 10px;
-  border: 1px solid var(--edge);
-  border-radius: 50%;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-dot);
   background: var(--glass);
+  text-shadow: none;
   transition: transform .4s cubic-bezier(.2, .8, .2, 1), background .2s;
 }
 .chev svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -144,18 +445,18 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   margin: 0;
   padding: 6px;
   list-style: none;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-card);
   background: var(--solid);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 40px rgb(var(--sh) / calc(.14 * var(--sh-k)));
-  clip-path: inset(0 0 100% 0 round 14px);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  box-shadow: var(--sh-pop);
+  clip-path: inset(0 0 100% 0 round var(--r-card));
   visibility: hidden;
   transition: clip-path .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s;
 }
 .picker.open .menu {
-  clip-path: inset(0 0 0 0 round 14px);
+  clip-path: inset(-40px -40px -40px -40px round var(--r-card));   /* 열렸을 때는 그림자까지 보이게 넉넉히 */
   visibility: visible;
   transition: clip-path .5s cubic-bezier(.2, .8, .2, 1), visibility 0s;
 }
@@ -172,7 +473,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   width: 100%;
   padding: 11px 16px 11px 14px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-small);
   background: none;
   text-align: left;
   cursor: pointer;
@@ -180,26 +481,26 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 }
 .opt:hover { background: var(--hover); }
 .menu-gap { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--edge); }
-.opt[aria-current="page"] { background: rgb(242 179 0 / .14); box-shadow: inset 3px 0 0 var(--accent); }
-.opt-name { font-size: 15px; font-weight: 700; line-height: 1.3; }
-.opt-meta { font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.opt[aria-current="page"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.opt-name { font-family: var(--f-display); font-size: 15px; font-weight: var(--t-w); line-height: 1.3; }
+.opt-meta { font: var(--l-w) 11px/1.3 var(--f-label); letter-spacing: calc(var(--l-ls) * .45); text-transform: var(--l-tt); color: var(--muted); }
 .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); transition: opacity .25s; }
 .picker.open + .sub { opacity: 0; }
 .act {
   appearance: none;
   flex: none;
   padding: 12px 18px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--on-ink);
+  border: var(--bw) solid var(--act-bd);
+  border-radius: var(--r-pill);
+  background: var(--act-bg);
+  color: var(--act-fg);
   font-weight: 600;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgb(var(--sh) / calc(.2 * var(--sh-k)));
+  box-shadow: var(--sh-btn);
 }
-.act:hover { background: var(--ink-hover); }
+.act:hover { background: var(--act-hover); }
 
 .hint {
   position: fixed;
@@ -210,11 +511,12 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   max-width: calc(100% - 32px);
   margin: 0;
   padding: 10px 16px;
-  border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-pill);
+  background: var(--hint-bg);
+  color: var(--hint-fg);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
   font-size: 13px;
   font-weight: 600;
   text-align: center;
@@ -228,12 +530,12 @@ body.focus .hint { display: none; }
   bottom: calc(28px + env(safe-area-inset-bottom, 0px));
   width: min(360px, calc(100% - 56px));
   padding: 20px 22px;
-  border: 1px solid var(--edge);
-  border-radius: 16px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-card);
   background: var(--glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 16px 40px rgb(var(--sh) / calc(.12 * var(--sh-k)));
+  -webkit-backdrop-filter: blur(calc(var(--blur) * 1.3)) saturate(var(--sat));
+  backdrop-filter: blur(calc(var(--blur) * 1.3)) saturate(var(--sat));
+  box-shadow: var(--sh-card);
 }
 .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .badge {
@@ -242,23 +544,24 @@ body.focus .hint { display: none; }
   flex: none;
   width: 30px;
   height: 30px;
-  border: 1.5px solid #16171A;   /* 노란 동그라미는 두 테마에서 똑같이: 진한 테두리·진한 글자 */
-  border-radius: 50%;
+  border: 1.5px solid var(--badge-bd);
+  border-radius: var(--r-dot);
   background: var(--accent);
-  color: #16171A;
-  font: 600 12px/1 var(--mono);
+  color: var(--on-accent);
+  font: 600 12px/1 var(--f-label);
+  text-shadow: none;
 }
 .count { font-size: 12px; font-weight: 600; color: var(--muted); }
-.info h2 { margin: 0; font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
-.en { margin: 2px 0 0; font: 500 11px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.info h2 { margin: 0; font-family: var(--f-display); font-size: 24px; line-height: 1.2; font-weight: var(--t-w); letter-spacing: var(--t-ls); text-shadow: var(--glow); }
+.en { margin: 2px 0 0; font: var(--l-w) 11px/1.4 var(--f-label); letter-spacing: calc(var(--l-ls) * .45); text-transform: var(--l-tt); color: var(--muted); }
 .desc { margin: 12px 0 0; }
 .how { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
 .nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .btn {
   appearance: none;
   padding: 9px 13px;
-  border: 1px solid var(--edge);
-  border-radius: 9px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-small);
   background: var(--btn);
   font-weight: 600;
   font-size: 13px;
@@ -273,7 +576,7 @@ body.focus .hint { display: none; }
   left: 0;
   top: 0;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-small);
   background: var(--ink);
   color: var(--on-ink);
   font-size: 12px;
@@ -315,15 +618,16 @@ body.mainview .home { visibility: visible; opacity: 1; transition: opacity .5s e
 .panel + .panel { border-left: 1px solid var(--edge); }
 .panel:hover, .panel:focus-visible { background: var(--panel-hover); }
 .panel:focus-visible { outline: 2px solid var(--ink); outline-offset: -6px; }
-.p-no { font: 500 11px/1 var(--mono); letter-spacing: .14em; color: var(--muted); }
-.p-name { font-size: clamp(18px, 1.7vw, 24px); font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+.p-no { font: var(--l-w) 11px/1 var(--f-label); letter-spacing: var(--l-ls); color: var(--muted); }
+.p-name { font-family: var(--f-display); font-size: clamp(18px, 1.7vw, 24px); font-weight: var(--t-w); line-height: 1.25; letter-spacing: var(--t-ls); text-shadow: var(--glow); }
 .p-box { font-size: 13px; color: var(--muted); }
 .p-go {
   margin-top: 10px;
   padding: 9px 14px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--on-ink);
+  border: var(--bw) solid var(--act-bd);
+  border-radius: var(--r-pill);
+  background: var(--act-bg);
+  color: var(--act-fg);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1;
@@ -343,11 +647,12 @@ body.mainview .hint, body.mainview .actions > :not(.snd) { display: none; }
 .crumb {
   appearance: none;
   padding: 11px 16px;
-  border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-pill);
+  background: var(--crumb-bg);
+  color: var(--crumb-fg);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
@@ -355,7 +660,7 @@ body.mainview .hint, body.mainview .actions > :not(.snd) { display: none; }
 }
 .crumb:hover { border-color: var(--ink); background: var(--lift); }
 /* 소리 켜기·끄기: 스피커 아이콘 (끄면 물결 대신 X) */
-.crumb.snd { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; }
+.crumb.snd { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: var(--r-dot); }
 .crumb svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* 처음으로: 넓은 화면은 글자, 휴대폰은 집 아이콘 (아래 max-width: 640px) */
 .home-btn svg { display: none; }
@@ -363,7 +668,7 @@ body.mainview .hint, body.mainview .actions > :not(.snd) { display: none; }
 .snd.off .x { display: inline; }
 .snd.off { color: var(--muted); }
 
-/* 배가 분해되면 아래에서 올라오는 설치 장소 선택지 세 개 */
+/* 배가 분해되면 아래에서 올라오는 설치 장소 선택지 */
 .choices {
   position: fixed;
   left: 50%;
@@ -387,12 +692,12 @@ body.mainview .hint, body.mainview .actions > :not(.snd) { display: none; }
   gap: 12px;
   min-width: 212px;
   padding: 12px 18px 12px 12px;
-  border: 1px solid var(--edge);
-  border-radius: 14px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-card);
   background: var(--card);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 12px 30px rgb(var(--sh) / calc(.12 * var(--sh-k)));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  box-shadow: var(--sh-card);
   text-align: left;
   cursor: pointer;
   opacity: 0;
@@ -401,7 +706,7 @@ body.mainview .hint, body.mainview .actions > :not(.snd) { display: none; }
 }
 .choice:hover { border-color: var(--ink); }
 .choice .badge { width: 28px; height: 28px; }
-.c-name { display: block; font-size: 15px; font-weight: 700; line-height: 1.3; }
+.c-name { display: block; font-family: var(--f-display); font-size: 15px; font-weight: var(--t-w); line-height: 1.3; }
 .c-place { display: block; font-size: 12px; color: var(--muted); line-height: 1.4; }
 body.field.exploded .choices { visibility: visible; pointer-events: auto; transition: visibility 0s; }
 body.field.exploded .choices-label { opacity: 1; transition: opacity .4s ease .5s; }
@@ -412,7 +717,7 @@ body.field.exploded .choice {
 }
 body.field.exploded .hint, body.site .hint { display: none; }
 
-/* 분해된 배 위에 박스 자리를 알려 주는 번호 핀 */
+/* 분해된 배 위에 박스 자리를 알려 주는 핀 */
 .pins { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; }
 body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .pin {
@@ -423,70 +728,245 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: var(--r-dot);
   background: var(--ink);
   color: var(--on-ink);
-  font: 600 12px/1 var(--mono);
+  font: 600 12px/1 var(--f-label);
   box-shadow: 0 0 0 3px var(--ring);
   transform: translate(-50%, calc(-100% - 14px));
 }
 .pin::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 14px; background: var(--ink); transform: translateX(-50%); }
 
-/* 테마 바꾸기 (오른쪽 아래, 모든 화면에 늘 떠 있다): [해 라이트][달 다크] — 고른 쪽 뒤로 진한 판(::before)이 미끄러진다.
+/* ===================== 스타일 고르기 (오른쪽 아래, 모든 화면) =====================
+   [◐ 테마 · 스튜디오] [가 글꼴 · 테마 기본] — 누르면 위로 고르기 창이 열리고, 고르는 즉시 바뀐다(창은 열린 채라 계속 비교할 수 있다).
    아래쪽 안내·카드와 가로로 겹치는 화면(휴대폰 세로 등)에서는 그 위로 비켜 선다: --dock = 화면 아래에서 띄울 거리(JS가 잼) */
-.theme {
+.dock {
   position: fixed;
   right: 28px;
   bottom: max(calc(24px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px));
   z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  gap: 2px;
   padding: 4px;
-  border: 1px solid var(--edge);
-  border-radius: 999px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-pill);
   background: var(--glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgb(var(--sh) / calc(.1 * var(--sh-k)));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  box-shadow: var(--sh-pop);
   transition: bottom .45s cubic-bezier(.2, .8, .2, 1);
 }
-.theme::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  border-radius: 999px;
-  background: var(--ink);
-  transition: transform .5s cubic-bezier(.2, .8, .2, 1);
-}
-:root[data-theme="dark"] .theme::before { transform: translateX(100%); }
-.th-opt {
+.dock-btn {
   appearance: none;
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 14px 6px 6px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: none;
-  color: var(--muted);
+  color: var(--ink);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  transition: color .3s;
 }
-.th-opt:hover { color: var(--ink); }
-:root:not([data-theme="dark"]) .th-opt[data-t="light"], :root[data-theme="dark"] .th-opt[data-t="dark"] { color: var(--on-ink); }
-.th-opt svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dock-btn:hover, .dock-btn[aria-expanded="true"] { background: var(--hover); }
+.dock-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--badge-bd);
+  border-radius: var(--r-dot);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 700 13px/1 var(--f-display);
+}
+/* 테마 아이콘: 지금 테마의 바탕(왼쪽 반)과 포인트 색(오른쪽 반) */
+.dock-ico.th { background: linear-gradient(90deg, var(--base) 50%, var(--accent) 50%); }
+.dock-k { color: var(--muted); font-weight: 500; }
+.dock-v { max-width: 8.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet {
+  --sel: var(--ink);   /* 고른 것 표시 색 = 페이지(지금 테마)의 글자색 — 카드 안은 제 테마로 칠해져도 이 값은 그대로 이어받는다 */
+  position: fixed;
+  right: 28px;
+  bottom: calc(max(calc(24px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px)) + 58px);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(72vh, 680px);
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-card);
+  background: var(--solid);
+  -webkit-backdrop-filter: blur(calc(var(--blur) + 10px)) saturate(var(--sat));
+  backdrop-filter: blur(calc(var(--blur) + 10px)) saturate(var(--sat));
+  box-shadow: var(--sh-pop);
+  color: var(--ink);
+  transform-origin: 100% 100%;
+  animation: sheet-in .3s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes sheet-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.sheet-head { display: flex; align-items: center; gap: 8px; padding: 14px 12px 10px 18px; }
+.sheet-head h3 { margin: 0; font: var(--t-w) 17px/1.2 var(--f-display); letter-spacing: var(--t-ls); text-shadow: var(--glow); }
+.sheet-n { font: var(--l-w) 11px/1 var(--f-label); letter-spacing: var(--l-ls); text-transform: var(--l-tt); color: var(--muted); }
+.sheet-sp { flex: 1; }
+.sheet-nav {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-dot);
+  background: var(--btn);
+  cursor: pointer;
+}
+.sheet-nav:hover { border-color: var(--ink); }
+.sheet-nav svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 2px 14px 16px; scrollbar-width: thin; }
+.sheet-note { margin: 0 4px 10px; font-size: 12px; color: var(--muted); }
+/* 테마 카드: 윗부분(.tv)에 그 테마를 붙여 축소판으로 그린다 — 바탕 무늬, 떠 있는 판, 주 버튼, 보조 버튼, 포인트 점, 제목 글꼴까지 */
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tcard {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tv {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 104px;
+  padding: 10px;
+  overflow: hidden;
+  border: var(--bw) solid var(--edge);
+  border-radius: min(var(--r-card), 16px);
+  background: var(--bg);
+  background-color: var(--base);
+  color: var(--ink);
+  font-family: var(--f-body);
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color .2s, transform .2s;
+}
+.tcard:hover .tv { transform: translateY(-2px); }
+.tcard[aria-checked="true"] .tv { outline-color: var(--sel); }
+.tv-panel {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 6px 9px;
+  border: var(--bw) solid var(--edge);
+  border-radius: min(var(--r-card), 12px);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  box-shadow: var(--sh-card);
+}
+.tv-t { display: block; font: var(--t-w) 16px/1.15 var(--f-display); letter-spacing: var(--t-ls); text-shadow: var(--glow); white-space: nowrap; }
+.tv-e { display: block; margin-top: 3px; font: var(--l-w) 8.5px/1 var(--f-label); letter-spacing: var(--l-ls); text-transform: var(--l-tt); color: var(--muted); white-space: nowrap; }
+.tv-row { display: flex; align-items: center; gap: 6px; margin-top: auto; }
+.tv-act { padding: 5px 9px; border: var(--bw) solid var(--act-bd); border-radius: var(--r-pill); background: var(--act-bg); color: var(--act-fg); font-size: 10px; font-weight: 600; line-height: 1; box-shadow: var(--sh-btn); white-space: nowrap; }
+.tv-crumb { padding: 4px 8px; border: var(--bw) solid var(--edge); border-radius: var(--r-pill); background: var(--crumb-bg); color: var(--crumb-fg); font-size: 9.5px; font-weight: 600; line-height: 1; white-space: nowrap; }
+.tv-dot { flex: none; width: 15px; height: 15px; margin-left: auto; border: 1.5px solid var(--badge-bd); border-radius: var(--r-dot); background: var(--accent); }
+.tc-name { display: flex; align-items: baseline; gap: 6px; padding: 0 2px; font-size: 13.5px; font-weight: 700; line-height: 1.2; }
+.tc-name small { font-size: 10.5px; font-weight: 500; color: var(--muted); letter-spacing: .04em; }
+.tc-desc { padding: 0 2px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+/* 글꼴 목록: 이름을 그 글꼴로 보여 준다 */
+.flist { display: grid; gap: 8px; }
+.fopt {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: var(--bw) solid var(--edge);
+  border-radius: var(--r-small);
+  background: var(--btn);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.fopt:hover { border-color: var(--ink); }
+.fopt[aria-checked="true"] { border-color: var(--sel); box-shadow: inset 0 0 0 1px var(--sel); background: var(--accent-soft); }
+.fo-s { overflow: hidden; font-size: 20px; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+.fo-n { font: var(--l-w) 10.5px/1.2 var(--f-label); letter-spacing: calc(var(--l-ls) * .45); text-transform: var(--l-tt); color: var(--muted); }
+.fo-tag { grid-column: 2; grid-row: 1 / span 2; font-size: 11px; font-weight: 600; color: var(--muted); }
 
+/* ===================== 테마만의 장식 =====================
+   토큰으로 안 되는 몇 가지: 버튼 모양·표지판·겹테두리·빛 번짐·바닥 격자.
+   페이지에는 :root[data-theme="…"], 고르기 카드의 축소판에는 .tv[data-theme="…"]로 따로 건다
+   (그냥 [data-theme="…"] 아래로 걸면 페이지 테마의 장식이 모든 카드 안까지 번진다 — 카드는 모두 페이지 안에 있으므로) */
+/* 블루프린트: 도면 용지 테두리(안쪽 12px)와 모서리 눈금, 점선 안내 */
+:root[data-theme="blueprint"] .fx::before { content: ''; position: absolute; inset: 12px; border: 1px solid rgb(234 242 255 / .32); }
+:root[data-theme="blueprint"] .fx::after {
+  content: ''; position: absolute; inset: 12px;
+  background: linear-gradient(90deg, rgb(234 242 255 / .45) 1px, transparent 1px) 0 0 / 48px 7px repeat-x,
+              linear-gradient(90deg, rgb(234 242 255 / .45) 1px, transparent 1px) 0 100% / 48px 7px repeat-x,
+              linear-gradient(rgb(234 242 255 / .45) 1px, transparent 1px) 0 0 / 7px 48px repeat-y,
+              linear-gradient(rgb(234 242 255 / .45) 1px, transparent 1px) 100% 0 / 7px 48px repeat-y;
+}
+:root[data-theme="blueprint"] .hint { border-style: dashed; }
+:root[data-theme="blueprint"] :is(.act, .p-go):hover { color: #fff; }
+/* 컨트롤룸: 글자 전체에 인광 번짐, 주 버튼은 [ 대괄호 ] */
+:root[data-theme="control"] body { text-shadow: var(--glow); }
+:root[data-theme="control"] :is(.act, .p-go)::before, .tv[data-theme="control"] .tv-act::before { content: '[ '; }
+:root[data-theme="control"] :is(.act, .p-go)::after, .tv[data-theme="control"] .tv-act::after { content: ' ]'; }
+:root[data-theme="control"] :is(.badge, .pin, .dock-ico) { text-shadow: none; }
+/* 세이프티: 주 버튼 왼쪽 끝에 경고 줄무늬 */
+:root[data-theme="safety"] .act, .tv[data-theme="safety"] .tv-act { background: repeating-linear-gradient(-45deg, #141414 0 4px, #FFC400 4px 8px) 0 0 / 9px 100% no-repeat, #FFC400; padding-left: 20px; }
+.tv[data-theme="safety"] .tv-act { padding-left: 15px; }
+:root[data-theme="safety"] .act:hover { background: repeating-linear-gradient(-45deg, #141414 0 4px, #FFD23F 4px 8px) 0 0 / 9px 100% no-repeat, #FFD23F; }
+/* 브루탈: 흐림 없는 딱딱한 그림자, 누르면 그림자만큼 눌린다 */
+:root[data-theme="brutal"] :is(.act, .crumb, .btn, .choice, .dock) { box-shadow: 4px 4px 0 #0A0A0A; }
+:root[data-theme="brutal"] :is(.act, .crumb, .btn, .choice):active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #0A0A0A; }
+/* 스위스: 카드와 메뉴는 테두리 대신 굵은 윗줄 하나, 제목은 크게 */
+:root[data-theme="swiss"] :is(.info, .menu, .sheet) { border-width: 4px 0 0; }
+:root[data-theme="swiss"] .title { font-size: clamp(24px, 3vw, 38px); }
+/* 매거진: 라벨 앞에 줄표, 카드는 위아래 괘선만 */
+:root[data-theme="editorial"] .eyebrow::before { content: '— '; letter-spacing: 0; }
+:root[data-theme="editorial"] :is(.info, .menu, .sheet) { border-width: 1px 0; }
+/* 한지: 카드와 메뉴에 안쪽 겹테두리(옛 책의 광곽처럼), 도장 글자는 붓 명조 */
+:root[data-theme="hanji"] :is(.info, .menu, .sheet) { outline: 1px solid rgb(26 23 18 / .28); outline-offset: -6px; }
+:root[data-theme="hanji"] :is(.badge, .pin) { font-family: 'Song Myung', var(--krs); }
+/* 신스웨이브: 발밑의 원근 격자 바닥 */
+:root[data-theme="synthwave"] .fx::after {
+  content: ''; position: absolute; left: -60%; right: -60%; top: 64%; height: 60%;
+  background: linear-gradient(rgb(255 60 170 / .75) 2px, transparent 2px) 0 0 / 100% 42px,
+              linear-gradient(90deg, rgb(255 60 170 / .75) 2px, transparent 2px) 50% 0 / 70px 100%;
+  transform: perspective(260px) rotateX(64deg);
+  transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%);
+}
+:root[data-theme="synthwave"] :is(.act, .p-go), .tv[data-theme="synthwave"] .tv-act { border: 0; }
+/* 소프트: 판은 부풀어 있고, 누르면 안으로 들어간다 */
+:root[data-theme="soft"] :is(.crumb, .btn, .hint, .chev, .fopt, .sheet-nav), .tv[data-theme="soft"] .tv-crumb { box-shadow: var(--sh-btn); }
+:root[data-theme="soft"] :is(.crumb, .btn, .fopt, .sheet-nav):active,
+:root[data-theme="soft"] .fopt[aria-checked="true"] { box-shadow: inset 4px 4px 10px rgb(163 177 198 / .7), inset -4px -4px 10px #fff; }
+/* 플루언트: 아랫면 테두리가 조금 더 진하다(빛이 위에서 온 판) */
+:root[data-theme="fluent"] :is(.info, .choice, .crumb, .hint, .menu, .dock, .sheet, .btn), .tv[data-theme="fluent"] .tv-panel { border-bottom-color: rgb(0 0 0 / .16); }
+/* 비전: 판 가장자리의 밝은 반사 */
+:root[data-theme="vision"] :is(.crumb, .hint, .chev, .dock) { box-shadow: 0 10px 30px rgb(40 56 92 / .12), inset 0 1px 0 rgb(255 255 255 / .8); }
 @media (max-width: 640px) {
   .head { top: calc(16px + env(safe-area-inset-top, 0px)); left: 18px; right: 18px; }
   .title { font-size: 20px; }
+  :root[data-theme="swiss"] .title { font-size: 23px; }
   .chev { width: 24px; height: 24px; margin-left: 8px; }
   .sub { font-size: 12px; }
   .act { padding: 10px 14px; font-size: 13px; }
@@ -498,22 +978,41 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .home-btn { grid-column: 1; }
   .snd { grid-column: 2; order: 1; }
   .crumb { padding: 9px 13px; font-size: 13px; }
-  .crumb.snd, .crumb.home-btn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; }
+  .crumb.snd, .crumb.home-btn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: var(--r-dot); }
   .home-btn svg { display: block; }
   .home-btn span { display: none; }
-  /* 테마 버튼: 아이콘만 */
-  .theme { right: 12px; bottom: max(calc(12px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px)); }
-  .th-opt { padding: 9px 11px; }
-  .th-opt span { display: none; }
   .info { left: 12px; right: 12px; width: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding: 16px 18px; }
   .info h2 { font-size: 20px; }
   .desc { font-size: 14px; }
   .choices { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .choice-row { flex-direction: column; gap: 8px; }
   .choice { min-width: 0; width: calc(100vw - 24px); padding: 10px 14px 10px 10px; }
+  /* 스타일 고르기: 아이콘 둘만, 창은 화면 아래에서 올라오는 판(바텀 시트) — 카드는 옆으로 밀어 넘기고 3D는 위에 그대로 보이게 낮게 */
+  .dock { right: 12px; bottom: max(calc(12px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px)); }
+  .dock-btn { padding: 5px; min-height: 0; }
+  .dock-k, .dock-v { display: none; }
+  .dock-ico { width: 30px; height: 30px; font-size: 14px; }
+  .sheet {
+    left: 0; right: 0; bottom: 0; width: auto; max-height: 64vh;
+    border-width: var(--bw) 0 0; border-radius: 22px 22px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transform-origin: 50% 100%;
+    animation: sheet-up .34s cubic-bezier(.2, .8, .2, 1);
+  }
+  :root:is([data-theme="swiss"], [data-theme="carbon"], [data-theme="blueprint"], [data-theme="bauhaus"]) .sheet { border-radius: 0; }
+  .sheet-head { position: relative; padding-top: 20px; }
+  .sheet-head::before { content: ''; position: absolute; top: 7px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--edge); }
+  .tgrid { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 46%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  .tcard { scroll-snap-align: start; }
+  .tv { height: 96px; }
+  .flist { grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: 46%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  .fopt { scroll-snap-align: start; grid-template-columns: minmax(0, 1fr); }
+  .fo-x, .fo-tag { display: none; }   /* 좁은 화면: 글꼴 이름만(그 글꼴로) */
 }
+@keyframes sheet-up { from { transform: translateY(100%); } }
 /* 가로로 든 휴대폰(세로가 낮은 화면): 머리글을 조이고, 부품·장소 카드는 왼쪽 아래에 작게(넘치면 카드 안에서 스크롤),
-   메뉴는 화면 안에서 스크롤. 카드가 옆을 차지하면 모델은 JS(frame의 그림 옮기기)가 카드 오른쪽 빈 자리로 보낸다. --head-h = 머리글 아래 끝(JS가 잼) */
+   메뉴는 화면 안에서 스크롤. 카드가 옆을 차지하면 모델은 JS(frame의 그림 옮기기)가 카드 오른쪽 빈 자리로 보낸다. --head-h = 머리글 아래 끝(JS가 잼).
+   스타일 고르기 창은 오른쪽에 세로로 긴 판 */
 @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
   .head { top: calc(12px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; }
   .eyebrow { margin-bottom: 5px; }
@@ -521,7 +1020,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .chev { width: 24px; height: 24px; margin-left: 8px; }
   .sub { margin-top: 5px; font-size: 12px; }
   .menu { max-height: calc(100vh - 90px); max-height: calc(100dvh - 90px); overflow-y: auto; overscroll-behavior: contain; }
-  .info { left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(300px, 42vw); max-height: calc(100% - var(--head-h, 90px) - 18px); overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px; border-radius: 14px; }
+  .info { left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(300px, 42vw); max-height: calc(100% - var(--head-h, 90px) - 18px); overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px; }
   .row { margin-bottom: 6px; }
   .info h2 { font-size: 18px; }
   .desc { margin-top: 8px; font-size: 13px; line-height: 1.5; }
@@ -530,10 +1029,15 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .hint { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; font-size: 12px; }
   .choices { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); gap: 6px; }
   .choice { padding: 8px 14px 8px 10px; }
-  .theme { right: 16px; bottom: max(calc(12px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px)); }
+  .dock { right: 16px; bottom: max(calc(12px + env(safe-area-inset-bottom, 0px)), var(--dock, 0px)); }
+  .dock-btn { padding: 5px; min-height: 0; }
+  .dock-k, .dock-v { display: none; }   /* 아이콘만: 메인 화면 셋째 칸의 이름표·버튼을 가리지 않게 */
+  .sheet { top: 12px; bottom: 12px; right: 16px; width: min(340px, 46vw); max-height: none; }
+  .tv { height: 84px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .menu, .menu li, .picker.open .menu, .picker.open .menu li, .chev, .choice, .choices-label, .pins, .home, .panel, .p-go, .theme { transition: none !important; }
+  .menu, .menu li, .picker.open .menu, .picker.open .menu li, .chev, .choice, .choices-label, .pins, .home, .panel, .p-go, .dock, .tv { transition: none !important; }
+  .sheet { animation: none !important; }
 }
 
 /* 첫 로딩창: 불러오는 동안 로고가 조립되며 뒤를 가려 준다. 다 불러오고 로고도 마저 조립되면(JS의 loader) .hide → 잠깐(.25초) 보여 준 뒤 부드럽게 사라진다 */
@@ -547,8 +1051,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   justify-content: center;
   gap: 22px;
   background: var(--bg);
+  background-color: var(--base);
 }
-:root[data-theme="dark"] .loading { background: var(--bg-dark); }
 .loading.hide { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .45s ease .25s, visibility 0s linear .7s; }
 /* 로고 조립 (사용자가 그린 프레임 순서, 칸마다 이지이지):
    ① 허공 → ② 점이 나타남 → ③ 오른쪽으로 반절 늘어남 → ④ 끝까지 늘어남 → ⑤ 선 왼쪽 끝 밑에 작은 점이 나타남 → ⑥ 그 점이 오른쪽으로 늘어나 최종 로고.
@@ -581,7 +1085,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   100% { transform: translateX(0) scale(1); }
 }
 /* 불러오기가 2.4초를 넘기면 글자가 천천히 숨 쉬듯 깜빡인다 */
-.loading p { margin: 0; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); animation: load-pulse 1.2s ease-in-out 2.4s infinite alternate both; }
+.loading p { margin: 0; font: var(--l-w) 11px/1 var(--f-label); letter-spacing: var(--l-ls); text-transform: var(--l-tt); color: var(--muted); text-shadow: var(--glow); animation: load-pulse 1.2s ease-in-out 2.4s infinite alternate both; }
 @keyframes load-pulse { to { opacity: .35; } }
 @media (max-width: 480px) { .brand-mark { --W: 36px; } }
 @media (prefers-reduced-motion: reduce) {
@@ -590,6 +1094,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 }
 </style>
 
+<div class="fx" aria-hidden="true"></div>
 <canvas id="view" tabindex="0" aria-label="방폭박스 3D 뷰어. Enter 키로 분해하고, 좌우 화살표로 부품을 넘기고, Esc로 돌아갑니다."></canvas>
 
 <div class="loading" id="loading" role="status" aria-live="polite">
@@ -608,13 +1113,64 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 // · 글꼴도 여기서 부른다(스크립트가 붙인 글꼴은 화면 그리기를 막지 않음 → 로딩창이 곧바로 보임. 그동안 글자는 비슷한 시스템 글꼴로 나왔다가 바뀜)
 // · claude.ai 안(iframe)에서는 페이지 load 뒤에 글꼴·three.js를 부르고 로고도 그때 시작한다: 바깥 화면의 동그라미 로딩은 이 페이지의 load 무렵 걷히는 것으로
 //   보여서(추정), 가벼운 페이지로 load를 먼저 끝내야 동그라미가 금방 걷히고 이 로고가 실제 불러오기(3D 장면 짓기·첫 그리기)를 보여 준다
+
+// 글꼴: 고르기 목록(모두 한글이 있는 Google Fonts)과 테마마다 짝지은 글꼴. 필요한 것만 그때그때 부른다(STYLE.need)
+const STYLE = (() => {
+  const S = "'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif", M = "'AppleMyungjo', 'Batang', serif";
+  // gf = 통째로 부를 때의 이름·굵기, pv = 미리보기(글자 몇 개만 담은 작은 글꼴)용 굵기, one = 굵기가 하나뿐(제목을 가짜로 굵게 만들지 않게 400)
+  const FONTS = {
+    plex:       { ko: 'IBM 플렉스 산스', en: 'IBM Plex Sans KR', fam: `'IBM Plex Sans KR', ${S}`, gf: 'IBM+Plex+Sans+KR:wght@400;500;600;700', pv: 'IBM+Plex+Sans+KR:wght@600', tag: '기술 고딕' },
+    noto:       { ko: '본고딕', en: 'Noto Sans KR', fam: `'Noto Sans KR', ${S}`, gf: 'Noto+Sans+KR:wght@400;500;700', pv: 'Noto+Sans+KR:wght@700', tag: '반듯한 고딕' },
+    gothic:     { ko: '고딕 A1', en: 'Gothic A1', fam: `'Gothic A1', ${S}`, gf: 'Gothic+A1:wght@400;500;700;800', pv: 'Gothic+A1:wght@700', tag: '또렷한 고딕' },
+    nanum:      { ko: '나눔고딕', en: 'Nanum Gothic', fam: `'Nanum Gothic', ${S}`, gf: 'Nanum+Gothic:wght@400;700;800', pv: 'Nanum+Gothic:wght@700', tag: '익숙한 고딕' },
+    gowun:      { ko: '고운돋움', en: 'Gowun Dodum', fam: `'Gowun Dodum', ${S}`, gf: 'Gowun+Dodum', tag: '부드러운 돋움', one: 1 },
+    sunflower:  { ko: '선플라워', en: 'Sunflower', fam: `'Sunflower', ${S}`, gf: 'Sunflower:wght@300;500;700', pv: 'Sunflower:wght@500', tag: '가는 기하 고딕' },
+    orbit:      { ko: '오르빗', en: 'Orbit', fam: `'Orbit', ${S}`, gf: 'Orbit', tag: '미래형', one: 1 },
+    dohyeon:    { ko: '도현', en: 'Do Hyeon', fam: `'Do Hyeon', ${S}`, gf: 'Do+Hyeon', tag: '각진 제목체', one: 1 },
+    blackhan:   { ko: '검은고딕', en: 'Black Han Sans', fam: `'Black Han Sans', ${S}`, gf: 'Black+Han+Sans', tag: '굵은 제목체', one: 1 },
+    jua:        { ko: '주아', en: 'Jua', fam: `'Jua', ${S}`, gf: 'Jua', tag: '둥근 제목체', one: 1 },
+    serif:      { ko: '본명조', en: 'Noto Serif KR', fam: `'Noto Serif KR', ${M}`, gf: 'Noto+Serif+KR:wght@400;600;700', pv: 'Noto+Serif+KR:wght@700', tag: '반듯한 명조' },
+    myeongjo:   { ko: '나눔명조', en: 'Nanum Myeongjo', fam: `'Nanum Myeongjo', ${M}`, gf: 'Nanum+Myeongjo:wght@400;700;800', pv: 'Nanum+Myeongjo:wght@700', tag: '익숙한 명조' },
+    hahmlet:    { ko: '함렛', en: 'Hahmlet', fam: `'Hahmlet', ${M}`, gf: 'Hahmlet:wght@400;500;700', pv: 'Hahmlet:wght@700', tag: '현대 명조' },
+    batang:     { ko: '고운바탕', en: 'Gowun Batang', fam: `'Gowun Batang', ${M}`, gf: 'Gowun+Batang:wght@400;700', pv: 'Gowun+Batang:wght@700', tag: '부드러운 바탕' },
+    songmyung:  { ko: '송명', en: 'Song Myung', fam: `'Song Myung', ${M}`, gf: 'Song+Myung', tag: '붓 명조', one: 1 },
+    diphylleia: { ko: '디필레이아', en: 'Diphylleia', fam: `'Diphylleia', ${M}`, gf: 'Diphylleia', tag: '장식 명조', one: 1 },
+    coding:     { ko: '나눔고딕코딩', en: 'Nanum Gothic Coding', fam: "'Nanum Gothic Coding', ui-monospace, monospace", gf: 'Nanum+Gothic+Coding:wght@400;700', pv: 'Nanum+Gothic+Coding:wght@700', tag: '고정폭' },
+    gaegu:      { ko: '개구', en: 'Gaegu', fam: `'Gaegu', ${S}`, gf: 'Gaegu:wght@400;700', pv: 'Gaegu:wght@700', tag: '손글씨' },
+    plexmono:   { en: 'IBM Plex Mono', gf: 'IBM+Plex+Mono:wght@400;500;600' },   // 라벨용 (고르기 목록에는 없음)
+  };
+  const THEME_FONTS = {
+    studio: ['plex', 'plexmono'], charcoal: ['plex', 'plexmono'], vision: ['noto'], material: ['noto'], fluent: ['noto'], carbon: ['plex', 'plexmono'],
+    blueprint: ['coding'], control: ['coding'], safety: ['noto', 'blackhan', 'plexmono'], brutal: ['noto', 'blackhan', 'plexmono'], swiss: ['noto'],
+    editorial: ['serif', 'noto'], hanji: ['batang', 'songmyung'], synthwave: ['noto', 'orbit'], soft: ['gowun'], bauhaus: ['noto', 'dohyeon'],
+  };
+  const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
+  const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
+  // 통째로: 글자 조각(unicode-range)별로 나뉘어 있어서, 화면에 실제로 쓰인 글자가 든 조각만 내려받는다. 글꼴 목록(CSS)이 도착하면 풀리는 약속을 돌려준다
+  const need = ids => Promise.all(ids.map(id => {
+    const f = FONTS[id];
+    if (f && !loads[id]) {
+      full.add(id);
+      loads[id] = new Promise(res => { const l = link(`https://fonts.googleapis.com/css2?family=${f.gf}&display=swap`); l.onload = l.onerror = res; });
+    }
+    return loads[id];
+  }));
+  // 미리보기: 몇 글자만 담은 작은 글꼴(고르기 창을 열 때). 이미 통째로 부른 글꼴은 건드리지 않는다 — 작은 것이 뒤에 붙으면 그쪽을 먼저 써서 글자가 빠진다
+  const preview = (id, text) => { const f = FONTS[id]; if (f && !full.has(id) && !peek.has(id)) { peek.add(id); link(`https://fonts.googleapis.com/css2?family=${f.pv || f.gf}&text=${encodeURIComponent(text)}&display=swap`); } };
+  // 글꼴을 하나 고르면 제목·본문·라벨 모두 그 글꼴: :root[data-font="…"] 규칙을 여기서 만든다 (굵기가 하나뿐이면 제목도 400)
+  document.head.appendChild(Object.assign(document.createElement('style'), {
+    textContent: Object.entries(FONTS).filter(([, f]) => f.ko).map(([id, f]) => `:root[data-font="${id}"]{--f-body:${f.fam};--f-display:${f.fam};--f-label:${f.fam};${f.one ? '--t-w:400;' : ''}}`).join('\n'),
+  }));
+  const current = () => [...(THEME_FONTS[root.dataset.theme] || THEME_FONTS.studio), ...(FONTS[root.dataset.font] ? [root.dataset.font] : [])];
+  return { FONTS, THEME_FONTS, need, preview, current, full };
+})();
+
 const loader = (() => {
   const box = document.getElementById('loading');
   const marks = box.getAnimations ? box.getAnimations({ subtree: true }).filter(a => /^mark-/.test(a.animationName)) : [];
   const base = marks.length && marks[0].effect.getTiming().duration;
   marks.forEach(a => a.effect.updateTiming({ duration: 11000, easing: 'cubic-bezier(.19, .88, .46, .98)' }));
   const three = document.createElement('script');
-  const fonts = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap' });
   let boot, got = false, started = false;
   // 본 스크립트(3D 장면 짓기 · 첫 그리기)는 무거워서 도는 동안 페이지가 멈춘다. 로고가 먼저 화면에 올라가 브라우저가 따로 돌리기 시작한 뒤(두 프레임 뒤)에 돌려야
   // 그동안에도 로고가 계속 움직인다 — 바로 돌리면 로고가 한 번도 안 그려진 채 멈춰 있다가 거의 다 된 모습으로 나타난다
@@ -625,7 +1181,8 @@ const loader = (() => {
     if (started) return;
     started = true;
     marks.forEach(a => a.play());
-    document.head.append(fonts, three);
+    STYLE.need(STYLE.current());   // 지금 테마의 짝 글꼴 + 고른 글꼴
+    document.head.append(three);
   };
   if (top === self) start();
   else { marks.forEach(a => a.pause()); addEventListener('load', start); setTimeout(start, 3000); }   // 3초: load가 늦게 오는 망에서도 멈춰 있지 않게
@@ -704,10 +1261,37 @@ const loader = (() => {
 </nav>
 <div class="pins" id="pins" aria-hidden="true"><span class="pin" id="pin">Ex</span></div>
 
-<div class="theme" id="theme" role="radiogroup" aria-label="화면 테마">
-  <button type="button" class="th-opt" role="radio" data-t="light" aria-checked="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2M12 19.2v2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M2.8 12h2M19.2 12h2M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/></svg><span>라이트</span></button>
-  <button type="button" class="th-opt" role="radio" data-t="dark" aria-checked="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6z"/></svg><span>다크</span></button>
+<!-- 스타일 고르기: 오른쪽 아래(모든 화면). 버튼을 누르면 고르기 창(.sheet)이 열리고, 카드·글꼴은 JS가 채운다 -->
+<div class="dock" id="dock" role="group" aria-label="화면 스타일">
+  <button type="button" class="dock-btn" id="dock-theme" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-theme" aria-label="테마 고르기"><span class="dock-ico th" aria-hidden="true"></span><span class="dock-k">테마</span><span class="dock-v" id="dock-theme-v">스튜디오</span></button>
+  <button type="button" class="dock-btn" id="dock-font" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-font" aria-label="글꼴 고르기"><span class="dock-ico" aria-hidden="true">가</span><span class="dock-k">글꼴</span><span class="dock-v" id="dock-font-v">테마 기본</span></button>
 </div>
+<section class="sheet" id="sheet-theme" role="dialog" aria-label="테마 고르기" hidden>
+  <header class="sheet-head">
+    <h3>테마</h3><span class="sheet-n" id="theme-n"></span><span class="sheet-sp"></span>
+    <button type="button" class="sheet-nav sheet-dice" aria-label="무작위 조합 (테마·글꼴)" title="무작위 조합"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></button>
+    <button type="button" class="sheet-nav" data-step="-1" aria-label="이전 테마"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button type="button" class="sheet-nav" data-step="1" aria-label="다음 테마"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button type="button" class="sheet-nav sheet-x" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </header>
+  <div class="sheet-body">
+    <p class="sheet-note">색만이 아니라 모양·글꼴·바탕·3D 재질과 조명까지 한 벌로 바뀌어요. 키보드 T로 넘기기, 주사위는 무작위 조합.</p>
+    <div class="tgrid" id="tgrid" role="radiogroup" aria-label="테마"></div>
+  </div>
+</section>
+<section class="sheet" id="sheet-font" role="dialog" aria-label="글꼴 고르기" hidden>
+  <header class="sheet-head">
+    <h3>글꼴</h3><span class="sheet-n" id="font-n"></span><span class="sheet-sp"></span>
+    <button type="button" class="sheet-nav sheet-dice" aria-label="무작위 조합 (테마·글꼴)" title="무작위 조합"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></button>
+    <button type="button" class="sheet-nav" data-step="-1" aria-label="이전 글꼴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button type="button" class="sheet-nav" data-step="1" aria-label="다음 글꼴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button type="button" class="sheet-nav sheet-x" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </header>
+  <div class="sheet-body">
+    <p class="sheet-note">'테마 기본'은 테마마다 짝지은 글꼴이에요. 하나를 고르면 제목·본문·라벨이 모두 그 글꼴로 바뀌어요. 키보드 F로 넘기기.</p>
+    <div class="flist" id="flist" role="radiogroup" aria-label="글꼴"></div>
+  </div>
+</section>
 
 <div class="tip" id="tip" hidden></div>
 <p class="fail" id="fail" hidden>3D 화면을 불러오지 못했어요. 인터넷 연결을 확인하거나 다른 브라우저로 열어 주세요.</p>
@@ -717,7 +1301,7 @@ const loader = (() => {
 <script>
 loader.run(() => {
   const $ = id => document.getElementById(id);
-  const fail = () => { $('fail').hidden = false; $('hint').hidden = true; $('act').hidden = true; $('theme').hidden = true; $('loading').classList.add('hide'); };
+  const fail = () => { $('fail').hidden = false; $('hint').hidden = true; $('act').hidden = true; $('dock').hidden = true; $('loading').classList.add('hide'); };
   if (!window.THREE) return fail();
   let renderer;
   try {
@@ -781,12 +1365,139 @@ loader.run(() => {
   const rimLight = new THREE.DirectionalLight(col('#dde8ff'), .8);
   rimLight.position.set(6, 3, -5);
   const hemi = new THREE.HemisphereLight(col('#ffffff'), col('#b9b4aa'), .2);
-  scene.add(keyLight, rimLight, hemi);
-  // 다크 테마의 조명: 바탕이 어두우므로 뒤쪽 가장자리 빛(rim)을 올려 어두운 선체·부품의 윤곽이 바탕에 묻히지 않게 하고,
-  // 바닥에서 되비치는 빛(hemi 아래색)은 어두운 바닥에 맞춰 낮춘다. themeT(0 라이트 ~ 1 다크)를 frame이 천천히 옮긴다
-  const isDark = () => document.documentElement.dataset.theme === 'dark';
-  const RIM = [.8, 1.3], HEMI_GROUND = [col('#b9b4aa'), col('#3d3a35')];
-  let themeT = isDark() ? 1 : 0;
+  // 채움 빛: 앞 오른쪽 아래에서. 평소엔 꺼 두고, 신스웨이브(청록)처럼 반대쪽 색을 넣는 테마에서만 켠다
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0);
+  fillLight.position.set(5, -1.5, 6);
+  scene.add(keyLight, rimLight, hemi, fillLight);
+
+  // ---------- 테마 16가지: 이름·설명과 3D 분위기 (화면 쪽 모양·색·글꼴은 CSS의 [data-theme="…"]) ----------
+  // l = 조명 { key·rim·fill: [색, 세기], sky·ground = 반구광의 위·아래 색, hemi = 그 세기, exp = 노출 }
+  // mat = 3D 재질 바꾸는 방식: null = 원래 색 · gray = 흑백 · tint = 한 색으로 물들임(도면·인광) · clay = 점토(한 색·무광)
+  //       · warm = 색을 반쯤 빼고 따뜻하게(인쇄 사진) · ink = 먹과 한지의 두 색(어두운 곳은 먹, 밝은 곳은 한지)
+  const THEMES = [
+    { id: 'studio', ko: '스튜디오', en: 'Studio', desc: '제품 촬영 스튜디오의 따뜻한 회백색 — 기본',
+      l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', .8], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#b9b4aa', hemi: .2, exp: 1 }, mat: null },
+    { id: 'charcoal', ko: '차콜', en: 'Charcoal', desc: '스튜디오의 밤 — 따뜻한 숯색 어둠, 윤곽 빛을 올린 3D',
+      l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', 1.3], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#3d3a35', hemi: .2, exp: 1 }, mat: null },
+    { id: 'vision', ko: '비전', en: 'Vision', desc: '공간에 떠 있는 유리 — Apple visionOS·iOS의 재질 참고',
+      l: { key: ['#ffffff', 1.15], rim: ['#d6e4ff', .9], fill: ['#ffe6f0', .25], sky: '#f4f7ff', ground: '#cfd8ea', hemi: .4, exp: 1.1 }, mat: null },
+    { id: 'material', ko: '머티리얼', en: 'Material', desc: '톤으로 나눈 부드러운 면 — Google Material 3 참고',
+      l: { key: ['#ffffff', 1.15], rim: ['#e8def8', .7], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#cac4d0', hemi: .35, exp: 1.05 }, mat: null },
+    { id: 'fluent', ko: '플루언트', en: 'Fluent', desc: '아크릴과 미카의 반투명 — Microsoft Fluent 2 참고',
+      l: { key: ['#ffffff', 1.1], rim: ['#cfe4ff', .7], fill: ['#ffffff', 0], sky: '#f7f9fc', ground: '#c9ccd3', hemi: .4, exp: 1.05 }, mat: null },
+    { id: 'carbon', ko: '카본', en: 'Carbon', desc: '각진 엔터프라이즈 화면 — IBM Carbon 디자인 시스템 참고',
+      l: { key: ['#ffffff', 1.15], rim: ['#a6c8ff', 1.25], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#262626', hemi: .25, exp: 1.05 }, mat: null },
+    { id: 'blueprint', ko: '블루프린트', en: 'Blueprint', desc: '설계 도면 — 청사진 위 흰 선과 모눈, 3D도 한 색 도면처럼',
+      l: { key: ['#ffffff', 1], rim: ['#9fd0ff', 1.5], fill: ['#cfe4ff', .3], sky: '#cfe4ff', ground: '#0a2a66', hemi: .55, exp: 1.12 }, mat: { kind: 'tint', c: '#d6e7ff' } },
+    { id: 'control', ko: '컨트롤룸', en: 'Control Room', desc: '제어실 모니터 — 검은 화면의 초록 인광과 주사선',
+      l: { key: ['#b6ffcf', .85], rim: ['#2cff7a', 1.7], fill: ['#8cffb0', .2], sky: '#00aa33', ground: '#000000', hemi: .3, exp: 1.05 }, mat: { kind: 'tint', c: '#4dff8f' } },
+    { id: 'safety', ko: '세이프티', en: 'Safety', desc: '방폭 현장의 안전 표지 — 경고 줄무늬와 안전 노랑',
+      l: { key: ['#ffe2b0', 1.25], rim: ['#ffffff', .75], fill: ['#ffffff', 0], sky: '#fff4dd', ground: '#5c554a', hemi: .35, exp: 1.05 }, mat: null },
+    { id: 'brutal', ko: '브루탈', en: 'Neo-Brutal', desc: '굵은 선과 날것의 색 — 네오 브루탈리즘 웹 참고',
+      l: { key: ['#ffffff', 1.4], rim: ['#ffffff', .5], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#e8d6b8', hemi: .5, exp: 1.1 }, mat: null },
+    { id: 'swiss', ko: '스위스', en: 'Swiss', desc: '격자와 빨강 하나 — 국제 타이포그래피 양식, 3D는 흑백',
+      l: { key: ['#ffffff', 1.25], rim: ['#ffffff', .8], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#d0d0d0', hemi: .35, exp: 1.05 }, mat: { kind: 'gray' } },
+    { id: 'editorial', ko: '매거진', en: 'Editorial', desc: '종이 위 명조 — 잡지 에디토리얼, 3D는 인쇄 사진처럼',
+      l: { key: ['#ffe7c7', 1.1], rim: ['#fff1dc', .6], fill: ['#ffffff', 0], sky: '#fffaf0', ground: '#cdbb9c', hemi: .4, exp: 1 }, mat: { kind: 'warm', c: '#fff0dc' } },
+    { id: 'hanji', ko: '한지', en: 'Hanji', desc: '먹과 한지와 낙관 — 3D는 먹으로 그린 듯이',
+      l: { key: ['#fff4e0', 1.05], rim: ['#ffffff', .5], fill: ['#ffffff', 0], sky: '#fffaf0', ground: '#c9bea6', hemi: .5, exp: 1.02 }, mat: { kind: 'ink', c: '#efe6d4', d: '#23201b' } },
+    { id: 'synthwave', ko: '신스웨이브', en: 'Synthwave', desc: '네온 지평선 — 80년대 신스웨이브, 분홍·청록 빛이 닿는 3D',
+      l: { key: ['#b9a3ff', .6], rim: ['#ff2a95', 2], fill: ['#00e5ff', 1.3], sky: '#3a1c71', ground: '#120021', hemi: .35, exp: 1.15 }, mat: null },
+    { id: 'soft', ko: '소프트', en: 'Soft', desc: '점토처럼 부드러운 — 뉴모피즘 화면과 점토 3D',
+      l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .7], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#c8d0dc', hemi: .6, exp: 1.12 }, mat: { kind: 'clay', c: '#e8edf4' } },
+    { id: 'bauhaus', ko: '바우하우스', en: 'Bauhaus', desc: '원·삼각·사각과 삼원색 — 기하학과 두꺼운 선',
+      l: { key: ['#ffffff', 1.3], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#e6d6b3', hemi: .45, exp: 1.08 }, mat: null },
+  ];
+  const themeOf = id => THEMES.find(t => t.id === id) || THEMES[0];
+  const curTheme = () => themeOf(document.documentElement.dataset.theme || 'studio');
+  // 조명: 목표(LG)를 정해 두면 frame이 약 0.7초에 걸쳐 그쪽으로 옮긴다(lightStep)
+  const LG = { key: col('#fff2e0'), rim: col('#dde8ff'), fill: col('#ffffff'), sky: col('#ffffff'), ground: col('#b9b4aa'), keyI: 1.2, rimI: .8, fillI: 0, hemi: .2, exp: 1 };
+  function lightGoal(t) {
+    const l = t.l;
+    LG.key.copy(col(l.key[0])); LG.keyI = l.key[1];
+    LG.rim.copy(col(l.rim[0])); LG.rimI = l.rim[1];
+    LG.fill.copy(col(l.fill[0])); LG.fillI = l.fill[1];
+    LG.sky.copy(col(l.sky)); LG.ground.copy(col(l.ground)); LG.hemi = l.hemi; LG.exp = l.exp;
+  }
+  function lightStep(f) {
+    keyLight.color.lerp(LG.key, f); keyLight.intensity += (LG.keyI - keyLight.intensity) * f;
+    rimLight.color.lerp(LG.rim, f); rimLight.intensity += (LG.rimI - rimLight.intensity) * f;
+    fillLight.color.lerp(LG.fill, f); fillLight.intensity += (LG.fillI - fillLight.intensity) * f;
+    hemi.color.lerp(LG.sky, f); hemi.groundColor.lerp(LG.ground, f); hemi.intensity += (LG.hemi - hemi.intensity) * f;
+    renderer.toneMappingExposure += (LG.exp - renderer.toneMappingExposure) * f;
+  }
+  lightGoal(curTheme());
+  lightStep(1);
+  // 재질: 처음 볼 때 원래 값을 적어 두고(userData.orig), 테마가 바뀌면 원래 값에서 새로 계산한다.
+  // 무늬(map)는 흑백으로 바꾼 사본으로 갈아 끼울 뿐, 빼거나 새로 붙이지 않는다 (셰이더를 다시 만들면 화면이 잠깐 멈추므로)
+  const texVar = new Map();
+  function grayTex(t, amt = 1, lift = 0) {   // amt = 색을 뺄 정도, lift = 흰색 쪽으로 밝힐 정도(점토)
+    const key = `${t.uuid}:${amt}:${lift}`;
+    if (texVar.has(key)) return texVar.get(key);
+    let out = t;
+    const src = t.image;
+    if (src && src.width) {
+      const c = document.createElement('canvas'), x = c.getContext('2d');
+      c.width = src.width;
+      c.height = src.height;
+      x.drawImage(src, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+      for (let i = 0; i < p.length; i += 4) {
+        const l = .2126 * p[i] + .7152 * p[i + 1] + .0722 * p[i + 2];
+        for (let j = 0; j < 3; j++) { const v = p[i + j] + (l - p[i + j]) * amt; p[i + j] = v + (255 - v) * lift; }
+      }
+      x.putImageData(d, 0, 0);
+      out = t.clone();
+      out.image = c;
+      out.needsUpdate = true;
+    }
+    texVar.set(key, out);
+    return out;
+  }
+  const LUM = c => .2126 * c.r + .7152 * c.g + .0722 * c.b;
+  const tc = new THREE.Color();
+  // 원래 값은 재질 밖(WeakMap)에 적는다: userData에 두면 재질을 복제할 때 JSON으로 옮겨져 망가진다
+  const ORIG = new WeakMap();
+  function styleMat(m, mode) {
+    if (!m.color || m.visible === false || m.userData.isAO) return;
+    let o = ORIG.get(m);
+    if (!o) ORIG.set(m, o = { color: m.color.clone(), map: m.map, rough: m.roughness, metal: m.metalness, env: m.envMapIntensity });
+    // 원래대로
+    m.color.copy(o.color);
+    m.map = o.map;
+    if (o.rough !== undefined) { m.roughness = o.rough; m.metalness = o.metal; m.envMapIntensity = o.env; }
+    if (!mode) return;
+    const lit = !m.isMeshBasicMaterial && !m.isSpriteMaterial, l = LUM(o.color), v = Math.pow(l, .45);   // v = 사람 눈에 가까운 밝기
+    if (!lit && mode.kind !== 'tint') return;   // 스스로 빛나는 것(등·LED·불꽃)은 물들이기 테마에서만 바꾼다
+    if (mode.kind === 'gray') {
+      m.color.setScalar(l);
+      if (o.map) m.map = grayTex(o.map);
+    } else if (mode.kind === 'tint') {
+      m.color.copy(col(mode.c)).multiplyScalar(lit ? .2 + .95 * v : .9);
+      if (o.map) m.map = grayTex(o.map);
+      if (lit) { m.metalness = o.metal * .4; m.envMapIntensity = .55; }
+    } else if (mode.kind === 'clay') {
+      m.color.copy(col(mode.c)).multiplyScalar(.8 + .28 * v);
+      if (o.map) m.map = grayTex(o.map, 1, .75);
+      m.metalness = 0;
+      m.roughness = .9;
+      m.envMapIntensity = .35;
+    } else if (mode.kind === 'warm') {
+      m.color.lerp(tc.setScalar(l), .55).multiply(col(mode.c));
+      if (o.map) m.map = grayTex(o.map, .55);
+    } else if (mode.kind === 'ink') {
+      m.color.copy(col(mode.d)).lerp(col(mode.c), Math.min(1, v * 1.1));
+      if (o.map) m.map = grayTex(o.map, 1, .15);
+      m.metalness = o.metal * .3;
+      m.envMapIntensity = .5;
+    }
+  }
+  // 만든 모델(현장·박스)의 부품 재질에만 건다 — 부품마다 복제해 둔 재질(pt.mats)이라 여러 모델이 같이 쓰는 원본 재질은 건드리지 않는다
+  // (이스터에그 물체는 원래 색 그대로)
+  function styleBuilt(b, mode = curTheme().mat) {
+    for (const pt of b.parts) for (const m of pt.mats) styleMat(m, mode);
+    return b;
+  }
 
   // ---------- 질감: 코드로 그린 이음새 없는 무늬 ----------
   function canvasTex(size, paint, { color = false, repeat = [1, 1] } = {}) {
@@ -4822,7 +5533,7 @@ loader.run(() => {
   // 화면마다 별도 페이지: 주소 끝(#home / #ship / #offshore / #chemical / #intrinsic ...)으로 구분하고, 바꾸면 조립 상태부터 다시 시작한다
   const SLUG = { home: 'home', ship: 'ship', offshore: 'offshore', chem: 'chemical', is: 'intrinsic', exd: 'flameproof', ep: 'pressurized' };
   const fromHash = () => Object.keys(SLUG).find(key => location.hash === '#' + SLUG[key]) || 'home';
-  const getBuilt = key => built[key] || (built[key] = build(DEFS[key]()));
+  const getBuilt = key => built[key] || (built[key] = styleBuilt(build(DEFS[key]())));   // 새로 만든 모델도 지금 테마의 재질로
   function rest(b) {
     for (const pt of b.parts) {
       pt.tw = null;
@@ -5106,8 +5817,8 @@ loader.run(() => {
     bottomUI = document.body.classList.contains('field') && state === 'exploded' ? above($('choices'))
       : !hint.hidden && getComputedStyle(hint).display !== 'none' ? above(hint) : 0;
     cardRight = sideMQ.matches && !info.hidden ? info.getBoundingClientRect().right : 0;
-    // 테마 버튼(오른쪽 아래): 아래쪽 안내·박스 카드·설명 카드와 가로로 겹치면 그 위로 비켜 선다 (--dock = 화면 아래에서 띄울 거리)
-    const th = $('theme'), tr = th.getBoundingClientRect();
+    // 스타일 버튼(오른쪽 아래): 아래쪽 안내·박스 카드·설명 카드와 가로로 겹치면 그 위로 비켜 선다 (--dock = 화면 아래에서 띄울 거리 — 고르기 창도 이 위에 뜬다)
+    const tr = $('dock').getBoundingClientRect();
     let dock = 0;
     const low = [];
     if (!hint.hidden && getComputedStyle(hint).display !== 'none') low.push(hint);
@@ -5117,7 +5828,7 @@ loader.run(() => {
       const r = el.getBoundingClientRect();
       if (r.height && r.left < tr.right + 8 && r.right > tr.left - 8) dock = Math.max(dock, H - r.top + 10);
     }
-    th.style.setProperty('--dock', dock + 'px');
+    document.documentElement.style.setProperty('--dock', dock + 'px');
   }
   // i번째 칸의 화면 위치 (CSS 픽셀, 왼쪽 위 기준) — .home의 칸 배치와 똑같이 나눈다
   function panelRect(i) {
@@ -5618,10 +6329,8 @@ loader.run(() => {
     const now = performance.now(), t = now / 1000;
     dt = Math.min(.05, (now - last) / 1000);
     last = now;
-    // 테마를 바꾸면 3D 조명도 화면 색과 같은 빠르기(약 0.7초)로 따라간다
-    themeT += ((isDark() ? 1 : 0) - themeT) * k(4.5);
-    rimLight.intensity = RIM[0] + (RIM[1] - RIM[0]) * themeT;
-    hemi.groundColor.lerpColors(HEMI_GROUND[0], HEMI_GROUND[1], themeT);
+    // 테마를 바꾸면 3D 조명도 화면과 같은 빠르기(약 0.7초)로 따라간다
+    lightStep(k(4.5));
     if (homeOn) {
       if (camera.view && camera.view.enabled) camera.clearViewOffset();   // 메인 화면은 칸마다 따로 그리므로 그림 옮기기를 끈다
       shift.x = shift.y = 0;
@@ -5925,7 +6634,12 @@ loader.run(() => {
       if (e.key === 'Escape') { setMenu(false); $('title').focus(); }
       return;
     }
-    if (el.closest('#picker') || el.closest('.theme') || homeOn || trans) return;
+    // 스타일 넘기기: T = 다음 테마(Shift+T 이전), F = 다음 글꼴(Shift+F 이전) — 어느 화면에서나
+    if ((e.code === 'KeyT' || e.code === 'KeyF') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      stepStyle(e.code === 'KeyT' ? 'theme' : 'font', e.shiftKey ? -1 : 1);
+      return;
+    }
+    if (el.closest('#picker') || el.closest('.dock, .sheet') || homeOn || trans) return;
     // 개발자 명령: 왼쪽 Ctrl을 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
     if (e.code === 'ControlLeft') {
       const now = performance.now();
@@ -5958,31 +6672,136 @@ loader.run(() => {
   for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, () => SFX.wake(), true);
   document.addEventListener('visibilitychange', () => SFX.pause(document.hidden));
   sndUi();
-  // 테마(라이트/다크): 오른쪽 아래 버튼, 모든 화면. 고른 것은 기억해 두고(localStorage 'exbox-theme' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용),
-  // 바꿀 때는 .theme-anim을 잠깐 붙여 모든 색이 0.7초에 걸쳐 천천히 바뀌게 한다(깜빡임 없음). 3D 조명은 frame에서 같은 빠르기로 따라간다(themeT)
-  const themeOpts = $('theme').querySelectorAll('.th-opt');
-  let themeAnim = 0;
-  const syncTheme = () => themeOpts.forEach(b => b.setAttribute('aria-checked', String((b.dataset.t === 'dark') === isDark())));
-  function setTheme(t) {
-    if ((t === 'dark') === isDark()) return;
-    const root = document.documentElement;
-    root.classList.add('theme-anim');
-    clearTimeout(themeAnim);
-    themeAnim = setTimeout(() => root.classList.remove('theme-anim'), 800);
-    if (t === 'dark') root.dataset.theme = 'dark'; else delete root.dataset.theme;
-    syncTheme();
-    try { localStorage.setItem('exbox-theme', t); } catch (e) { /* 저장 못 하는 환경이면 이번 방문에만 */ }
+  // ---------- 스타일 고르기: 테마 16 · 글꼴 18 (오른쪽 아래, 모든 화면) ----------
+  // 고르면 바로 바뀐다(창은 열린 채 → 계속 넘겨 보며 비교). 바꿀 때는 필요한 글꼴이 준비되길 잠깐(최대 1.5초) 기다렸다가
+  // 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·모양·무늬·3D까지 한꺼번에, 깜빡임 없이). 그 기능이 없는 브라우저는 색만 0.7초에 걸쳐.
+  // 고른 것은 기억한다(localStorage 'exbox-theme'·'exbox-font' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용)
+  const docEl = document.documentElement;
+  const FONT_IDS = ['theme', ...Object.keys(STYLE.FONTS).filter(id => STYLE.FONTS[id].ko)];
+  const curFont = () => (STYLE.FONTS[docEl.dataset.font] ? docEl.dataset.font : 'theme');
+  const remember = (key, v) => { try { if (v) localStorage.setItem(key, v); else localStorage.removeItem(key); } catch (e) { /* 저장 못 하는 환경이면 이번 방문에만 */ } };
+  let morphT = 0, styleReq = 0, wantTheme = curTheme().id, wantFont = curFont();
+  function morph(apply) {
+    if (document.startViewTransition) { document.startViewTransition(apply); return; }
+    docEl.classList.add('theme-anim');
+    clearTimeout(morphT);
+    morphT = setTimeout(() => docEl.classList.remove('theme-anim'), 800);
+    apply();
   }
-  themeOpts.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
-  // 라디오 묶음처럼 방향키로도 바꾼다 (보기 화면의 방향키 넘기기와 섞이지 않게 keydown 처리에서 .theme은 뺀다)
-  $('theme').addEventListener('keydown', e => {
-    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
-    e.preventDefault();
-    const t = isDark() ? 'light' : 'dark';
-    setTheme(t);
-    $('theme').querySelector(`[data-t="${t}"]`).focus();
-  });
-  syncTheme();
+  // 글꼴을 실제로 쓸 수 있게 될 때까지(최대 1.5초) — 그래야 겹쳐 바꿀 때 대체 글꼴이 번쩍 보이지 않는다
+  const fontsReady = ids => Promise.race([
+    STYLE.need(ids).then(() => Promise.all(ids.map(id => {
+      const f = STYLE.FONTS[id];
+      return f && f.fam && document.fonts ? document.fonts.load(`20px ${f.fam.split(',')[0]}`, '가Aa') : 0;
+    }))),
+    new Promise(res => setTimeout(res, 1500)),
+  ]).catch(() => {});
+  // 테마와 글꼴을 한꺼번에 정한다: 빠르게 연달아 골라도(넘기기·무작위) 마지막 조합으로 한 번만 겹쳐 바꾼다
+  async function setStyle(themeId, fontId) {
+    const t = themeOf(themeId), req = ++styleReq;
+    wantTheme = t.id;
+    wantFont = fontId;
+    if (t === curTheme() && fontId === curFont()) return;
+    await fontsReady([...STYLE.THEME_FONTS[t.id], ...(fontId !== 'theme' ? [fontId] : [])]);
+    if (req !== styleReq) return;   // 기다리는 사이 다른 것을 골랐으면 그쪽으로
+    morph(() => {
+      const changed = t !== curTheme();
+      if (t.id === 'studio') delete docEl.dataset.theme; else docEl.dataset.theme = t.id;
+      if (fontId === 'theme') delete docEl.dataset.font; else docEl.dataset.font = fontId;
+      remember('exbox-theme', t.id === 'studio' ? '' : t.id);
+      remember('exbox-font', fontId === 'theme' ? '' : fontId);
+      if (changed) {
+        lightGoal(t);
+        if (document.startViewTransition) lightStep(1);   // 겹쳐 바꾸기면 조명도 한 번에 (가려진 채 바뀐다)
+        for (const b of Object.values(built)) styleBuilt(b, t.mat);
+      }
+      syncStyle();
+      measureUI();
+    });
+  }
+  const setTheme = id => setStyle(id, wantFont);
+  const setFont = id => setStyle(wantTheme, id);
+  // 무작위: 다른 테마 하나 + 글꼴(셋 중 하나는 그 테마의 짝 글꼴)
+  function shuffleStyle() {
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    const t = pick(THEMES.filter(x => x.id !== wantTheme)).id;
+    setStyle(t, Math.random() < .35 ? 'theme' : pick(FONT_IDS.filter(id => id !== 'theme' && id !== wantFont)));
+  }
+  const sheets = { theme: $('sheet-theme'), font: $('sheet-font') }, docks = { theme: $('dock-theme'), font: $('dock-font') };
+  let openSheet = null, sheetsMade = false;
+  function makeSheets() {
+    if (sheetsMade) return;
+    sheetsMade = true;
+    // 테마 카드: 윗부분(.tv)이 그 테마의 축소판 — 바탕 무늬, 떠 있는 판, 주 버튼, 보조 버튼, 포인트 점, 제목 글꼴까지 그 테마 그대로
+    $('tgrid').innerHTML = THEMES.map(t => `<button type="button" class="tcard" role="radio" aria-checked="false" data-id="${t.id}">`
+      + `<span class="tv" data-theme="${t.id}" aria-hidden="true"><span class="tv-panel"><span class="tv-t">${t.ko}</span><span class="tv-e">${t.en}</span></span>`
+      + '<span class="tv-row"><span class="tv-act">분해하기</span><span class="tv-crumb">처음으로</span><span class="tv-dot"></span></span></span>'
+      + `<span class="tc-name">${t.ko} <small>${t.en}</small></span><span class="tc-desc">${t.desc}</span></button>`).join('');
+    // 글꼴: 이름을 그 글꼴로 보여 준다
+    $('flist').innerHTML = FONT_IDS.map(id => {
+      const f = STYLE.FONTS[id];
+      return id === 'theme'
+        ? '<button type="button" class="fopt" role="radio" aria-checked="false" data-id="theme"><span class="fo-s">테마 기본<span class="fo-x"> · 가나다 Aa</span></span><span class="fo-n">테마마다 짝지은 글꼴</span><span class="fo-tag">기본</span></button>'
+        : `<button type="button" class="fopt" role="radio" aria-checked="false" data-id="${id}"><span class="fo-s" style="font-family: ${f.fam}">${f.ko}<span class="fo-x"> · 가나다 Aa</span></span><span class="fo-n">${f.en}</span><span class="fo-tag">${f.tag}</span></button>`;
+    }).join('');
+    sheets.theme.querySelectorAll('.tcard').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.id)));
+    sheets.font.querySelectorAll('.fopt').forEach(b => b.addEventListener('click', () => setFont(b.dataset.id)));
+    // 카드 제목·라벨과 글꼴 이름에 쓰이는 글꼴은 그 몇 글자만 담은 작은 판으로 부른다 (통째로는 고를 때)
+    const want = {};
+    THEMES.forEach(t => STYLE.THEME_FONTS[t.id].forEach(id => { want[id] = (want[id] || '') + t.ko + t.en + '분해하기처음으로'; }));
+    FONT_IDS.forEach(id => { if (id !== 'theme') want[id] = (want[id] || '') + STYLE.FONTS[id].ko + ' · 가나다Aa'; });
+    for (const [id, text] of Object.entries(want)) STYLE.preview(id, [...new Set(text)].join(''));
+  }
+  function syncStyle() {
+    const t = curTheme(), fid = curFont(), fname = fid === 'theme' ? '테마 기본' : STYLE.FONTS[fid].ko;
+    $('dock-theme-v').textContent = t.ko;
+    $('dock-font-v').textContent = fname;
+    docks.theme.setAttribute('aria-label', `테마 고르기 — 지금 ${t.ko}`);
+    docks.font.setAttribute('aria-label', `글꼴 고르기 — 지금 ${fname}`);
+    $('theme-n').textContent = `${THEMES.indexOf(t) + 1} / ${THEMES.length}`;
+    $('font-n').textContent = `${FONT_IDS.indexOf(fid) + 1} / ${FONT_IDS.length}`;
+    sheets.theme.querySelectorAll('.tcard').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === t.id)));
+    sheets.font.querySelectorAll('.fopt').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === fid)));
+    const sel = openSheet && sheets[openSheet].querySelector('[aria-checked="true"]');   // 열린 창에서 고른 항목이 보이게
+    if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  function showSheet(which, keyboard) {
+    const open = which && openSheet !== which ? which : null;
+    openSheet = open;
+    for (const k of ['theme', 'font']) { sheets[k].hidden = k !== open; docks[k].setAttribute('aria-expanded', String(k === open)); }
+    if (!open) return;
+    makeSheets();
+    syncStyle();
+    const sel = sheets[open].querySelector('[aria-checked="true"]');
+    if (sel) { sel.scrollIntoView({ block: 'nearest', inline: 'nearest' }); if (keyboard) sel.focus(); }
+  }
+  // 앞·뒤 화살표: 목록을 한 칸씩 넘기며 바로 바꾼다 (끝에서 처음으로 돈다)
+  function stepStyle(which, d) {
+    const ids = which === 'theme' ? THEMES.map(t => t.id) : FONT_IDS, cur = which === 'theme' ? wantTheme : wantFont;
+    const next = ids[(ids.indexOf(cur) + d + ids.length) % ids.length];
+    if (which === 'theme') setTheme(next); else setFont(next);
+    const el = sheets[which].querySelector(`[data-id="${next}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }
+  for (const k of ['theme', 'font']) {
+    docks[k].addEventListener('click', e => showSheet(k, e.detail === 0));   // detail 0 = 키보드로 누름 → 고른 항목으로 초점을 옮긴다
+    sheets[k].querySelectorAll('.sheet-nav[data-step]').forEach(b => b.addEventListener('click', () => stepStyle(k, +b.dataset.step)));
+    sheets[k].querySelector('.sheet-x').addEventListener('click', () => { showSheet(null); docks[k].focus(); });
+    sheets[k].querySelector('.sheet-dice').addEventListener('click', shuffleStyle);
+    // 라디오 묶음처럼: 방향키로 옆 항목을 고르고, Esc로 닫는다
+    sheets[k].addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); showSheet(null); docks[k].focus(); return; }
+      const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key], cur = e.target.closest('.tcard, .fopt');
+      if (!dir || !cur) return;
+      e.preventDefault();
+      const opts = [...sheets[k].querySelectorAll('.tcard, .fopt')], nx = opts[(opts.indexOf(cur) + dir + opts.length) % opts.length];
+      nx.focus();
+      nx.click();
+    });
+  }
+  // 창 밖을 누르면 닫는다 (3D를 누른 것은 그대로 3D로도 간다)
+  document.addEventListener('pointerdown', e => { if (openSheet && !e.target.closest('.sheet, .dock')) showSheet(null); }, true);
+  syncStyle();
   // 메인 화면의 세 칸: 마우스를 올리면 그 현장이 살짝 다가오며 기울고, 누르면 그 현장으로 들어간다
   homeEl.addEventListener('pointermove', e => { px = e.clientX / innerWidth; py = e.clientY / innerHeight; });
   homeEl.querySelectorAll('.panel').forEach((b, i) => {
