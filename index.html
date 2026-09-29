@@ -398,7 +398,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .menu, .menu li, .picker.open .menu, .picker.open .menu li, .chev, .choice, .choices-label, .pins, .home, .panel, .p-go { transition: none !important; }
 }
 
-/* 첫 로딩창: 3D가 그려지기 전까지 뒤를 가려 준다. 첫 화면이 그려지면(JS에서) .hide를 붙여 부드럽게 사라진다 */
+/* 첫 로딩창: 로고가 조립되는 동안 뒤를 가려 준다. 첫 화면이 그려지고 로고가 다 조립되면(JS에서) .hide → 잠깐(.25초) 보여 준 뒤 부드럽게 사라진다 */
 .loading {
   position: fixed;
   inset: 0;
@@ -407,31 +407,57 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 22px;
   background: radial-gradient(ellipse at 50% 42%, #F9F8F4 0%, #E7E5DF 60%, #D6D3CB 100%);
-  transition: opacity .4s ease, visibility 0s linear .4s;
 }
-.loading.hide { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .4s ease, visibility 0s linear .4s; }
-.loading .spin {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 3px solid rgb(22 23 26 / .12);
-  border-top-color: var(--ink);
-  animation: loading-spin .9s linear infinite;
+.loading.hide { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .45s ease .25s, visibility 0s linear .7s; }
+/* 로고 조립 (사용자가 그린 프레임 순서, 칸마다 이지이지):
+   ① 허공 → ② 점이 나타남 → ③ 오른쪽으로 반절 늘어남 → ④ 끝까지 늘어남 → ⑤ 선 왼쪽 끝 밑에 작은 점이 나타남 → ⑥ 그 점이 오른쪽으로 늘어나 최종 로고.
+   3열 × 4줄. 줄 = 윗선(두께 --T, 끝까지) + 밑단(두께 --E, 왼쪽부터 칸마다 정해진 길이 --p). 크기 비율은 최종 로고 그림(열 폭 206 : 열 사이 17 : 윗선 16 : 밑단 8 : 줄 사이 9)을 따른다.
+   열은 60ms, 줄은 35ms씩 살짝 늦게 시작해 물결처럼 이어진다 */
+.brand-mark { --W: 96px; --T: 8px; --E: 4px; --G: 8px; --R: 4px; display: flex; gap: var(--G); }
+.brand-mark .col { display: flex; flex-direction: column; gap: var(--R); }
+.brand-mark .cell { --P: calc(var(--W) * var(--p, .5)); position: relative; width: var(--W); height: calc(var(--T) + var(--E)); }
+.brand-mark .cell::before,
+.brand-mark .cell::after { content: ''; position: absolute; left: 0; background: var(--ink); animation: 2.1s cubic-bezier(.66, 0, .34, 1) calc(var(--c, 0) * 60ms + var(--r, 0) * 35ms) both; }
+.brand-mark .cell::before { top: 0; width: var(--W); height: var(--T); transform-origin: calc(var(--T) / 2) 50%; animation-name: mark-bar; }
+/* 밑단은 윗선과 1px 겹쳐 두 조각 사이에 실금이 비치지 않게 */
+.brand-mark .cell::after { top: calc(var(--T) - 1px); width: var(--P); height: calc(var(--E) + 1px); transform-origin: calc(var(--E) / 2) 50%; animation-name: mark-notch; }
+.brand-mark .col:nth-child(2) { --c: 1; }
+.brand-mark .col:nth-child(3) { --c: 2; }
+.brand-mark .cell:nth-child(2) { --r: 1; }
+.brand-mark .cell:nth-child(3) { --r: 2; }
+.brand-mark .cell:nth-child(4) { --r: 3; }
+@keyframes mark-bar {
+  0%, 8% { width: var(--T); transform: scale(0); }
+  18%, 24% { width: var(--T); transform: scale(1); }
+  42%, 47% { width: calc(var(--W) / 2); transform: scale(1); }
+  65%, 100% { width: var(--W); transform: scale(1); }
 }
-@keyframes loading-spin { to { transform: rotate(360deg); } }
-.loading p { margin: 0; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+@keyframes mark-notch {
+  0%, 68% { width: var(--E); transform: scale(0); }
+  76%, 80% { width: var(--E); transform: scale(1); }
+  100% { width: var(--P); transform: scale(1); }
+}
+/* 로고가 다 조립된 뒤에도 불러오는 중이면 글자가 천천히 숨 쉬듯 깜빡인다 */
+.loading p { margin: 0; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); animation: load-pulse 1.2s ease-in-out 2.4s infinite alternate both; }
+@keyframes load-pulse { to { opacity: .35; } }
+@media (max-width: 480px) { .brand-mark { --W: 72px; --T: 6px; --E: 3px; --G: 6px; --R: 3px; } }
 @media (prefers-reduced-motion: reduce) {
-  .loading .spin { animation: none; }
-  .loading { transition: none; }
+  .brand-mark .cell::before, .brand-mark .cell::after, .loading p { animation: none; }
+  .loading.hide { transition: none; }
 }
 </style>
 
 <canvas id="view" tabindex="0" aria-label="방폭박스 3D 뷰어. Enter 키로 분해하고, 좌우 화살표로 부품을 넘기고, Esc로 돌아갑니다."></canvas>
 
 <div class="loading" id="loading" role="status" aria-live="polite">
-  <div class="spin" aria-hidden="true"></div>
+  <!-- --p = 밑단 길이(열 폭에 대한 비율), 최종 로고 그림에서 잰 값 -->
+  <div class="brand-mark" aria-hidden="true">
+    <div class="col"><span class="cell" style="--p:.8"></span><span class="cell" style="--p:.8"></span><span class="cell" style="--p:.16"></span><span class="cell" style="--p:.16"></span></div>
+    <div class="col"><span class="cell" style="--p:.8"></span><span class="cell" style="--p:.32"></span><span class="cell" style="--p:.64"></span><span class="cell" style="--p:.16"></span></div>
+    <div class="col"><span class="cell" style="--p:.32"></span><span class="cell" style="--p:.48"></span><span class="cell" style="--p:.64"></span><span class="cell" style="--p:.8"></span></div>
+  </div>
   <p>불러오는 중…</p>
 </div>
 
@@ -5690,8 +5716,21 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   mode = innerWidth / innerHeight < .85 ? 'tall' : 'wide';
   resize();
   select(fromHash());
-  // 로딩창 닫기: 다음다음 프레임(첫 화면이 실제로 그려진 뒤)에 부드럽게 사라진다
-  requestAnimationFrame(() => requestAnimationFrame(() => $('loading').classList.add('hide')));
+  // 로딩창 닫기: ① 첫 화면이 실제로 그려지고(다음다음 프레임) ② 로고 조립 애니메이션도 끝나면 .hide → CSS가 .25초 보여 준 뒤 부드럽게 지운다.
+  // 불러오기가 길어 로고가 먼저 끝났으면 finished가 바로 풀린다. 움직임 줄이기면 로고 애니메이션이 없어 기다리지 않는다
+  const loadEl = $('loading');
+  const logoDone = Promise.race([
+    Promise.all((loadEl.getAnimations ? loadEl.getAnimations({ subtree: true }) : []).filter(a => /^mark-/.test(a.animationName)).map(a => a.finished)).catch(() => {}),
+    new Promise(res => setTimeout(res, 3500)),   // 안전장치: 애니메이션이 어떤 이유로 멈춰 끝나지 않아도 3.5초 뒤에는 닫는다 (로딩창에 갇히지 않게)
+  ]);
+  new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res))).then(() => logoDone).then(() => {
+    const covered = getComputedStyle(loadEl).display !== 'none';   // 검사 도구처럼 로딩창을 아예 숨긴 경우엔 장면을 건드리지 않는다
+    loadEl.classList.add('hide');
+    if (!covered) return;
+    idleAt = performance.now();   // 이스터에그 30초는 장면이 보이기 시작한 때부터 센다
+    // 로딩창 뒤에서 이미 끝나 버린 첫 등장(카메라가 다가오며 살짝 돌아 들어오는 것)을, 로딩창이 걷힐 때 다시 보여 준다
+    if (cam && !homeOn && !reduced) { cam.d = zoomGoal(panGoal(camGoal())).d * 1.35; stage.rotation.y = -.7; }
+  });
   requestAnimationFrame(frame);
 })();
 </script>
