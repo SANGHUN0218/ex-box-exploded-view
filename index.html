@@ -89,7 +89,7 @@ try {
   --contours: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='t' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1 0 1 0 1 0 1 0 1'/%3E%3C/feComponentTransfer%3E%3CfeConvolveMatrix order='3' kernelMatrix='-1 -1 -1 -1 8 -1 -1 -1 -1' preserveAlpha='true'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .36 0 0 0 0 .56 .28 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E");
 }
 
-/* ===================== 테마 28가지 =====================
+/* ===================== 테마 30가지 =====================
    색만 바꾸지 않는다: 모양 언어(둥글기·테두리·그림자·흐림), 글꼴 짝, 바탕 재료(무늬·빛), 3D 재질과 조명(JS의 THEMES)을 한 벌로 */
 
 /* 차콜 — 스튜디오의 밤: 라이트의 따뜻한 회백색을 그대로 어둡게 옮긴 숯색 */
@@ -599,6 +599,48 @@ try {
   --sh-card: 0 10px 24px rgb(27 47 69 / .12); --sh-btn: none; --sh-pop: 0 14px 30px rgb(27 47 69 / .16);
   --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Noto Serif KR', var(--krs); --f-label: 'Noto Serif KR', var(--krs);
   --t-w: 700; --t-ls: 0; --l-tt: none; --l-ls: .14em; --l-w: 400;
+}
+/* 홀로그램 — 무지갯빛 필름과 크롬 (2000년 전후 Y2K 그래픽 참고): 보는 각도마다 색이 도는 파스텔 바탕, 무지갯빛 가는 테두리의 진주색 유리판, 크롬처럼 흐르는 색 글자 제목. 3D는 진주색에 분홍·하늘 빛 */
+[data-theme="holo"] {
+  --ink: #2A2250; --on-ink: #fff; --ink-hover: #1B1540; --muted: #5F5885;
+  --iris: conic-gradient(from 20deg, #FF9DE6, #9EC5FF, #8FFFD8, #FFF39E, #FFB38F, #FF9DE6);
+  /* 테두리 칸은 비워 두고(--edge 투명) 그 밑에 무지갯빛을 깐다 → 무지갯빛 가는 테두리 */
+  --glass: linear-gradient(rgb(255 255 255 / .74), rgb(255 255 255 / .74)) padding-box, var(--iris) border-box;
+  --solid: linear-gradient(rgb(255 255 255 / .9), rgb(255 255 255 / .9)) padding-box, var(--iris) border-box;
+  --card: linear-gradient(rgb(255 255 255 / .8), rgb(255 255 255 / .8)) padding-box, var(--iris) border-box;
+  --btn: linear-gradient(rgb(255 255 255 / .85), rgb(255 255 255 / .85)) padding-box, var(--iris) border-box;
+  --lift: linear-gradient(#fff, #fff) padding-box, var(--iris) border-box;
+  --hover: rgb(122 92 255 / .08); --panel-hover: rgb(255 255 255 / .22);
+  --edge: transparent; --sh: 90 70 170; --ring: #fff;
+  --accent: #7A5CFF; --on-accent: #fff; --accent-soft: rgb(122 92 255 / .12); --badge-bd: #fff;
+  --act-bg: linear-gradient(100deg, #FF9DE6, #9EC5FF 35%, #8FFFD8 65%, #FFF39E); --act-fg: #2A2250;
+  --act-hover: linear-gradient(100deg, #FFB5EC, #B3D2FF 35%, #A8FFE1 65%, #FFF6B5);
+  --bg: radial-gradient(60% 50% at 30% 30%, rgb(255 255 255 / .75) 0%, transparent 70%),
+        conic-gradient(from 160deg at 115% -15%, #FFD6F5, #D9E4FF, #D3FFF1, #FFF7CF, #FFE0D1, #FFD6F5 25%, #D9E4FF 30%, #D3FFF1 36%, #FFF7CF 42%, #FFD6F5 50%);   /* 색이 모이는 점은 화면 밖(오른쪽 위)에 */
+  --base: #EEE6FF;
+  --r-card: 20px; --r-small: 12px; --bw: 1.5px; --blur: 18px; --sat: 140%;
+  --sh-card: 0 18px 44px rgb(90 70 170 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
+  --sh-btn: 0 8px 22px rgb(122 92 255 / .28);
+  --sh-pop: 0 26px 60px rgb(90 70 170 / .22);
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Gugi', var(--kr); --f-label: 'Noto Sans KR', var(--kr);
+  --t-w: 400; --t-ls: .01em; --l-ls: .16em; --l-w: 500;
+}
+/* 멤피스 — 80년대 멤피스 디자인 (1980년대 밀라노 멤피스 그룹의 그래픽 참고): 물결선·삼각형·지그재그·점이 흩어진 바탕, 검은 선과 파스텔(민트·분홍·연보라·노랑), 통통한 제목체, 연보라 그림자 */
+[data-theme="memphis"] {
+  --ink: #111; --on-ink: #fff; --ink-hover: #000; --muted: #3F3F3F;
+  --glass: #fff; --solid: #fff; --card: #fff; --btn: #fff;
+  --lift: #FFF3B0; --hover: rgb(255 158 207 / .28); --panel-hover: rgb(255 255 255 / .35);
+  --edge: #111; --sh: 17 17 17; --ring: #fff;
+  --accent: #FF5DA2; --on-accent: #111; --accent-soft: rgb(255 93 162 / .16); --badge-bd: #111;
+  --act-bg: #9EE6D0; --act-fg: #111; --act-bd: #111; --act-hover: #FFE066;
+  --crumb-bg: #fff; --hint-bg: #FFE066;
+  --bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='330' height='330'%3E%3Cg opacity='.42' stroke='%23111' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 46q10-14 20 0t20 0t20 0' fill='none'/%3E%3Cpath d='M168 26l18 30h-36z' fill='%23FF9ECF'/%3E%3Ccircle cx='232' cy='150' r='13' fill='%239EE6D0'/%3E%3Cpath d='M36 196l10-10l10 10l10-10l10 10' fill='none' stroke='%23FF5DA2' stroke-width='3'/%3E%3Crect x='176' y='222' width='36' height='12' rx='2' fill='%23FFE066' transform='rotate(-20 194 228)'/%3E%3Cpath d='M96 118l16 5' fill='none'/%3E%3Cpath d='M214 76l7 13' fill='none' stroke='%23C8B6FF' stroke-width='4'/%3E%3Cpath d='M76 256q8-10 16 0t16 0' fill='none' stroke='%238C7CF0' stroke-width='3'/%3E%3C/g%3E%3Cg fill='%23111' opacity='.32'%3E%3Ccircle cx='130' cy='190' r='2.4'/%3E%3Ccircle cx='142' cy='190' r='2.4'/%3E%3Ccircle cx='154' cy='190' r='2.4'/%3E%3Ccircle cx='130' cy='202' r='2.4'/%3E%3Ccircle cx='142' cy='202' r='2.4'/%3E%3Ccircle cx='154' cy='202' r='2.4'/%3E%3C/g%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 50% 40%, #FFF9EE 0%, #FFF1DC 70%);
+  --base: #FFF4E2;
+  --r-pill: 999px; --r-card: 18px; --r-small: 12px; --bw: 2px; --blur: 0px;
+  --sh-card: 7px 7px 0 #C8B6FF; --sh-btn: 3px 3px 0 #111; --sh-pop: 8px 8px 0 #9EE6D0;
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Bagel Fat One', var(--kr); --f-label: 'Noto Sans KR', var(--kr);
+  --t-w: 400; --t-ls: .01em; --l-ls: .14em; --l-w: 700;
 }
 
 /* 테마를 바꿀 때: 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·둥글기·무늬까지 한꺼번에 부드럽게).
@@ -1281,6 +1323,17 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   background: linear-gradient(0deg, #12002B, #4B0C7A 20%, #B4185F 45%, #EE5A1F 68%, #FBC63B 86%, #FFFBE8) calc(100% - 30px) 50% / 8px 34% no-repeat,
               linear-gradient(#fff8, #fff8) 50% 50% / 26px 1.5px no-repeat, linear-gradient(#fff8, #fff8) 50% 50% / 1.5px 26px no-repeat;
 }
+/* 홀로그램: 제목은 크롬처럼 흐르는 색 글자(글자 모양으로 그러데이션을 오림), 화살표는 글자색으로. 테두리가 투명이라 나눔선만 따로 */
+:root[data-theme="holo"] :is(.title, .info h2, .p-name), .tv[data-theme="holo"] .tv-t {
+  background: linear-gradient(100deg, #6B5CFF, #FF5FB4 32%, #25B8D9 64%, #7A5CFF);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+:root[data-theme="holo"] .chev { color: var(--ink); }
+:root[data-theme="holo"] :is(.menu-gap, .panel + .panel) { border-color: rgb(42 34 80 / .12); }
+:root[data-theme="holo"] :is(.crumb, .btn, .chev, .sheet-nav, .fopt), .tv[data-theme="holo"] .tv-crumb { box-shadow: 0 4px 12px rgb(90 70 170 / .14); }
+/* 멤피스: 보조 버튼도 검은 그림자, 누르면 들어간다 */
+:root[data-theme="memphis"] :is(.crumb, .btn, .chev, .sheet-nav), .tv[data-theme="memphis"] .tv-crumb { box-shadow: 3px 3px 0 #111; }
+:root[data-theme="memphis"] :is(.act, .crumb, .btn, .sheet-nav):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #111; }
 /* 해도: 나침반 — 10도마다 눈금이 있는 두 겹 원, 남북(자홍)·동서 선 */
 :root[data-theme="chart"] .fx::before, :root[data-theme="chart"] .fx::after { content: ''; position: absolute; left: 4%; top: 40%; width: 176px; height: 176px; border-radius: 50%; }
 :root[data-theme="chart"] .fx::before {
@@ -1489,6 +1542,7 @@ const STYLE = (() => {
     aurora: ['gothic'], kit: ['plex', 'sunflower', 'plexmono'], retro: ['nanum'], noir: ['myeongjo', 'hahmlet', 'noto'],
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
     steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
+    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -1777,6 +1831,10 @@ loader.run(() => {
       l: { key: ['#ffffff', .8], rim: ['#ffd08a', .6], fill: ['#ffffff', .2], sky: '#ffffff', ground: '#3a3a44', hemi: .9, exp: 1 }, mat: { kind: 'heat' } },
     { id: 'chart', ko: '해도', en: 'Sea Chart', desc: '바다 지도 — 물 깊이 곡선과 나침반, 항해용 해도 참고',
       l: { key: ['#fffaf0', 1.2], rim: ['#cfe6ff', .9], fill: ['#ffffff', .15], sky: '#eaf4f8', ground: '#9fb7c0', hemi: .45, exp: 1.05 }, mat: null },
+    { id: 'holo', ko: '홀로그램', en: 'Holo', desc: '무지갯빛 필름과 크롬 — Y2K 그래픽 참고, 3D는 진주색',
+      l: { key: ['#ffffff', 1], rim: ['#ff8fe0', 1.4], fill: ['#7fe8ff', .9], sky: '#f6f0ff', ground: '#c9f5e6', hemi: .5, exp: 1.1 }, mat: { kind: 'tint', c: '#f4f0ff' } },
+    { id: 'memphis', ko: '멤피스', en: 'Memphis', desc: '물결·삼각형·지그재그와 파스텔 — 80년대 멤피스 디자인 참고',
+      l: { key: ['#fff6ec', 1.25], rim: ['#ff9ecf', .9], fill: ['#9ee6d0', .45], sky: '#fffaf0', ground: '#c8b6ff', hemi: .5, exp: 1.08 }, mat: null },
   ];
   const themeOf = id => THEMES.find(t => t.id === id) || THEMES[0];
   const curTheme = () => themeOf(document.documentElement.dataset.theme || 'studio');
@@ -7051,7 +7109,7 @@ loader.run(() => {
   for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, () => SFX.wake(), true);
   document.addEventListener('visibilitychange', () => SFX.pause(document.hidden));
   sndUi();
-  // ---------- 스타일 고르기: 테마 28 · 글꼴 26 (오른쪽 아래, 모든 화면) ----------
+  // ---------- 스타일 고르기: 테마 30 · 글꼴 26 (오른쪽 아래, 모든 화면) ----------
   // 고르면 바로 바뀐다(창은 열린 채 → 계속 넘겨 보며 비교). 바꿀 때는 필요한 글꼴이 준비되길 잠깐(최대 1.5초) 기다렸다가
   // 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·모양·무늬·3D까지 한꺼번에, 깜빡임 없이). 그 기능이 없는 브라우저는 색만 0.7초에 걸쳐.
   // 고른 것은 기억한다(localStorage 'exbox-theme'·'exbox-font' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용)
