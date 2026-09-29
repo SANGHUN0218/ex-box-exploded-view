@@ -83,9 +83,13 @@ try {
   --fibers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .16' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .1 -.02'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
   /* 분필 가루: 종이 결과 같은 알갱이를 흰색으로 (어두운 칠판 위) */
   --dust: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E");
+  /* 유약 갈라짐(빙렬): 잡음의 절댓값이 0에 가까운 곳(그물처럼 이어진 곡선)만 가는 선으로 */
+  --crackle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='c' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='.028' numOctaves='1' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .3 0 0 0 0 .26 -70 0 0 0 1.4'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='.18'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  /* 물 깊이 곡선(등심선): 부드러운 잡음을 10단으로 나눈 뒤 단의 경계만 선으로 */
+  --contours: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='t' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1 0 1 0 1 0 1 0 1'/%3E%3C/feComponentTransfer%3E%3CfeConvolveMatrix order='3' kernelMatrix='-1 -1 -1 -1 8 -1 -1 -1 -1' preserveAlpha='true'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .36 0 0 0 0 .56 .28 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E");
 }
 
-/* ===================== 테마 24가지 =====================
+/* ===================== 테마 28가지 =====================
    색만 바꾸지 않는다: 모양 언어(둥글기·테두리·그림자·흐림), 글꼴 짝, 바탕 재료(무늬·빛), 3D 재질과 조명(JS의 THEMES)을 한 벌로 */
 
 /* 차콜 — 스튜디오의 밤: 라이트의 따뜻한 회백색을 그대로 어둡게 옮긴 숯색 */
@@ -511,6 +515,90 @@ try {
   --sh-card: 2px 3px 0 rgb(43 43 43 / .14); --sh-btn: none; --sh-pop: 3px 4px 0 rgb(43 43 43 / .16);
   --f-body: 'Gowun Dodum', var(--kr); --f-display: 'Hi Melody', var(--kr); --f-label: 'Gowun Dodum', var(--kr);
   --t-w: 400; --t-ls: 0; --l-tt: none; --l-ls: .04em; --l-w: 400;
+}
+/* 스틸 — 기계 조작반과 금속 명판 (산업 기계의 금속 패널 참고): 헤어라인 가공 금속판, 네 귀퉁이 리벳, 새긴 글자, 초록 불이 들어온 누름 버튼, 검은 명판 안내 */
+[data-theme="steel"] {
+  --ink: #1E2226; --on-ink: #fff; --ink-hover: #000; --muted: #454D55;
+  --rivets: radial-gradient(circle at 9px 9px, #F4F6F8 0 1.3px, #8A9198 2.4px, #50575E 3.1px, transparent 3.7px),
+            radial-gradient(circle at calc(100% - 9px) 9px, #F4F6F8 0 1.3px, #8A9198 2.4px, #50575E 3.1px, transparent 3.7px),
+            radial-gradient(circle at 9px calc(100% - 9px), #F4F6F8 0 1.3px, #8A9198 2.4px, #50575E 3.1px, transparent 3.7px),
+            radial-gradient(circle at calc(100% - 9px) calc(100% - 9px), #F4F6F8 0 1.3px, #8A9198 2.4px, #50575E 3.1px, transparent 3.7px);
+  --brushed: repeating-linear-gradient(180deg, rgb(255 255 255 / .22) 0 1px, transparent 1px 2px, rgb(0 0 0 / .025) 2px 3px);
+  --glass: var(--rivets), var(--brushed), linear-gradient(180deg, #E6E9EC 0%, #C8CDD2 100%);
+  --solid: var(--rivets), var(--brushed), linear-gradient(180deg, #E9ECEF 0%, #CDD2D7 100%);
+  --card: var(--rivets), var(--brushed), linear-gradient(180deg, #E6E9EC 0%, #C8CDD2 100%);
+  --btn: var(--brushed), linear-gradient(180deg, #F3F5F7 0%, #D2D7DC 100%);
+  --lift: var(--brushed), linear-gradient(180deg, #fff 0%, #E2E6EA 100%);
+  --hover: rgb(30 34 38 / .08); --panel-hover: rgb(255 255 255 / .12);
+  --edge: #7C848C; --sh: 10 14 18; --ring: #D0D4D8;
+  --accent: #2F9E44; --on-accent: #fff; --accent-soft: rgb(47 158 68 / .14); --badge-bd: #1E2226;
+  --act-bg: radial-gradient(120% 95% at 50% 15%, #9BE8AE 0%, #39B05A 45%, #1E7A38 100%); --act-fg: #fff; --act-bd: #16562A;
+  --act-hover: radial-gradient(120% 95% at 50% 15%, #B2F0C1 0%, #46C267 45%, #238A40 100%);
+  --crumb-bg: var(--brushed), linear-gradient(180deg, #F3F5F7 0%, #D2D7DC 100%);
+  --hint-bg: linear-gradient(180deg, #2C3237, #1E2226); --hint-fg: #E8EBEE;
+  --bg: radial-gradient(ellipse at 50% 36%, rgb(255 255 255 / .38) 0%, transparent 62%),
+        repeating-linear-gradient(180deg, rgb(255 255 255 / .06) 0 1px, transparent 1px 2px, rgb(0 0 0 / .035) 2px 3px),
+        linear-gradient(180deg, #ADB3B9 0%, #868D94 100%);
+  --base: #9AA0A7;
+  --r-pill: 6px; --r-card: 6px; --r-small: 4px; --blur: 0px;
+  --sh-card: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -1px 0 rgb(0 0 0 / .15), 0 12px 26px rgb(10 14 18 / .3);
+  --sh-btn: inset 0 1px 0 rgb(255 255 255 / .55), 0 2px 3px rgb(10 14 18 / .35);
+  --sh-pop: inset 0 1px 0 rgb(255 255 255 / .7), 0 18px 36px rgb(10 14 18 / .35);
+  --f-body: 'IBM Plex Sans KR', var(--kr); --f-display: 'IBM Plex Sans KR', var(--kr); --f-label: var(--mono);
+  --t-w: 700; --t-ls: .02em; --l-ls: .2em; --l-w: 600;
+  --glow: 0 1px 0 rgb(255 255 255 / .55);   /* 새긴 글자: 아래쪽에 밝은 턱 */
+}
+/* 청자 — 비취색 유약과 빙렬 (고려청자 참고): 옅은 비색 바탕의 유약 갈라짐, 백자처럼 흰 판 안쪽에 상감처럼 넣은 가는 선, 장식 명조 제목. 3D도 청자 빛 */
+[data-theme="celadon"] {
+  --ink: #213A31; --on-ink: #F4F6EF; --ink-hover: #2F5044; --muted: #465F55;
+  --glass: rgb(247 249 243 / .9); --solid: rgb(246 248 242 / .97); --card: rgb(247 249 243 / .92); --btn: #FAFBF7;
+  --lift: #fff; --hover: rgb(94 140 122 / .1); --panel-hover: rgb(255 255 255 / .2);
+  --edge: rgb(33 58 49 / .16); --sh: 40 70 58; --sh-k: .9; --ring: #F4F6EF;
+  --accent: #5E8C7A; --on-accent: #fff; --accent-soft: rgb(94 140 122 / .14); --badge-bd: #F4F6EF;
+  --act-bg: #3F6E5E; --act-fg: #F4F6EF; --act-hover: #2F5B4C;
+  --bg: var(--crackle), radial-gradient(ellipse at 50% 34%, rgb(255 255 255 / .55) 0%, transparent 60%), linear-gradient(180deg, #C4D8CC 0%, #9DBDAE 100%);
+  --base: #AFCBBD;
+  --r-card: 22px; --r-small: 12px; --blur: 8px;
+  --sh-card: inset 0 0 0 5px rgb(247 249 243 / .9), inset 0 0 0 6px rgb(94 140 122 / .45), 0 16px 36px rgb(40 70 58 / .16);   /* 상감처럼 안쪽 가는 선 */
+  --sh-btn: 0 6px 16px rgb(40 70 58 / .25);
+  --sh-pop: inset 0 0 0 5px rgb(246 248 242 / .97), inset 0 0 0 6px rgb(94 140 122 / .4), 0 22px 44px rgb(40 70 58 / .2);
+  --f-body: 'Gowun Batang', var(--krs); --f-display: 'Diphylleia', var(--krs); --f-label: 'Gowun Batang', var(--krs);
+  --t-w: 400; --t-ls: .02em; --l-tt: none; --l-ls: .2em; --l-w: 400;
+}
+/* 열화상 — 열화상 카메라 화면 (산업 설비 열화상 점검 화면 참고): 검은 화면, 네 귀퉁이 틀·가운데 조준선·오른쪽 온도 색 막대(.fx), 고정폭 라벨.
+   3D는 밝기를 온도 색(보라 → 빨강 → 주황 → 노랑 → 흰색)으로 — 실제 온도가 아니라 연출 */
+[data-theme="thermal"] {
+  --ink: #F5F5F5; --on-ink: #0B0B0F; --ink-hover: #fff; --muted: #A3A3AD;
+  --glass: rgb(12 12 16 / .72); --solid: rgb(14 14 18 / .95); --card: rgb(12 12 16 / .8); --btn: rgb(255 255 255 / .06);
+  --lift: rgb(255 255 255 / .14); --hover: rgb(255 255 255 / .08); --panel-hover: rgb(255 255 255 / .03);
+  --edge: rgb(255 255 255 / .22); --sh: 0 0 0; --sh-k: 2; --ring: #0B0B0F;
+  --accent: #FBC63B; --on-accent: #0B0B0F; --accent-soft: rgb(251 198 59 / .16); --badge-bd: #FBC63B;
+  --act-bg: linear-gradient(90deg, #4B0C7A, #B4185F 40%, #EE5A1F 72%, #FBC63B); --act-fg: #fff; --act-hover: linear-gradient(90deg, #5D1392, #CC2470 40%, #F56D33 72%, #FCD25F);
+  --bg: radial-gradient(ellipse at 50% 45%, #1C1C24 0%, #0B0B0F 70%);
+  --base: #0B0B0F;
+  --r-pill: 2px; --r-card: 2px; --r-small: 2px; --blur: 6px;
+  --sh-card: none; --sh-btn: none; --sh-pop: 0 20px 40px rgb(0 0 0 / .5);
+  --f-body: 'IBM Plex Sans KR', var(--kr); --f-display: 'IBM Plex Sans KR', var(--kr); --f-label: var(--mono);
+  --t-w: 600; --t-ls: 0; --l-ls: .18em; --l-w: 500;
+  color-scheme: dark;
+}
+/* 해도 — 바다 지도 (항해용 해도 참고): 옅은 바다색 위 물 깊이 곡선(등심선)과 경위도 격자, 모래색 뭍, 나침반 눈금 원(.fx), 명조 제목, 해도의 자홍 표시 */
+[data-theme="chart"] {
+  --ink: #1B2F45; --on-ink: #F7F4EA; --ink-hover: #0F2033; --muted: #4D6075;
+  --glass: rgb(250 248 240 / .92); --solid: #FAF8F0; --card: #FAF8F0; --btn: #FFFDF6;
+  --lift: #fff; --hover: rgb(27 47 69 / .06); --panel-hover: rgb(255 255 255 / .2);
+  --edge: rgb(27 47 69 / .35); --sh: 27 47 69; --sh-k: .8; --ring: #F7F4EA;
+  --accent: #C2255C; --on-accent: #fff; --accent-soft: rgb(194 37 92 / .12); --badge-bd: #fff;
+  --act-bg: #1B2F45; --act-fg: #F7F4EA; --act-hover: #2A4563;
+  --bg: radial-gradient(34% 30% at 100% 0%, #EFE3BF 0 58%, #CDB98A 58.5% 59.5%, transparent 60%),   /* 뭍 (등심선은 바다에만) */
+        var(--contours),
+        linear-gradient(90deg, rgb(27 47 69 / .09) 1px, transparent 1px) 0 0 / 160px 160px, linear-gradient(rgb(27 47 69 / .09) 1px, transparent 1px) 0 0 / 160px 160px,
+        linear-gradient(180deg, #E6F0F3 0%, #D2E4EA 100%);
+  --base: #DAE9ED;
+  --r-pill: 3px; --r-card: 4px; --r-small: 3px; --blur: 2px;
+  --sh-card: 0 10px 24px rgb(27 47 69 / .12); --sh-btn: none; --sh-pop: 0 14px 30px rgb(27 47 69 / .16);
+  --f-body: 'Noto Sans KR', var(--kr); --f-display: 'Noto Serif KR', var(--krs); --f-label: 'Noto Serif KR', var(--krs);
+  --t-w: 700; --t-ls: 0; --l-tt: none; --l-ls: .14em; --l-w: 400;
 }
 
 /* 테마를 바꿀 때: 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·둥글기·무늬까지 한꺼번에 부드럽게).
@@ -1174,6 +1262,38 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 /* 스케치: 축소판 카드도 손그림 상자, 부품 이름엔 형광펜 */
 .tv[data-theme="sketch"] .tv-panel { border-radius: var(--r-card); }
 :root[data-theme="sketch"] .info h2 { width: fit-content; background: linear-gradient(-2deg, transparent 55%, rgb(255 225 77 / .75) 55% 90%, transparent 90%); }
+/* 스틸: 작은 동그라미·도크는 리벳 없는 금속, 버튼은 눌리는 금속 버튼, 흐린 글자도 새긴 듯이 */
+:root[data-theme="steel"] :is(.chev, .dock), .tv[data-theme="steel"] .tv-panel { background: var(--btn); }
+:root[data-theme="steel"] :is(.crumb, .btn, .chev, .sheet-nav, .fopt), .tv[data-theme="steel"] .tv-crumb { box-shadow: var(--sh-btn); }
+:root[data-theme="steel"] :is(.act, .crumb, .btn, .sheet-nav, .fopt):active { box-shadow: inset 0 2px 4px rgb(10 14 18 / .35); }
+:root[data-theme="steel"] :is(.eyebrow, .sub, .p-no, .p-box, .count, .en, .how, .choices-label) { text-shadow: 0 1px 0 rgb(255 255 255 / .35); }
+/* 열화상: 네 귀퉁이 틀, 가운데 조준선, 오른쪽 온도 색 막대 */
+:root[data-theme="thermal"] .fx::before {
+  content: ''; position: absolute; inset: 18px;
+  background: linear-gradient(#fff9, #fff9) 0 0 / 30px 1.5px, linear-gradient(#fff9, #fff9) 0 0 / 1.5px 30px,
+              linear-gradient(#fff9, #fff9) 100% 0 / 30px 1.5px, linear-gradient(#fff9, #fff9) 100% 0 / 1.5px 30px,
+              linear-gradient(#fff9, #fff9) 0 100% / 30px 1.5px, linear-gradient(#fff9, #fff9) 0 100% / 1.5px 30px,
+              linear-gradient(#fff9, #fff9) 100% 100% / 30px 1.5px, linear-gradient(#fff9, #fff9) 100% 100% / 1.5px 30px;
+  background-repeat: no-repeat;
+}
+:root[data-theme="thermal"] .fx::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(0deg, #12002B, #4B0C7A 20%, #B4185F 45%, #EE5A1F 68%, #FBC63B 86%, #FFFBE8) calc(100% - 30px) 50% / 8px 34% no-repeat,
+              linear-gradient(#fff8, #fff8) 50% 50% / 26px 1.5px no-repeat, linear-gradient(#fff8, #fff8) 50% 50% / 1.5px 26px no-repeat;
+}
+/* 해도: 나침반 — 10도마다 눈금이 있는 두 겹 원, 남북(자홍)·동서 선 */
+:root[data-theme="chart"] .fx::before, :root[data-theme="chart"] .fx::after { content: ''; position: absolute; left: 4%; top: 40%; width: 176px; height: 176px; border-radius: 50%; }
+:root[data-theme="chart"] .fx::before {
+  background: repeating-conic-gradient(rgb(27 47 69 / .55) 0 .8deg, transparent .8deg 10deg);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 12px), #000 calc(100% - 12px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 12px), #000 calc(100% - 12px));
+}
+:root[data-theme="chart"] .fx::after {
+  border: 1px solid rgb(27 47 69 / .5);
+  background: radial-gradient(closest-side, transparent calc(100% - 13px), rgb(27 47 69 / .4) calc(100% - 13px) calc(100% - 12px), transparent calc(100% - 12px)),
+              linear-gradient(rgb(194 37 92 / .6), rgb(194 37 92 / .6)) 50% 50% / 1.5px 100% no-repeat,
+              linear-gradient(rgb(27 47 69 / .4), rgb(27 47 69 / .4)) 50% 50% / 100% 1px no-repeat;
+}
 @media (max-width: 640px) {
   .head { top: calc(16px + env(safe-area-inset-top, 0px)); left: 18px; right: 18px; }
   .title { font-size: 20px; }
@@ -1205,12 +1325,16 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .dock-ico { width: 30px; height: 30px; font-size: 14px; }
   .sheet {
     left: 0; right: 0; bottom: 0; width: auto; max-height: 64vh;
-    border-width: var(--bw) 0 0; border-radius: 22px 22px 0 0;
+    border-width: var(--bw) 0 0; border-radius: var(--r-card) var(--r-card) 0 0;   /* 위 모서리는 그 테마의 카드 둥글기 */
     padding-bottom: env(safe-area-inset-bottom, 0px);
     transform-origin: 50% 100%;
     animation: sheet-up .34s cubic-bezier(.2, .8, .2, 1);
   }
-  :root:is([data-theme="swiss"], [data-theme="carbon"], [data-theme="blueprint"], [data-theme="bauhaus"], [data-theme="retro"], [data-theme="noir"]) .sheet { border-radius: 0; }
+  :root[data-theme="sketch"] .sheet { border-radius: 255px 18px 0 0 / 18px 40px 0 0; }   /* 손그림 상자의 둥글기(값에 /가 있어 위 규칙으로는 안 됨) */
+  /* 바탕 장식도 휴대폰 크기로: 나침반은 작게, 열화상 틀·색 막대는 가장자리에 붙게 */
+  :root[data-theme="chart"] .fx::before, :root[data-theme="chart"] .fx::after { left: auto; right: 14px; top: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 118px; height: 118px; }
+  :root[data-theme="thermal"] .fx::before { inset: 7px; }
+  :root[data-theme="thermal"] .fx::after { background-position: calc(100% - 12px) 50%, 50% 50%, 50% 50%; }
   .sheet-head { position: relative; padding-top: 20px; }
   .sheet-head::before { content: ''; position: absolute; top: 7px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--edge); }
   .tgrid { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 46%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
@@ -1364,6 +1488,7 @@ const STYLE = (() => {
     editorial: ['serif', 'noto'], hanji: ['batang', 'songmyung'], synthwave: ['noto', 'orbit'], soft: ['gowun'], bauhaus: ['noto', 'dohyeon'],
     aurora: ['gothic'], kit: ['plex', 'sunflower', 'plexmono'], retro: ['nanum'], noir: ['myeongjo', 'hahmlet', 'noto'],
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
+    steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -1644,6 +1769,14 @@ loader.run(() => {
       l: { key: ['#ffffff', 1], rim: ['#ffffff', 1], fill: ['#dfe9df', .3], sky: '#f0f5f0', ground: '#1f3326', hemi: .5, exp: 1.05 }, mat: { kind: 'ink', c: '#f0f2ea', d: '#2e4a3a' } },
     { id: 'sketch', ko: '스케치', en: 'Sketch', desc: '손으로 그린 와이어프레임 — 손그림 목업 참고, 3D는 연필 소묘',
       l: { key: ['#ffffff', 1.15], rim: ['#ffffff', .6], fill: ['#ffffff', .1], sky: '#ffffff', ground: '#c8c8c0', hemi: .55, exp: 1.08 }, mat: { kind: 'ink', c: '#fbfbf7', d: '#3a3a3a' } },
+    { id: 'steel', ko: '스틸', en: 'Steel', desc: '기계 조작반과 금속 명판 — 헤어라인 금속판, 리벳, 새긴 글자',
+      l: { key: ['#f4f7ff', 1.3], rim: ['#ffffff', 1], fill: ['#dde4ec', .3], sky: '#eef2f6', ground: '#50565c', hemi: .35, exp: 1.05 }, mat: null },
+    { id: 'celadon', ko: '청자', en: 'Celadon', desc: '비취색 유약과 빙렬 — 고려청자 참고, 3D도 청자 빛',
+      l: { key: ['#fffdf4', 1.1], rim: ['#effff6', .9], fill: ['#ffffff', .2], sky: '#f4fbf6', ground: '#6f9585', hemi: .55, exp: 1.08 }, mat: { kind: 'tint', c: '#b3d4c2' } },
+    { id: 'thermal', ko: '열화상', en: 'Thermal', desc: '열화상 카메라 화면 — 3D는 밝기를 온도 색으로(연출)',
+      l: { key: ['#ffffff', .8], rim: ['#ffd08a', .6], fill: ['#ffffff', .2], sky: '#ffffff', ground: '#3a3a44', hemi: .9, exp: 1 }, mat: { kind: 'heat' } },
+    { id: 'chart', ko: '해도', en: 'Sea Chart', desc: '바다 지도 — 물 깊이 곡선과 나침반, 항해용 해도 참고',
+      l: { key: ['#fffaf0', 1.2], rim: ['#cfe6ff', .9], fill: ['#ffffff', .15], sky: '#eaf4f8', ground: '#9fb7c0', hemi: .45, exp: 1.05 }, mat: null },
   ];
   const themeOf = id => THEMES.find(t => t.id === id) || THEMES[0];
   const curTheme = () => themeOf(document.documentElement.dataset.theme || 'studio');
@@ -1693,6 +1826,9 @@ loader.run(() => {
   }
   const LUM = c => .2126 * c.r + .7152 * c.g + .0722 * c.b;
   const tc = new THREE.Color();
+  // 열화상 색: 밝기 0 → 1을 보라 → 빨강 → 주황 → 노랑 → 흰색으로
+  const HEAT = ['#12002b', '#4b0c7a', '#b4185f', '#ee5a1f', '#fbc63b', '#fffbe8'].map(h => col(h));
+  const heat = (v, out) => { const x = Math.min(.999, Math.max(0, v)) * (HEAT.length - 1), i = Math.floor(x); return out.copy(HEAT[i]).lerp(HEAT[i + 1], x - i); };
   // 원래 값은 재질 밖(WeakMap)에 적는다: userData에 두면 재질을 복제할 때 JSON으로 옮겨져 망가진다
   const ORIG = new WeakMap();
   function styleMat(m, mode) {
@@ -1727,6 +1863,12 @@ loader.run(() => {
       if (o.map) m.map = grayTex(o.map, 1, .15);
       m.metalness = o.metal * .3;
       m.envMapIntensity = .5;
+    } else if (mode.kind === 'heat') {
+      heat(v, m.color);
+      if (o.map) m.map = grayTex(o.map);
+      m.metalness = 0;
+      m.roughness = 1;
+      m.envMapIntensity = 0;
     }
   }
   // 만든 모델(현장·박스)의 부품 재질에만 건다 — 부품마다 복제해 둔 재질(pt.mats)이라 여러 모델이 같이 쓰는 원본 재질은 건드리지 않는다
@@ -6909,7 +7051,7 @@ loader.run(() => {
   for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown']) addEventListener(ev, () => SFX.wake(), true);
   document.addEventListener('visibilitychange', () => SFX.pause(document.hidden));
   sndUi();
-  // ---------- 스타일 고르기: 테마 24 · 글꼴 26 (오른쪽 아래, 모든 화면) ----------
+  // ---------- 스타일 고르기: 테마 28 · 글꼴 26 (오른쪽 아래, 모든 화면) ----------
   // 고르면 바로 바뀐다(창은 열린 채 → 계속 넘겨 보며 비교). 바꿀 때는 필요한 글꼴이 준비되길 잠깐(최대 1.5초) 기다렸다가
   // 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·모양·무늬·3D까지 한꺼번에, 깜빡임 없이). 그 기능이 없는 브라우저는 색만 0.7초에 걸쳐.
   // 고른 것은 기억한다(localStorage 'exbox-theme'·'exbox-font' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용)
