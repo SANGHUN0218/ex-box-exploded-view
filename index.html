@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<!-- 글꼴(IBM Plex)은 아래 loader 스크립트가 부른다: 여기 두면 글꼴 파일 목록을 받을 때까지 화면을 아예 안 그려 첫 화면이 하얗게 기다린다 -->
 <style>
 :root {
   --ink: #16171A;
@@ -467,7 +467,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 // 로딩창 로고를 실제 불러오기에 맞춘다 (three.js도 여기서 부른다)
 // · 불러오는 동안: 처음엔 원래와 비슷한 속도로 조립되다가 점점 느려진다 — 11초 곡선, 1 - e^(-t/2.4초)에 맞춤 (1.5초에 반, 5초에 88%)
 // · 다 불러오면 finish(): 남은 조립을 원래 빠르기의 1.4배로 마저 하고 로딩창을 걷는다 → 빨리 불러오면 로고도 빨리, 오래 걸리면 천천히
-// · claude.ai 안(iframe)에서는 페이지 load 뒤에 three.js를 부르고 로고도 그때 시작한다: 바깥 화면의 동그라미 로딩은 이 페이지의 load 무렵 걷히는 것으로
+// · 글꼴도 여기서 부른다(스크립트가 붙인 글꼴은 화면 그리기를 막지 않음 → 로딩창이 곧바로 보임. 그동안 글자는 비슷한 시스템 글꼴로 나왔다가 바뀜)
+// · claude.ai 안(iframe)에서는 페이지 load 뒤에 글꼴·three.js를 부르고 로고도 그때 시작한다: 바깥 화면의 동그라미 로딩은 이 페이지의 load 무렵 걷히는 것으로
 //   보여서(추정), 가벼운 페이지로 load를 먼저 끝내야 동그라미가 금방 걷히고 이 로고가 실제 불러오기(3D 장면 짓기·첫 그리기)를 보여 준다
 const loader = (() => {
   const box = document.getElementById('loading');
@@ -475,6 +476,7 @@ const loader = (() => {
   const base = marks.length && marks[0].effect.getTiming().duration;
   marks.forEach(a => a.effect.updateTiming({ duration: 11000, easing: 'cubic-bezier(.19, .88, .46, .98)' }));
   const three = document.createElement('script');
+  const fonts = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap' });
   let boot, got = false, started = false;
   // 본 스크립트(3D 장면 짓기 · 첫 그리기)는 무거워서 도는 동안 페이지가 멈춘다. 로고가 먼저 화면에 올라가 브라우저가 따로 돌리기 시작한 뒤(두 프레임 뒤)에 돌려야
   // 그동안에도 로고가 계속 움직인다 — 바로 돌리면 로고가 한 번도 안 그려진 채 멈춰 있다가 거의 다 된 모습으로 나타난다
@@ -485,7 +487,7 @@ const loader = (() => {
     if (started) return;
     started = true;
     marks.forEach(a => a.play());
-    document.head.appendChild(three);
+    document.head.append(fonts, three);
   };
   if (top === self) start();
   else { marks.forEach(a => a.pause()); addEventListener('load', start); setTimeout(start, 3000); }   // 3초: load가 늦게 오는 망에서도 멈춰 있지 않게
