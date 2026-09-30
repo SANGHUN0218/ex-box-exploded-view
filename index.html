@@ -654,12 +654,15 @@ try {
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 html { background: var(--base); }
-/* 바탕: 테마의 --bg(여러 겹·무늬). 테마만의 장식(도면 테두리·신스웨이브 격자 바닥)은 .fx가 그린다 — 둘 다 3D 캔버스 뒤 */
-body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--bg); background-color: var(--base); }
-.fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+/* 바탕: 테마의 --bg(여러 겹·무늬)를 body에 직접 칠한다. claude.ai 아티팩트는 페이지를 감싸며 body에 미색(#faf9f5)을 깔아 두어서,
+   body 밑에 칠하면(음수 z-index) 그 미색에 가려 어떤 테마든 바탕이 미색으로 보였다.
+   테마만의 장식(도면 테두리·신스웨이브 격자 바닥 등)은 .fx가 그 위, 3D 캔버스 아래에 그린다(문서 순서: .fx → 캔버스) */
+.fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
 body {
   margin: 0;
   overflow: hidden;
+  background: var(--bg);
+  background-color: var(--base);
   color: var(--ink);
   font: 400 15px/1.6 var(--f-body);
   word-break: keep-all;
