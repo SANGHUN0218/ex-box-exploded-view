@@ -1722,7 +1722,7 @@ const loader = (() => {
     <button type="button" class="sheet-nav sheet-x" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </header>
   <div class="sheet-body">
-    <p class="sheet-note">분해할 때 부품이 화면 밖까지 튕겨 나갔다가 제자리로 돌아와요. 퍼짐 0%면 예전처럼 화면 안에서만 벌어져요. 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해서 보여 줘요.</p>
+    <p class="sheet-note">분해할 때 부품이 다 같이 화면 밖까지 퍼져 나갔다가 한꺼번에 제자리로 돌아와요(조립은 그 반대). 퍼짐 0%면 예전처럼 차례로 움직여요. 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해서 보여 줘요.</p>
     <div class="ctl">
       <div class="ctl-head"><label class="ctl-k" for="m-burst">퍼짐<small>화면 밖까지 날아가는 거리</small></label><output class="ctl-v" id="m-burst-v" for="m-burst">130%</output></div>
       <input type="range" id="m-burst" min="0" max="300" step="5" value="130">
@@ -5915,10 +5915,8 @@ loader.run(() => {
       if (st === state) goalDy = 0;
       return { d: P.z + dist, x: P.x, y: P.y - (tall ? fh * .2 : 0), z: P.z };
     }
-    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 상자를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다).
-    // 분해 튕김 ①(burstHold 전)에는 분해 중이어도 조립된 모습 크기로 바짝 붙어 있어서 튕겨 나가는 부품이 화면을 뚫고 나간다
-    const hold = !settled && st === 'exploded' && performance.now() < burstHold;
-    const asm = st === 'assembled' || hold, b = asm ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
+    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 상자를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다)
+    const asm = st === 'assembled', b = asm ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
     const s = turnBox(b, c, stage.rotation).getSize(V());
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로, 조금 멀리서 보고 장면을 위로 올린다
     const card = !asm && isField(cur);
@@ -5928,8 +5926,8 @@ loader.run(() => {
     if (st === state) goalDy = band.dy;
     const look = V(c.x, c.y - (card ? s.y * .07 : 0), 0);
     // 부품이 이동하는 동안에는 지나가는 자리까지 담을 만큼 물러나 있는다 (안 그러면 조립되며 날아드는 부품이 화면 밖에서 잘린다).
-    // 분해 튕김으로 화면 밖까지 날아가는 거리는 여기 넣지 않는다 — 카메라가 따라 물러나면 화면 밖으로 나가는 맛이 없으므로
-    const pts = hold ? cur.apts : !settled && performance.now() < moveUntil ? cur.mpts[mode] : asm ? cur.apts : cur.lpts[mode];
+    // 분해 튕김 때는 explode가 moveUntil을 0으로 둔다 — 카메라가 튀어 나가는 자리까지 따라 물러나면 화면 밖으로 나가는 맛이 없으므로
+    const pts = !settled && performance.now() < moveUntil ? cur.mpts[mode] : asm ? cur.apts : cur.lpts[mode];
     return { d: fitPts(pts, look, fq.setFromEuler(stage.rotation), band.my, mx, camera.aspect), x: look.x, y: look.y, z: 0 };
   }
   const zoomGoal = g => zoom ? { x: g.x + zoom.x, y: g.y + zoom.y, z: g.z + zoom.z, d: g.z + zoom.z + (g.d - g.z) * zoom.r } : g;
@@ -5951,7 +5949,7 @@ loader.run(() => {
   // 분해·조립 경로: 조립 자리(A) 쪽 끝에서는 반해체 방향(B − A)을 따라 곧게 빠져나오고(조립 때는 곧게 들어가고),
   // 옆으로 비켜나는 움직임은 충분히 멀어진 뒤에야 커진다 → 구멍에 끼워진 부품이 앞판·테두리를 뚫고 지나가지 않는다.
   // 위치 = a + 4s(1−s)(B − a) + s³(o − a)  (a = 조립 쪽 끝, o = 반대쪽 끝, s = a에서 잰 진행도. s = ½ 무렵 B에 이른다)
-  // burst = 분해 튕김(burstPlan이 정한 부품별 바깥 거리·기울기). 분해할 때만 넘긴다
+  // burst = 분해 튕김(burstPlan이 정한 바깥으로 튀는 거리와 때). 분해할 때만 넘긴다
   function tween(pt, to, { dur = 900, delay = 0, via = null, rot = [0, 1], burst = null } = {}) {
     const from = { p: pt.p.clone(), q: pt.q.clone(), s: pt.s };
     pt.tw = {
@@ -5960,38 +5958,27 @@ loader.run(() => {
       dur: reduced ? 1 : dur,
     };
   }
-  // 분해 튕김: 부품이 움직이기 시작한 뒤 t ms에 분해 자리에서 바깥 쪽으로 얼마나 나가 있는지 (1 = 끝까지, 화면 밖). bo.l = 옆으로(화면 가로·세로), bo.z = 앞으로(카메라 쪽)
-  // 제자리에서 곧게 빠져나오는 동안(P)은 0 → 펑 터지듯 빠르게 나가(R, 처음에 가장 빠름) 가장 멀리 → 제 차례(ret)까지 화면 밖에서 기다렸다가 →
-  // 화면 밖 구간은 빠르게 지나 날아 들어오며 브레이크를 밟듯 서서(Rt) → 제자리에 착 붙는다(S).
-  // 돌아올 때 옆 거리는 앞 거리보다 먼저 줄어서, 끝에는 제 자리 바로 앞에서 곧게 내려앉는다(이미 자리 잡은 옆 부품을 스치지 않게).
-  // 앞 거리는 분해 자리를 살짝(ov) 지나 뒤로 눌렸다가 돌아온다(도장 찍듯 착)
-  const bo = { l: 0, z: 0 };
-  function burstAt(t, b) {
-    if (t < b.P) { bo.l = bo.z = 0; return bo; }
-    const up = t < b.P + b.R ? 1 - (1 - (t - b.P) / b.R) ** 3 : 1;   // 나가는 쪽 (돌아오기 시작한 뒤에도 끝까지 이어 곱해서 끊김 없이)
-    if (t < b.ret) { bo.l = bo.z = up; return bo; }
-    if (t < b.ret + b.Rt) {
-      const g = 1 - (1 - (t - b.ret) / b.Rt) ** 3;
-      bo.l = up * (1 - g) ** 1.8;
-      bo.z = up * (1 - (1 + b.ov) * g);
-      return bo;
-    }
-    bo.l = 0;
-    bo.z = -b.ov * (1 - ease(Math.min((t - b.ret - b.Rt) / b.S, 1)));
-    return bo;
-  }
-  const rv = V(), rw = V(), bq = new THREE.Quaternion();
+  // ---------- 분해 튕김 (퍼짐이 0%보다 클 때) ----------
+  // 모든 부품이 한 시계(u: 0 → 1, 같은 출발·같은 길이)로 다 같이 움직인다: 한꺼번에 펑 터져 화면 밖까지 나갔다가, 한꺼번에 돌아와 같은 순간에 내려앉는다.
+  // 부품 위치 = 분해 경로(조립 자리 → 분해 자리: 반해체 방향으로 곧게 빠진 뒤 옆으로) + 바깥으로 튀는 거리(D) × 튕김 곡선 h(u).
+  // 곡선은 모두 속도 0에서 출발해 속도 0으로 도착한다(중간에 서거나 갑자기 빨라지지 않게). 카메라도 같은 시계로 물러난다(frame의 burstCam)
+  const smoother = x => x * x * x * (x * (6 * x - 15) + 10);   // 출발·도착 때 속도와 가속도가 0 — 가장 부드러운 곡선
+  const smooth = x => x * x * (3 - 2 * x);                      // 출발·도착 때 속도 0
+  const burstOut = x => 1 - (1 - x) ** 3 * (1 + 3 * x);       // 속도 0에서 출발해 1/3 지점에서 가장 빨랐다가 감속 — 부드러운 "펑"
+  const snapOut = x => 1 - (1 - x) ** 14 * (1 + 14 * x);      // 같은 모양을 아주 짧게(처음 7%에 가장 빠름): 박스에서 제자리를 곧게 빠져나오는 순간
+  // 튕김 곡선: u0에 출발해 up에 가장 멀리(1) 나갔다가, 머뭇거리지 않고 바로 돌아와 끝(1)에 0 (돌아올 때도 속도 0으로 내려앉는다)
+  const burstH = (u, b) => u <= b.u0 ? 0 : u < b.up ? burstOut((u - b.u0) / (b.up - b.u0)) : 1 - smooth((u - b.up) / (1 - b.up));
+  // 분해 경로의 진행도: 박스 = 처음에 곧게 쑥 빠져나와(반해체 자리) 이어서 옆으로, 현장 = 화면 밖에 나가 있는 동안(s0 → s1)만
+  const burstS = (u, b) => b.box ? snapOut(Math.min(u / b.s1, 1)) : smoother(clamp((u - b.s0) / (b.s1 - b.s0), 0, 1));
+  const rv = V(), rw = V();
   function run(pt, now) {
     const w = pt.tw, b = w.burst, u = clamp((now - w.t0) / w.dur, 0, 1), e = ease(u);
     if (b) {
-      // 튕김: 분해 경로(a → B 쪽으로 곧게 → o)는 앞부분에 몰아서 빨리 지난다(처음에 곧게 쑥 빠져나와야 바깥으로 튈 때 이웃 부품을 뚫지 않는다).
-      // 그 위에 바깥으로 날아갔다 돌아오는 만큼(burstAt × D)을 더하고, 날아가는 동안 기울었다가 돌아오며 바로 선다
-      const t = now - w.t0, s = 1 - (1 - clamp((t - b.s0) / (b.s1 - b.s0), 0, 1)) ** 3, a = w.from.p, o = w.to.p, f = burstAt(t, b);
-      pt.p.copy(a).addScaledVector(rv.subVectors(w.via, a), 4 * s * (1 - s)).addScaledVector(rw.subVectors(o, a), s * s * s).addScaledVector(b.Dl, f.l).addScaledVector(b.Dz, f.z);
-      // 제 방향으로 돌기는 r0 → r1 사이에, 기울기는 이웃과 충분히 떨어진 뒤(앞 거리 25% 넘어서)부터
-      pt.q.copy(w.from.q).slerp(w.to.q, ease(clamp((t - b.r0) / (b.r1 - b.r0), 0, 1)));
-      if (b.ang) pt.q.premultiply(bq.setFromAxisAngle(b.axis, b.ang * clamp((f.z - .25) / .75, 0, 1)));
-      pt.s = w.to.s;
+      // 조립(rev)은 분해를 그대로 거꾸로 돌린 것: v = 분해 쪽 시계, a0 = 조립 자리 쪽 끝, o = 분해 자리 쪽 끝
+      const v = b.rev ? 1 - u : u, a0 = b.rev ? w.to : w.from, o = b.rev ? w.from : w.to, s = burstS(v, b);
+      pt.p.copy(a0.p).addScaledVector(rv.subVectors(w.via, a0.p), 4 * s * (1 - s)).addScaledVector(rw.subVectors(o.p, a0.p), s * s * s).addScaledVector(b.D, burstH(v, b));
+      pt.q.copy(a0.q).slerp(o.q, smoother(clamp((v - b.r0) / (b.r1 - b.r0), 0, 1)));   // 제 방향으로 돌기도 다 같이 (r0 → r1)
+      pt.s = w.from.s + (w.to.s - w.from.s) * e;   // (크게 보던 부품에서 바로 조립할 때만 크기가 바뀐다)
       if (u >= 1) pt.tw = null;
       return;
     }
@@ -6003,69 +5990,45 @@ loader.run(() => {
     pt.s = w.from.s + (w.to.s - w.from.s) * e;
     if (u >= 1) pt.tw = null;
   }
-  // 분해 튕김의 짜임 (퍼짐이 0%보다 클 때). 시간은 모두 속도(배)로 나눈다 (du0 = 그 모델의 기본 분해 시간):
-  // ① 펑 — 화면 밖으로 흩어진다. 이동안 카메라는 조립된 크기 그대로 바짝 붙어 있다
-  // ② 다 나간 뒤 잠깐 숨을 고르고 ③ 카메라가 물러나며, 위 줄부터(왼쪽 → 오른쪽으로 살짝) 차례로 돌아와 제자리에 착착 붙는다
-  // 날아가는 단위: 박스 = 부품 하나하나 (원래 분해 차례대로, 간격만 반으로 좁혀 곧게 빠져나온 뒤 튄다)
-  //   현장 = 덩어리 묶음(group) 통째로 — 다 같이 한 번에 펑 하고, 묶음 안 부품이 서로 벌어지는 것(분해 경로)·제 방향으로 도는 것은 화면 밖에 나가 있는 동안 한다
-  //   (현장 부품은 서로 맞물려 있어서, 화면 안에서 따로 움직이면 뚫고 지나가는 짝이 많다)
-  // 방향: 박스 = 그 부품의 분해 자리가 화면 가운데로부터 놓인 쪽, 현장 = 그 묶음이 지금(조립된 모습에서) 모델 가운데로부터 놓인 쪽
-  //   (붙어 있던 이웃끼리 같은 쪽으로 퍼지며 벌어져 서로 뚫지 않게). 가운데에 너무 가까우면 다른 쪽 기준, 그것도 가까우면 차례로 고르게 흩뿌림
-  // 거리: 그 방향으로 화면 가운데 → 가장자리 거리 × 퍼짐(%) × (바깥 것일수록 0.9 → 1.2). 카메라 쪽(앞)으로도 나가서,
-  //   돌아올 때 이미 자리 잡은 것의 앞을 지나 내려앉는다. 거리는 다 펼쳐진 뒤의 화면 크기로 잰다
-  let burstHold = 0, burstFast = 0;   // burstHold까지는 분해 중이어도 카메라가 조립된 모습 크기로 바짝 붙어 있고(①), 그다음 burstFast까지는 평소보다 빨리 물러난다(②③)
-  function burstPlan(du0, st0) {
+  // 튕겨 나가는 거리·방향과 때 (부품마다 거리·방향만 다르고 시계는 모두 같다)
+  // 묶음: 박스 = 부품 하나하나, 현장 = 덩어리 묶음(group) 통째로 — 현장 부품은 서로 맞물려 있어서, 묶음 안 부품이 서로 벌어지는 것(분해 경로)·
+  //   제 방향으로 도는 것은 가장 멀리 나가 있는 동안(s0 → s1) 한다 (화면 안에서 따로 움직이면 뚫고 지나가는 짝이 많다)
+  // 거리·방향: 다 펼쳐진 모습을 화면 가운데를 중심으로 한 덩어리처럼 크게 늘였다가 돌아온다 — 화면 비율로 퍼짐 × (자리 + 바깥쪽 0.25).
+  //   그래서 가장자리 것은 화면 밖까지 멀리, 가운데 것은 조금만 나가서 화면이 비는 때가 없다 (모두 밖으로 나가면 한동안 텅 빈 화면만 보인다).
+  //   카메라 쪽(앞)으로도 조금 (지금 카메라 거리의 30%까지만). 거리는 다 펼쳐진 뒤의 화면 크기로 잰다
+  // 때(u): 박스 = 처음 7%에 곧게 쑥 빠져나오고 4%부터 튀기 시작, 현장 = 곧바로 튐 · 가장 멀리 = 42% · 제 방향으로 돌기 = 박스 12~62%, 현장 26~60%
+  // 박스는 원래 분해 차례(order, 쉼 숫자 포함)를 아주 짧게 눌러 담아 출발한다(start): 다 같이 터지지만 앞을 막은 문·덮개가 아주 조금 먼저 비켜서
+  //   안쪽 부품이 뚫고 나오지 않게. 늦게 출발한 부품은 그만큼 짧게 움직여 모두 같은 순간에 내려앉는다 (조립은 이것을 거꾸로)
+  const BURST_SPREAD = .06, BURST_PAUSE = .1;   // 차례 전체 = T의 6%(약 0.1초 — 눈에는 한꺼번에), 쉼 숫자 1 = T의 10%
+  let burstCam = null;   // 분해 튕김 동안 카메라도 같은 시계로: { t0, wait, dur, c0 = 출발할 때의 카메라, st = 그때의 화면 상태 }
+  function burstPlan() {
     const k = reduced ? 0 : MOTION.burst / 100;
     if (!k) return null;
-    const field = !!cur.def.fieldParts, sp = MOTION.speed, g = camGoal('exploded', true), hh = (g.d - g.z) * TAN, hw = hh * camera.aspect, look = V(g.x, g.y, g.z);
+    const field = !!cur.def.fieldParts, g = camGoal('exploded', true), hh = (g.d - g.z) * TAN, hw = hh * camera.aspect, look = V(g.x, g.y, g.z);
     // 분해된 뒤의 무대 각도 (frame과 같은 식: 돌려 놓은 각도 + 마우스 위치에 따른 살짝 기울임)
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orbit.x + (py - .5) * .07 * tiltFade, orbit.y + (px - .5) * .12 * tiltFade, 0)), qi = q.clone().invert();
-    const rnd = n => { const s = Math.sin(n) * 43758.5453; return s - Math.floor(s); };   // 차례로 정해지는 0~1 (매번 같은 모양으로 터지게)
     const scr = v => { v.applyQuaternion(q); return [v.x / hw, v.y / hh]; };   // 무대 방향 → 화면 비율 (가운데 → 가장자리 = 1)
-    const T = { P: (field ? .05 : .1) * du0 / sp, R: .2 * du0 / sp, Rt: .38 * du0 / sp, S: .12 * du0 / sp };
-    const ac = cur.abox.getCenter(V()), byKey = new Map();
-    cur.order.forEach((pt, i) => {
+    const byKey = new Map();
+    for (const pt of cur.order) {
       const key = field ? pt.group : pt;
-      let u = byKey.get(key);
-      if (!u) byKey.set(key, u = { parts: [], start: field ? 0 : (pt.pause * du0 + i * st0 * .5) / sp });
-      u.parts.push(pt);
-    });
-    const units = [...byKey.values()];
-    for (const u of units) {
-      const avg = f => u.parts.reduce((s, pt) => s.add(f(pt)), V()).divideScalar(u.parts.length);
-      u.slot = scr(avg(pt => C(pt).p).sub(look));
-      const asm = scr(avg(pt => pt.A.p).sub(ac));
-      let [x, y] = field ? asm : u.slot;
-      if (Math.hypot(x, y) < (field ? .01 : .08)) [x, y] = field ? u.slot : asm;
-      u.dir = Math.hypot(x, y) < .005 ? null : Math.atan2(y, x);
-      u.rho = field ? Math.hypot(...asm) : Math.min(Math.hypot(...u.slot), 1);
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key).push(pt);
     }
-    const rhoMax = field ? Math.max(...units.map(u => u.rho), 1e-6) : 1;
-    // 마지막 단위가 터져 나가는 무렵 → 위 줄부터 차례로 돌아오기 시작 (차례 사이 = .45·du0를 단위 수로 나눔).
-    // 돌아오는 길의 앞부분은 화면 밖이라 화면이 비어 보이는 숨 고르기는 짧다 (단위마다 적어도 거리의 94%까지는 나갔다가 돌아온다)
-    const nu = units.length, out = Math.max(...units.map(u => u.start)) + T.P + .2 * T.R, W = .45 * du0 / sp;
-    units.sort((p, q2) => (-p.slot[1] + .3 * p.slot[0]) - (-q2.slot[1] + .3 * q2.slot[0])).forEach((u, j) => {
-      u.ret = Math.max(u.start + T.P + .6 * T.R, out + (nu > 1 ? j / (nu - 1) : 0) * W);
-      const r1 = rnd(j * 12.9898 + 4.1), r2 = rnd(j * 78.233 + 1.7), r3 = rnd(j * 39.425 + 7.3);
-      const a = u.dir ?? j * 2.39996, L = k * (.9 + .3 * u.rho / rhoMax);
-      u.b = {
-        ...T, ov: Math.min(.06, .02 / k), ret: u.ret - u.start,
-        Dl: V(Math.cos(a) * hw * L, Math.sin(a) * hh * L, 0).applyQuaternion(qi),   // 옆으로 (화면 가로·세로)
-        Dz: V(0, 0, (field ? .45 : .3 + .3 * r3) * Math.min(hw, hh) * L).applyQuaternion(qi),   // 앞으로 (카메라 쪽). 현장 묶음끼리는 같은 비율(서로 앞뒤로 어긋나며 긁지 않게)
-        axis: V(r2 - .5, r3 - .5, r1 - .5).normalize(),
-        ang: field ? 0 : (r1 < .5 ? -1 : 1) * (.35 + .5 * r3) * Math.min(k, 1.5) * (u.parts[0].r > 1.2 ? .35 : 1),   // 박스 부품만 날아가며 기운다 (큰 것은 덜)
-        // 분해 경로(조립 자리 → 분해 자리)와 제 방향으로 돌기를 지나는 때 (그 단위가 움직이기 시작한 때부터 ms)
-        // 박스 = 곧바로 시작해 .7·du0 안에, 돌기는 펑 할 때부터 돌아오는 길의 40%까지 / 현장 = 화면 밖에 나가 있는 동안만
-        s0: field ? T.P + .45 * T.R : 0, s1: field ? T.P + .6 * T.R + .12 * T.Rt : .7 * du0 / sp,
-        r0: field ? T.P + .45 * T.R : T.P, r1: field ? T.P + .6 * T.R + .12 * T.Rt : u.ret - u.start + .4 * T.Rt,
-      };
+    const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z);
+    const when = field ? { u0: 0, up: .42, s0: .26, s1: .6, r0: .26, r1: .6 } : { box: true, u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
+    const plan = new Map(), n = cur.order.length;
+    [...byKey.values()].forEach((parts, j) => {
+      const [x, y] = scr(parts.reduce((s, pt) => s.add(C(pt).p), V()).divideScalar(parts.length).sub(look)), r = Math.hypot(x, y);
+      const a = r > .02 ? Math.atan2(y, x) : j * 2.39996, m = k * (Math.min(r, 1.2) + .25);   // 가운데에 딱 놓인 것은 차례로 고르게 흩뿌림
+      const b = { ...when, D: V(Math.cos(a) * hw * m, Math.sin(a) * hh * m, Math.min(.2 * Math.min(hw, hh) * m, zMax)).applyQuaternion(qi) };
+      for (const pt of parts) plan.set(pt, { b, start: field ? 0 : BURST_SPREAD * cur.order.indexOf(pt) / Math.max(n - 1, 1) + BURST_PAUSE * pt.pause });   // start = T에 대한 비율
     });
-    const list = units.flatMap(u => u.parts.map(pt => ({ pt, start: u.start, dur: u.ret - u.start + T.Rt + T.S, b: u.b })));
-    // 카메라: 마지막 단위가 터져 나가는 순간까지 붙어 있다가, 부품이 화면 밖에 있는 동안 서둘러 물러나서 돌아오는 부품을 맞는다
-    burstHold = performance.now() + Math.max(...units.map(u => u.start)) + T.P + .25 * T.R;
-    burstFast = burstHold + .9 * du0 / sp;
-    return { list, total: Math.max(...list.map(o => o.start + o.dur)) };
+    return plan;
   }
+  // 조립 시간 (처음으로 가는 연출이 현장 조립이 끝날 무렵 이어서 줄어들게 할 때도 씀)
+  const asmTime = b => MOTION.burst > 0 && !reduced ? (b.def.dur || 1650) / MOTION.speed : ((b.def.dur || 1650) * .9 + (b.def.stagger || 11) * .9 * (b.parts.length - 1)) / MOTION.speed;
+  // 다 같이 움직일 때의 소리: 큰 부품 n개의 재질 소리를 .025초 간격으로 (한꺼번에 떨어져 나가고, 한꺼번에 착 붙는 소리)
+  const chorus = (n, at, pan) => [...cur.parts].sort((p, q) => q.r - p.r).slice(0, n).map((pt, i) => [at + i * .025, pt, pan(pt)]);
 
   function explode() {
     if (state !== 'assembled' || trans) return;
@@ -6073,22 +6036,23 @@ loader.run(() => {
     homing = false;
     state = 'exploded';
     hovered = null;
-    const du0 = cur.def.dur || 1650, st0 = cur.def.stagger || 11, plan = burstPlan(du0, st0);
+    const du0 = cur.def.dur || 1650, st0 = cur.def.stagger || 11, plan = burstPlan();
     const pan = pt => panOf(C(pt).p, cur.lbox[mode]);
     if (plan) {
-      // 분해 튕김 (burstPlan의 ①②③). 소리: 현장 = 거대한 바람(전체 길이만큼), 박스 = 터지는 바람 + 떨어져 나가는 순간과 제자리에 붙는 순간의 재질 소리
-      markMove(plan.total, 0, 0);
-      for (const o of plan.list) tween(o.pt, C(o.pt), { dur: o.dur, delay: o.start, via: o.pt.B, burst: o.b });
-      if (isField(cur)) SFX.wind(plan.total / 1000, true);
+      // 분해 튕김: 모든 부품이 같은 때 출발해 같은 길이(T)로 — 카메라도 같은 시계로 조립된 모습 → 다 펼쳐진 모습으로 물러난다(T의 80% 동안).
+      // 카메라는 튀어 나가는 자리를 담으려고 더 물러나지 않는다(moveUntil = 0) — 그래야 부품이 화면 밖으로 나간다
+      // 소리: 현장 = 거대한 바람(전체 길이만큼), 박스 = 터지는 바람 + 큰 부품들이 한꺼번에 떨어져 나가는 소리와 한꺼번에 제자리에 붙는 소리
+      const T = du0 / MOTION.speed;
+      moveUntil = 0;
+      burstCam = cam ? { t0: performance.now(), wait: 0, dur: .8 * T, c0: { ...cam }, st: 'exploded' } : null;
+      for (const pt of cur.order) { const { b, start } = plan.get(pt); tween(pt, C(pt), { dur: T * (1 - start), delay: T * start, via: pt.B, burst: b }); }
+      if (isField(cur)) SFX.wind(T / 1000, true);
       else {
-        SFX.air(.5 + .9 / MOTION.speed, 300, 2600, .16);
-        SFX.parts([
-          ...plan.list.map(o => [o.start / 1000 + .04, o.pt, pan(o.pt)]),
-          ...plan.list.map(o => [(o.start + o.b.ret + o.b.Rt * .93) / 1000, o.pt, pan(o.pt)]),
-        ]);
+        SFX.air(.4 + .8 / MOTION.speed, 300, 2600, .16);
+        SFX.parts([...chorus(3, .03, pan), ...chorus(5, T * .97 / 1000, pan)]);
       }
     } else {
-      burstHold = burstFast = 0;
+      burstCam = null;
       const du = du0 / MOTION.speed, st = st0 / MOTION.speed;
       markMove(du * (1 + cur.hold), st, cur.order.length);
       // 돌기는 반해체 자리를 지나 옆으로 벌어진 뒤에 (붙어 있을 때 돌면 이웃 부품을 긁는다)
@@ -6106,7 +6070,25 @@ loader.run(() => {
     if (state === 'assembled') return;
     state = 'assembled';
     focused = hovered = site = null;
+    burstCam = null;
     const du = (cur.def.dur || 1650) * .9 / MOTION.speed, st = (cur.def.stagger || 11) * .9 / MOTION.speed;
+    const plan = burstPlan();
+    if (plan) {
+      // 퍼짐이 있으면(새 움직임) 조립은 분해 튕김을 그대로 거꾸로 돌린 것: 다 같이 바깥으로 부풀었다가 한꺼번에 모여 들어온다.
+      // 같은 길을 거꾸로 지나므로 분해 때처럼 서로 뚫지 않고, 마지막에는 안쪽 부품이 아주 조금 먼저, 문·덮개가 마지막에 곧게 들어가 닫힌다.
+      // 카메라는 처음 20%는 그대로 있다가 나머지 동안 조립된 모습으로 다가간다(분해 때 카메라를 거꾸로)
+      const T = (cur.def.dur || 1650) / MOTION.speed;
+      moveUntil = 0;
+      burstCam = cam ? { t0: performance.now(), wait: .2 * T, dur: .8 * T, c0: { ...cam }, st: 'assembled' } : null;
+      for (const pt of cur.order) { const { b, start } = plan.get(pt); tween(pt, pt.A, { dur: T * (1 - start), via: pt.B, burst: { ...b, rev: true } }); }
+      if (isField(cur)) SFX.wind(T / 1000, false);
+      else {
+        SFX.air(.4 + .8 / MOTION.speed, 2600, 400, .12);
+        SFX.parts(chorus(5, T * .97 / 1000, pt => panOf(pt.A.p, cur.abox)));
+      }
+      ui();
+      return;
+    }
     markMove(du * (1 + cur.hold), st, cur.order.length);
     // 조립은 거꾸로: 벌어져 있을 때 먼저 제 방향으로 돌고, 그다음 곧게 들어간다
     [...cur.order].reverse().forEach((pt, i) => tween(pt, pt.A, { dur: du, delay: i * st + (cur.hold - pt.pause) * du, via: pt.B, rot: [0, .45] }));
@@ -6355,8 +6337,8 @@ loader.run(() => {
     homing = false;
     if (homeOn || trans) return;
     const shrink = () => { if (run === homeRun) toMain(); };
-    // 현장이 다 모이기 조금 전에 줄어들기 시작해서 끊김 없이 이어지게 한다 (assemble과 같은 시간: 속도(배)로 나눔)
-    const settle = b => reduced ? 0 : Math.max(0, ((b.def.dur || 1650) * .9 + (b.def.stagger || 11) * .9 * (b.parts.length - 1)) / MOTION.speed - 250);
+    // 현장이 다 모이기 조금 전에 줄어들기 시작해서 끊김 없이 이어지게 한다 (assemble과 같은 시간)
+    const settle = b => reduced ? 0 : Math.max(0, asmTime(b) - 250);
     if (isField(cur)) {
       if (state === 'assembled') shrink();
       else { assemble(); setTimeout(shrink, settle(cur)); }
@@ -6963,13 +6945,22 @@ loader.run(() => {
       const e = ease(clamp((now - handoff.t0) / handoff.dur, 0, 1)), c0 = handoff.cam;
       for (const key of ['d', 'x', 'y', 'z']) cam[key] = c0[key] + (g[key] - c0[key]) * e;
     } else {
-      // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
-      // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다. 분해 튕김 ②③ 동안은 빨리 물러나 돌아오는 부품을 맞는다
-      const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : now > burstHold && now < burstFast && state === 'exploded' ? 4.5 : 2.4);
-      cam.d += (g.d - cam.d) * f;
-      cam.x += (g.x - cam.x) * f;
-      cam.y += (g.y - cam.y) * f;
-      cam.z += (g.z - cam.z) * f;
+      // 분해 튕김 동안은 카메라도 부품과 같은 시계로 출발할 때의 자리 → 다 펼쳐진 모습으로 부드럽게 (속도 0에서 출발해 속도 0으로 도착).
+      // 다른 조작(조립·부품 보기·휠 확대·옮기기)을 하면 그만두고 평소처럼 따라간다
+      if (burstCam && (state !== burstCam.st || zoomAt > burstCam.t0 || (down && down.pan))) burstCam = null;
+      if (burstCam) {
+        const u = clamp((now - burstCam.t0 - burstCam.wait) / burstCam.dur, 0, 1), e = ease(u), c0 = burstCam.c0;
+        for (const key of ['d', 'x', 'y', 'z']) cam[key] = c0[key] + (g[key] - c0[key]) * e;
+        if (u >= 1) burstCam = null;
+      } else {
+        // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
+        // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다
+        const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : 2.4);
+        cam.d += (g.d - cam.d) * f;
+        cam.x += (g.x - cam.x) * f;
+        cam.y += (g.y - cam.y) * f;
+        cam.z += (g.z - cam.z) * f;
+      }
     }
     camera.position.set(cam.x, cam.y, cam.d);
     camera.lookAt(cam.x, cam.y, cam.z);
@@ -7435,7 +7426,15 @@ loader.run(() => {
   // 다시 보기: 지금 화면(현장·박스)을 조립된 모습으로 되돌린 뒤 바로 다시 분해한다 (메인 화면·화면 전환 중·처음으로 가는 중에는 하지 않는다)
   function replayExplode() {
     if (!cur || homeOn || trans || handoff || homing) return;
-    if (state !== 'assembled') { rest(cur); state = 'assembled'; focused = hovered = site = null; }
+    if (state !== 'assembled') {
+      rest(cur);
+      state = 'assembled';
+      focused = hovered = site = null;
+      // 카메라도 조립된 모습 크기로 바로 — 처음 분해할 때와 같은 모습에서 다시 터진다
+      zoom = null;
+      pan.set(0, 0, 0);
+      if (cam) Object.assign(cam, camGoal());
+    }
     explode();
   }
   mBurst.addEventListener('input', () => { MOTION.burst = +mBurst.value; syncMotion(); });
