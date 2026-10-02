@@ -1204,6 +1204,24 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .fo-s { overflow: hidden; font-size: 20px; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
 .fo-n { font: var(--l-w) 10.5px/1.2 var(--f-label); letter-spacing: calc(var(--l-ls) * .45); text-transform: var(--l-tt); color: var(--muted); }
 .fo-tag { grid-column: 2; grid-row: 1 / span 2; font-size: 11px; font-weight: 600; color: var(--muted); }
+/* 분해 모션 창: 컨트롤바 두 개(이름·설명 | 지금 값, 막대, 눈금) + 다시 보기·기본값 버튼. 막대 색은 테마의 포인트 색 */
+.dock-ico svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.ctl { margin: 4px 4px 18px; }
+.ctl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.ctl-k { font: var(--t-w) 16px/1.2 var(--f-display); letter-spacing: var(--t-ls); text-shadow: var(--glow); }
+.ctl-k small { display: block; margin-top: 3px; font: 400 12px/1.35 var(--f-body); letter-spacing: 0; color: var(--muted); text-shadow: none; }
+.ctl-v { flex: none; font: 600 22px/1 var(--f-label); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.ctl input[type="range"] { display: block; width: 100%; height: 30px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.ctl input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* 눈금 글자: 막대 손잡이 가운데(양 끝 8px 안쪽)에 맞춘다. 첫 글자는 왼쪽 끝, 마지막 글자는 오른쪽 끝에 붙인다 */
+.ctl-scale { position: relative; height: 14px; margin-top: 3px; font: var(--l-w) 10.5px/1 var(--f-label); letter-spacing: 0; color: var(--muted); }
+.ctl-scale span { position: absolute; top: 0; left: calc(8px + (100% - 16px) * var(--f)); transform: translateX(-50%); white-space: nowrap; }
+.ctl-scale span:first-child { transform: translateX(-8px); }
+.ctl-scale span:last-child { transform: translateX(calc(8px - 100%)); }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 4px 4px; }
+.ctl-row .btn { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 12px; }
+.ctl-row .btn svg, .sheet-play svg { fill: currentColor; stroke: none; }
+.ctl-row .btn svg { width: 14px; height: 14px; }
 
 /* ===================== 테마만의 장식 =====================
    토큰으로 안 되는 몇 가지: 버튼 모양·표지판·겹테두리·빛 번짐·바닥 격자.
@@ -1664,10 +1682,11 @@ const loader = (() => {
 </nav>
 <div class="pins" id="pins" aria-hidden="true"><span class="pin" id="pin">Ex</span></div>
 
-<!-- 스타일 고르기: 오른쪽 아래(모든 화면). 버튼을 누르면 고르기 창(.sheet)이 열리고, 카드·글꼴은 JS가 채운다 -->
-<div class="dock" id="dock" role="group" aria-label="화면 스타일">
+<!-- 스타일 고르기·분해 모션 조절: 오른쪽 아래(모든 화면). 버튼을 누르면 창(.sheet)이 열리고, 테마 카드·글꼴은 JS가 채운다 -->
+<div class="dock" id="dock" role="group" aria-label="화면 스타일과 분해 모션">
   <button type="button" class="dock-btn" id="dock-theme" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-theme" aria-label="테마 고르기"><span class="dock-ico th" aria-hidden="true"></span><span class="dock-k">테마</span><span class="dock-v" id="dock-theme-v">스튜디오</span></button>
   <button type="button" class="dock-btn" id="dock-font" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-font" aria-label="글꼴 고르기"><span class="dock-ico" aria-hidden="true">가</span><span class="dock-k">글꼴</span><span class="dock-v" id="dock-font-v">테마 기본</span></button>
+  <button type="button" class="dock-btn" id="dock-motion" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-motion" aria-label="분해 모션 조절"><span class="dock-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4"/><path d="M12 2.8v3.4M12 17.8v3.4M2.8 12h3.4M17.8 12h3.4M5.5 5.5l2.4 2.4M16.1 16.1l2.4 2.4M5.5 18.5l2.4-2.4M16.1 7.9l2.4-2.4"/></svg></span><span class="dock-k">모션</span><span class="dock-v" id="dock-motion-v">130% · 1.0×</span></button>
 </div>
 <section class="sheet" id="sheet-theme" role="dialog" aria-label="테마 고르기" hidden>
   <header class="sheet-head">
@@ -1693,6 +1712,31 @@ const loader = (() => {
   <div class="sheet-body">
     <p class="sheet-note">'테마 기본'은 테마마다 짝지은 글꼴이에요. 하나를 고르면 제목·본문·라벨이 모두 그 글꼴로 바뀌어요. 키보드 F로 넘기기.</p>
     <div class="flist" id="flist" role="radiogroup" aria-label="글꼴"></div>
+  </div>
+</section>
+<!-- 분해 모션 조절: 컨트롤바 두 개(퍼짐 %, 속도 배). 값은 이 기기에 기억하고, 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해 보여 준다 -->
+<section class="sheet" id="sheet-motion" role="dialog" aria-label="분해 모션 조절" hidden>
+  <header class="sheet-head">
+    <h3>분해 모션</h3><span class="sheet-sp"></span>
+    <button type="button" class="sheet-nav sheet-play" aria-label="다시 분해해서 보기" title="다시 분해해서 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.8v12.4L18.4 12z"/></svg></button>
+    <button type="button" class="sheet-nav sheet-x" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </header>
+  <div class="sheet-body">
+    <p class="sheet-note">분해할 때 부품이 화면 밖까지 튕겨 나갔다가 제자리로 돌아와요. 퍼짐 0%면 예전처럼 화면 안에서만 벌어져요. 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해서 보여 줘요.</p>
+    <div class="ctl">
+      <div class="ctl-head"><label class="ctl-k" for="m-burst">퍼짐<small>화면 밖까지 날아가는 거리</small></label><output class="ctl-v" id="m-burst-v" for="m-burst">130%</output></div>
+      <input type="range" id="m-burst" min="0" max="300" step="5" value="130">
+      <div class="ctl-scale" aria-hidden="true"><span style="--f:0">0%</span><span style="--f:.3333">100% 화면 끝</span><span style="--f:.6667">200%</span><span style="--f:1">300%</span></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label class="ctl-k" for="m-speed">속도<small>분해·조립이 빠른 정도</small></label><output class="ctl-v" id="m-speed-v" for="m-speed">1.0×</output></div>
+      <input type="range" id="m-speed" min="0.2" max="3" step="0.1" value="1">
+      <div class="ctl-scale" aria-hidden="true"><span style="--f:0">0.2× 느리게</span><span style="--f:.2857">1×</span><span style="--f:.6429">2×</span><span style="--f:1">빠르게 3×</span></div>
+    </div>
+    <div class="ctl-row">
+      <button type="button" class="btn" id="m-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.8v12.4L18.4 12z"/></svg>다시 분해해 보기</button>
+      <button type="button" class="btn" id="m-reset">기본값 (130% · 1.0×)</button>
+    </div>
   </div>
 </section>
 
@@ -5349,6 +5393,19 @@ loader.run(() => {
   // 부품이 다 같이 움직이는(분해·조립) 동안은 이 시각까지 카메라가 넉넉히 물러나 있는다
   let moveUntil = 0;
   const markMove = (dur, stagger, n) => { moveUntil = performance.now() + dur + stagger * n + 120; };
+  // 분해 모션 조절(오른쪽 아래 [모션] 창의 컨트롤바 둘). 이 기기에 기억한다
+  // burst = 퍼짐(%): 분해할 때 부품이 분해 자리보다 얼마나 더 바깥(화면 밖)까지 날아갔다가 돌아오는지.
+  //         화면 가운데 → 가장자리 거리에 대한 비율 (100% = 화면 가운데에 놓일 부품도 화면 끝까지, 0% = 예전처럼 분해 자리까지만)
+  // speed = 속도(배): 분해·조립에 걸리는 시간을 이 값으로 나눈다
+  const MOTION_DEF = { burst: 130, speed: 1 };
+  const MOTION = { ...MOTION_DEF };
+  try {
+    const m = JSON.parse(localStorage.getItem('exbox-motion') || 'null');
+    if (m && isFinite(m.burst) && isFinite(m.speed)) {
+      MOTION.burst = clamp(Math.round(m.burst / 5) * 5, 0, 300);
+      MOTION.speed = clamp(Math.round(m.speed * 10) / 10, .2, 3);
+    }
+  } catch (e) { /* 저장소를 못 쓰는 환경이면 기본값 */ }
 
   // ---------- 소리: 파일 없이 Web Audio로 그 자리에서 합성한다 ----------
   // 현장에 들어갈 때 대표 소리(선박 = 뱃고동, 해양플랜트 = 플레어 불길, 화학공장 = 멀리서 작게 빵빵), 머무는 동안 은은한 바람(해양플랜트는 불길, 화학공장은 가끔 경적),
@@ -5850,15 +5907,18 @@ loader.run(() => {
     return bot - top > 2 * e - 1 ? { my, dy: 0 } : { my: H / Math.max(bot - top, H * .3), dy: (top + bot) / 2 - H / 2 };
   }
   let goalDy = 0;   // 지금 화면의 camGoal이 정한 dy (frame이 그림을 그만큼 내린다)
-  function camGoal(st = state) {
+  // settled = 움직임이 다 끝난 뒤의 자리로 잰다(분해 튕김 거리를 화면 크기로 정할 때)
+  function camGoal(st = state, settled = false) {
     if (st === 'site') {
       const P = sitePoint(site), tall = camera.aspect < .85, fh = 2.4, fw = 3.4;
       const dist = Math.max(fh / (2 * TAN), fw / (2 * TAN * camera.aspect));
       if (st === state) goalDy = 0;
       return { d: P.z + dist, x: P.x, y: P.y - (tall ? fh * .2 : 0), z: P.z };
     }
-    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 상자를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다)
-    const asm = st === 'assembled', b = asm ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
+    // 돌려 놓은 각도에서 화면에 꽉 차도록, 지금 각도로 돌린 상자를 재서 거리를 정한다 (돌리면 카메라가 알맞게 다가오거나 물러난다).
+    // 분해 튕김 ①(burstHold 전)에는 분해 중이어도 조립된 모습 크기로 바짝 붙어 있어서 튕겨 나가는 부품이 화면을 뚫고 나간다
+    const hold = !settled && st === 'exploded' && performance.now() < burstHold;
+    const asm = st === 'assembled' || hold, b = asm ? cur.abox : cur.lbox[mode], c = b.getCenter(V());
     const s = turnBox(b, c, stage.rotation).getSize(V());
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로, 조금 멀리서 보고 장면을 위로 올린다
     const card = !asm && isField(cur);
@@ -5867,8 +5927,9 @@ loader.run(() => {
     const band = st === 'assembled' || st === 'exploded' ? bandFit(my) : { my, dy: 0 };
     if (st === state) goalDy = band.dy;
     const look = V(c.x, c.y - (card ? s.y * .07 : 0), 0);
-    // 부품이 이동하는 동안에는 지나가는 자리까지 담을 만큼 물러나 있는다 (안 그러면 조립되며 날아드는 부품이 화면 밖에서 잘린다)
-    const pts = performance.now() < moveUntil ? cur.mpts[mode] : asm ? cur.apts : cur.lpts[mode];
+    // 부품이 이동하는 동안에는 지나가는 자리까지 담을 만큼 물러나 있는다 (안 그러면 조립되며 날아드는 부품이 화면 밖에서 잘린다).
+    // 분해 튕김으로 화면 밖까지 날아가는 거리는 여기 넣지 않는다 — 카메라가 따라 물러나면 화면 밖으로 나가는 맛이 없으므로
+    const pts = hold ? cur.apts : !settled && performance.now() < moveUntil ? cur.mpts[mode] : asm ? cur.apts : cur.lpts[mode];
     return { d: fitPts(pts, look, fq.setFromEuler(stage.rotation), band.my, mx, camera.aspect), x: look.x, y: look.y, z: 0 };
   }
   const zoomGoal = g => zoom ? { x: g.x + zoom.x, y: g.y + zoom.y, z: g.z + zoom.z, d: g.z + zoom.z + (g.d - g.z) * zoom.r } : g;
@@ -5890,17 +5951,50 @@ loader.run(() => {
   // 분해·조립 경로: 조립 자리(A) 쪽 끝에서는 반해체 방향(B − A)을 따라 곧게 빠져나오고(조립 때는 곧게 들어가고),
   // 옆으로 비켜나는 움직임은 충분히 멀어진 뒤에야 커진다 → 구멍에 끼워진 부품이 앞판·테두리를 뚫고 지나가지 않는다.
   // 위치 = a + 4s(1−s)(B − a) + s³(o − a)  (a = 조립 쪽 끝, o = 반대쪽 끝, s = a에서 잰 진행도. s = ½ 무렵 B에 이른다)
-  function tween(pt, to, { dur = 900, delay = 0, via = null, rot = [0, 1] } = {}) {
+  // burst = 분해 튕김(burstPlan이 정한 부품별 바깥 거리·기울기). 분해할 때만 넘긴다
+  function tween(pt, to, { dur = 900, delay = 0, via = null, rot = [0, 1], burst = null } = {}) {
     const from = { p: pt.p.clone(), q: pt.q.clone(), s: pt.s };
     pt.tw = {
-      from, to, rot, via: via && via.clone(), back: to === pt.A,
+      from, to, rot, via: via && via.clone(), back: to === pt.A, burst: reduced ? null : burst,
       t0: performance.now() + (reduced ? 0 : delay),
       dur: reduced ? 1 : dur,
     };
   }
-  const rv = V(), rw = V();
+  // 분해 튕김: 부품이 움직이기 시작한 뒤 t ms에 분해 자리에서 바깥 쪽으로 얼마나 나가 있는지 (1 = 끝까지, 화면 밖). bo.l = 옆으로(화면 가로·세로), bo.z = 앞으로(카메라 쪽)
+  // 제자리에서 곧게 빠져나오는 동안(P)은 0 → 펑 터지듯 빠르게 나가(R, 처음에 가장 빠름) 가장 멀리 → 제 차례(ret)까지 화면 밖에서 기다렸다가 →
+  // 화면 밖 구간은 빠르게 지나 날아 들어오며 브레이크를 밟듯 서서(Rt) → 제자리에 착 붙는다(S).
+  // 돌아올 때 옆 거리는 앞 거리보다 먼저 줄어서, 끝에는 제 자리 바로 앞에서 곧게 내려앉는다(이미 자리 잡은 옆 부품을 스치지 않게).
+  // 앞 거리는 분해 자리를 살짝(ov) 지나 뒤로 눌렸다가 돌아온다(도장 찍듯 착)
+  const bo = { l: 0, z: 0 };
+  function burstAt(t, b) {
+    if (t < b.P) { bo.l = bo.z = 0; return bo; }
+    const up = t < b.P + b.R ? 1 - (1 - (t - b.P) / b.R) ** 3 : 1;   // 나가는 쪽 (돌아오기 시작한 뒤에도 끝까지 이어 곱해서 끊김 없이)
+    if (t < b.ret) { bo.l = bo.z = up; return bo; }
+    if (t < b.ret + b.Rt) {
+      const g = 1 - (1 - (t - b.ret) / b.Rt) ** 3;
+      bo.l = up * (1 - g) ** 1.8;
+      bo.z = up * (1 - (1 + b.ov) * g);
+      return bo;
+    }
+    bo.l = 0;
+    bo.z = -b.ov * (1 - ease(Math.min((t - b.ret - b.Rt) / b.S, 1)));
+    return bo;
+  }
+  const rv = V(), rw = V(), bq = new THREE.Quaternion();
   function run(pt, now) {
-    const w = pt.tw, u = clamp((now - w.t0) / w.dur, 0, 1), e = ease(u);
+    const w = pt.tw, b = w.burst, u = clamp((now - w.t0) / w.dur, 0, 1), e = ease(u);
+    if (b) {
+      // 튕김: 분해 경로(a → B 쪽으로 곧게 → o)는 앞부분에 몰아서 빨리 지난다(처음에 곧게 쑥 빠져나와야 바깥으로 튈 때 이웃 부품을 뚫지 않는다).
+      // 그 위에 바깥으로 날아갔다 돌아오는 만큼(burstAt × D)을 더하고, 날아가는 동안 기울었다가 돌아오며 바로 선다
+      const t = now - w.t0, s = 1 - (1 - clamp((t - b.s0) / (b.s1 - b.s0), 0, 1)) ** 3, a = w.from.p, o = w.to.p, f = burstAt(t, b);
+      pt.p.copy(a).addScaledVector(rv.subVectors(w.via, a), 4 * s * (1 - s)).addScaledVector(rw.subVectors(o, a), s * s * s).addScaledVector(b.Dl, f.l).addScaledVector(b.Dz, f.z);
+      // 제 방향으로 돌기는 r0 → r1 사이에, 기울기는 이웃과 충분히 떨어진 뒤(앞 거리 25% 넘어서)부터
+      pt.q.copy(w.from.q).slerp(w.to.q, ease(clamp((t - b.r0) / (b.r1 - b.r0), 0, 1)));
+      if (b.ang) pt.q.premultiply(bq.setFromAxisAngle(b.axis, b.ang * clamp((f.z - .25) / .75, 0, 1)));
+      pt.s = w.to.s;
+      if (u >= 1) pt.tw = null;
+      return;
+    }
     if (w.via) {
       const a = w.back ? w.to.p : w.from.p, o = w.back ? w.from.p : w.to.p, s = w.back ? 1 - e : e;
       pt.p.copy(a).addScaledVector(rv.subVectors(w.via, a), 4 * s * (1 - s)).addScaledVector(rw.subVectors(o, a), s * s * s);
@@ -5909,6 +6003,69 @@ loader.run(() => {
     pt.s = w.from.s + (w.to.s - w.from.s) * e;
     if (u >= 1) pt.tw = null;
   }
+  // 분해 튕김의 짜임 (퍼짐이 0%보다 클 때). 시간은 모두 속도(배)로 나눈다 (du0 = 그 모델의 기본 분해 시간):
+  // ① 펑 — 화면 밖으로 흩어진다. 이동안 카메라는 조립된 크기 그대로 바짝 붙어 있다
+  // ② 다 나간 뒤 잠깐 숨을 고르고 ③ 카메라가 물러나며, 위 줄부터(왼쪽 → 오른쪽으로 살짝) 차례로 돌아와 제자리에 착착 붙는다
+  // 날아가는 단위: 박스 = 부품 하나하나 (원래 분해 차례대로, 간격만 반으로 좁혀 곧게 빠져나온 뒤 튄다)
+  //   현장 = 덩어리 묶음(group) 통째로 — 다 같이 한 번에 펑 하고, 묶음 안 부품이 서로 벌어지는 것(분해 경로)·제 방향으로 도는 것은 화면 밖에 나가 있는 동안 한다
+  //   (현장 부품은 서로 맞물려 있어서, 화면 안에서 따로 움직이면 뚫고 지나가는 짝이 많다)
+  // 방향: 박스 = 그 부품의 분해 자리가 화면 가운데로부터 놓인 쪽, 현장 = 그 묶음이 지금(조립된 모습에서) 모델 가운데로부터 놓인 쪽
+  //   (붙어 있던 이웃끼리 같은 쪽으로 퍼지며 벌어져 서로 뚫지 않게). 가운데에 너무 가까우면 다른 쪽 기준, 그것도 가까우면 차례로 고르게 흩뿌림
+  // 거리: 그 방향으로 화면 가운데 → 가장자리 거리 × 퍼짐(%) × (바깥 것일수록 0.9 → 1.2). 카메라 쪽(앞)으로도 나가서,
+  //   돌아올 때 이미 자리 잡은 것의 앞을 지나 내려앉는다. 거리는 다 펼쳐진 뒤의 화면 크기로 잰다
+  let burstHold = 0, burstFast = 0;   // burstHold까지는 분해 중이어도 카메라가 조립된 모습 크기로 바짝 붙어 있고(①), 그다음 burstFast까지는 평소보다 빨리 물러난다(②③)
+  function burstPlan(du0, st0) {
+    const k = reduced ? 0 : MOTION.burst / 100;
+    if (!k) return null;
+    const field = !!cur.def.fieldParts, sp = MOTION.speed, g = camGoal('exploded', true), hh = (g.d - g.z) * TAN, hw = hh * camera.aspect, look = V(g.x, g.y, g.z);
+    // 분해된 뒤의 무대 각도 (frame과 같은 식: 돌려 놓은 각도 + 마우스 위치에 따른 살짝 기울임)
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orbit.x + (py - .5) * .07 * tiltFade, orbit.y + (px - .5) * .12 * tiltFade, 0)), qi = q.clone().invert();
+    const rnd = n => { const s = Math.sin(n) * 43758.5453; return s - Math.floor(s); };   // 차례로 정해지는 0~1 (매번 같은 모양으로 터지게)
+    const scr = v => { v.applyQuaternion(q); return [v.x / hw, v.y / hh]; };   // 무대 방향 → 화면 비율 (가운데 → 가장자리 = 1)
+    const T = { P: (field ? .05 : .1) * du0 / sp, R: .2 * du0 / sp, Rt: .38 * du0 / sp, S: .12 * du0 / sp };
+    const ac = cur.abox.getCenter(V()), byKey = new Map();
+    cur.order.forEach((pt, i) => {
+      const key = field ? pt.group : pt;
+      let u = byKey.get(key);
+      if (!u) byKey.set(key, u = { parts: [], start: field ? 0 : (pt.pause * du0 + i * st0 * .5) / sp });
+      u.parts.push(pt);
+    });
+    const units = [...byKey.values()];
+    for (const u of units) {
+      const avg = f => u.parts.reduce((s, pt) => s.add(f(pt)), V()).divideScalar(u.parts.length);
+      u.slot = scr(avg(pt => C(pt).p).sub(look));
+      const asm = scr(avg(pt => pt.A.p).sub(ac));
+      let [x, y] = field ? asm : u.slot;
+      if (Math.hypot(x, y) < (field ? .01 : .08)) [x, y] = field ? u.slot : asm;
+      u.dir = Math.hypot(x, y) < .005 ? null : Math.atan2(y, x);
+      u.rho = field ? Math.hypot(...asm) : Math.min(Math.hypot(...u.slot), 1);
+    }
+    const rhoMax = field ? Math.max(...units.map(u => u.rho), 1e-6) : 1;
+    // 마지막 단위가 터져 나가는 무렵 → 위 줄부터 차례로 돌아오기 시작 (차례 사이 = .45·du0를 단위 수로 나눔).
+    // 돌아오는 길의 앞부분은 화면 밖이라 화면이 비어 보이는 숨 고르기는 짧다 (단위마다 적어도 거리의 94%까지는 나갔다가 돌아온다)
+    const nu = units.length, out = Math.max(...units.map(u => u.start)) + T.P + .2 * T.R, W = .45 * du0 / sp;
+    units.sort((p, q2) => (-p.slot[1] + .3 * p.slot[0]) - (-q2.slot[1] + .3 * q2.slot[0])).forEach((u, j) => {
+      u.ret = Math.max(u.start + T.P + .6 * T.R, out + (nu > 1 ? j / (nu - 1) : 0) * W);
+      const r1 = rnd(j * 12.9898 + 4.1), r2 = rnd(j * 78.233 + 1.7), r3 = rnd(j * 39.425 + 7.3);
+      const a = u.dir ?? j * 2.39996, L = k * (.9 + .3 * u.rho / rhoMax);
+      u.b = {
+        ...T, ov: Math.min(.06, .02 / k), ret: u.ret - u.start,
+        Dl: V(Math.cos(a) * hw * L, Math.sin(a) * hh * L, 0).applyQuaternion(qi),   // 옆으로 (화면 가로·세로)
+        Dz: V(0, 0, (field ? .45 : .3 + .3 * r3) * Math.min(hw, hh) * L).applyQuaternion(qi),   // 앞으로 (카메라 쪽). 현장 묶음끼리는 같은 비율(서로 앞뒤로 어긋나며 긁지 않게)
+        axis: V(r2 - .5, r3 - .5, r1 - .5).normalize(),
+        ang: field ? 0 : (r1 < .5 ? -1 : 1) * (.35 + .5 * r3) * Math.min(k, 1.5) * (u.parts[0].r > 1.2 ? .35 : 1),   // 박스 부품만 날아가며 기운다 (큰 것은 덜)
+        // 분해 경로(조립 자리 → 분해 자리)와 제 방향으로 돌기를 지나는 때 (그 단위가 움직이기 시작한 때부터 ms)
+        // 박스 = 곧바로 시작해 .7·du0 안에, 돌기는 펑 할 때부터 돌아오는 길의 40%까지 / 현장 = 화면 밖에 나가 있는 동안만
+        s0: field ? T.P + .45 * T.R : 0, s1: field ? T.P + .6 * T.R + .12 * T.Rt : .7 * du0 / sp,
+        r0: field ? T.P + .45 * T.R : T.P, r1: field ? T.P + .6 * T.R + .12 * T.Rt : u.ret - u.start + .4 * T.Rt,
+      };
+    });
+    const list = units.flatMap(u => u.parts.map(pt => ({ pt, start: u.start, dur: u.ret - u.start + T.Rt + T.S, b: u.b })));
+    // 카메라: 마지막 단위가 터져 나가는 순간까지 붙어 있다가, 부품이 화면 밖에 있는 동안 서둘러 물러나서 돌아오는 부품을 맞는다
+    burstHold = performance.now() + Math.max(...units.map(u => u.start)) + T.P + .25 * T.R;
+    burstFast = burstHold + .9 * du0 / sp;
+    return { list, total: Math.max(...list.map(o => o.start + o.dur)) };
+  }
 
   function explode() {
     if (state !== 'assembled' || trans) return;
@@ -5916,15 +6073,32 @@ loader.run(() => {
     homing = false;
     state = 'exploded';
     hovered = null;
-    const du = cur.def.dur || 1650, st = cur.def.stagger || 11;
-    markMove(du * (1 + cur.hold), st, cur.order.length);
-    // 돌기는 반해체 자리를 지나 옆으로 벌어진 뒤에 (붙어 있을 때 돌면 이웃 부품을 긁는다)
-    cur.order.forEach((pt, i) => tween(pt, C(pt), { dur: du, delay: i * st + pt.pause * du, via: pt.B, rot: [.55, 1] }));
-    // 소리: 현장 = 거대한 바람, 박스 = 부품마다 떨어져 나가는 순간 재질 소리 (+ 가벼운 바람)
-    if (isField(cur)) SFX.wind((du * (1 + cur.hold) + st * cur.order.length) / 1000, true);
-    else {
-      SFX.air(1.1, 350, 1600, .1);
-      SFX.parts(cur.order.map((pt, i) => [(i * st + pt.pause * du) / 1000 + .04, pt, panOf(C(pt).p, cur.lbox[mode])]));
+    const du0 = cur.def.dur || 1650, st0 = cur.def.stagger || 11, plan = burstPlan(du0, st0);
+    const pan = pt => panOf(C(pt).p, cur.lbox[mode]);
+    if (plan) {
+      // 분해 튕김 (burstPlan의 ①②③). 소리: 현장 = 거대한 바람(전체 길이만큼), 박스 = 터지는 바람 + 떨어져 나가는 순간과 제자리에 붙는 순간의 재질 소리
+      markMove(plan.total, 0, 0);
+      for (const o of plan.list) tween(o.pt, C(o.pt), { dur: o.dur, delay: o.start, via: o.pt.B, burst: o.b });
+      if (isField(cur)) SFX.wind(plan.total / 1000, true);
+      else {
+        SFX.air(.5 + .9 / MOTION.speed, 300, 2600, .16);
+        SFX.parts([
+          ...plan.list.map(o => [o.start / 1000 + .04, o.pt, pan(o.pt)]),
+          ...plan.list.map(o => [(o.start + o.b.ret + o.b.Rt * .93) / 1000, o.pt, pan(o.pt)]),
+        ]);
+      }
+    } else {
+      burstHold = burstFast = 0;
+      const du = du0 / MOTION.speed, st = st0 / MOTION.speed;
+      markMove(du * (1 + cur.hold), st, cur.order.length);
+      // 돌기는 반해체 자리를 지나 옆으로 벌어진 뒤에 (붙어 있을 때 돌면 이웃 부품을 긁는다)
+      cur.order.forEach((pt, i) => tween(pt, C(pt), { dur: du, delay: i * st + pt.pause * du, via: pt.B, rot: [.55, 1] }));
+      // 소리: 현장 = 거대한 바람, 박스 = 부품마다 떨어져 나가는 순간 재질 소리 (+ 가벼운 바람)
+      if (isField(cur)) SFX.wind((du * (1 + cur.hold) + st * cur.order.length) / 1000, true);
+      else {
+        SFX.air(1.1, 350, 1600, .1);
+        SFX.parts(cur.order.map((pt, i) => [(i * st + pt.pause * du) / 1000 + .04, pt, pan(pt)]));
+      }
     }
     ui();
   }
@@ -5932,7 +6106,7 @@ loader.run(() => {
     if (state === 'assembled') return;
     state = 'assembled';
     focused = hovered = site = null;
-    const du = (cur.def.dur || 1650) * .9, st = (cur.def.stagger || 11) * .9;
+    const du = (cur.def.dur || 1650) * .9 / MOTION.speed, st = (cur.def.stagger || 11) * .9 / MOTION.speed;
     markMove(du * (1 + cur.hold), st, cur.order.length);
     // 조립은 거꾸로: 벌어져 있을 때 먼저 제 방향으로 돌고, 그다음 곧게 들어간다
     [...cur.order].reverse().forEach((pt, i) => tween(pt, pt.A, { dur: du, delay: i * st + (cur.hold - pt.pause) * du, via: pt.B, rot: [0, .45] }));
@@ -6181,8 +6355,8 @@ loader.run(() => {
     homing = false;
     if (homeOn || trans) return;
     const shrink = () => { if (run === homeRun) toMain(); };
-    // 현장이 다 모이기 조금 전에 줄어들기 시작해서 끊김 없이 이어지게 한다
-    const settle = b => reduced ? 0 : (b.def.dur || 1650) * .9 + (b.def.stagger || 11) * .9 * (b.parts.length - 1) - 250;
+    // 현장이 다 모이기 조금 전에 줄어들기 시작해서 끊김 없이 이어지게 한다 (assemble과 같은 시간: 속도(배)로 나눔)
+    const settle = b => reduced ? 0 : Math.max(0, ((b.def.dur || 1650) * .9 + (b.def.stagger || 11) * .9 * (b.parts.length - 1)) / MOTION.speed - 250);
     if (isField(cur)) {
       if (state === 'assembled') shrink();
       else { assemble(); setTimeout(shrink, settle(cur)); }
@@ -6790,7 +6964,8 @@ loader.run(() => {
       for (const key of ['d', 'x', 'y', 'z']) cam[key] = c0[key] + (g[key] - c0[key]) * e;
     } else {
       // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
-      const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : 2.4);   // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다
+      // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다. 분해 튕김 ②③ 동안은 빨리 물러나 돌아오는 부품을 맞는다
+      const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : now > burstHold && now < burstFast && state === 'exploded' ? 4.5 : 2.4);
       cam.d += (g.d - cam.d) * f;
       cam.x += (g.x - cam.x) * f;
       cam.y += (g.y - cam.y) * f;
@@ -7167,7 +7342,7 @@ loader.run(() => {
     const t = pick(THEMES.filter(x => x.id !== wantTheme)).id;
     setStyle(t, Math.random() < .35 ? 'theme' : pick(FONT_IDS.filter(id => id !== 'theme' && id !== wantFont)));
   }
-  const sheets = { theme: $('sheet-theme'), font: $('sheet-font') }, docks = { theme: $('dock-theme'), font: $('dock-font') };
+  const sheets = { theme: $('sheet-theme'), font: $('sheet-font'), motion: $('sheet-motion') }, docks = { theme: $('dock-theme'), font: $('dock-font'), motion: $('dock-motion') };
   let openSheet = null, sheetsMade = false;
   function makeSheets() {
     if (sheetsMade) return;
@@ -7208,8 +7383,9 @@ loader.run(() => {
   function showSheet(which, keyboard) {
     const open = which && openSheet !== which ? which : null;
     openSheet = open;
-    for (const k of ['theme', 'font']) { sheets[k].hidden = k !== open; docks[k].setAttribute('aria-expanded', String(k === open)); }
+    for (const k in sheets) { sheets[k].hidden = k !== open; docks[k].setAttribute('aria-expanded', String(k === open)); }
     if (!open) return;
+    if (open === 'motion') { if (keyboard) $('m-burst').focus(); return; }
     makeSheets();
     syncStyle();
     const sel = sheets[open].querySelector('[aria-checked="true"]');
@@ -7242,6 +7418,35 @@ loader.run(() => {
   // 창 밖을 누르면 닫는다 (3D를 누른 것은 그대로 3D로도 간다)
   document.addEventListener('pointerdown', e => { if (openSheet && !e.target.closest('.sheet, .dock')) showSheet(null); }, true);
   syncStyle();
+  // ---------- 분해 모션 조절: 퍼짐(%) · 속도(배). 컨트롤바에서 손을 떼면(change) 그 값으로 바로 다시 분해해서 보여 준다 ----------
+  const mBurst = $('m-burst'), mSpeed = $('m-speed');
+  function syncMotion() {
+    const b = MOTION.burst + '%', s = MOTION.speed.toFixed(1) + '×';
+    mBurst.value = MOTION.burst;
+    mSpeed.value = MOTION.speed;
+    mBurst.setAttribute('aria-valuetext', `${MOTION.burst}퍼센트`);
+    mSpeed.setAttribute('aria-valuetext', `${MOTION.speed.toFixed(1)}배`);
+    $('m-burst-v').textContent = b;
+    $('m-speed-v').textContent = s;
+    $('dock-motion-v').textContent = `${b} · ${s}`;
+    docks.motion.setAttribute('aria-label', `분해 모션 조절 — 지금 퍼짐 ${b}, 속도 ${MOTION.speed.toFixed(1)}배`);
+  }
+  const saveMotion = () => { try { localStorage.setItem('exbox-motion', JSON.stringify(MOTION)); } catch (e) { /* 저장 못 하는 환경이면 이번 방문에만 */ } };
+  // 다시 보기: 지금 화면(현장·박스)을 조립된 모습으로 되돌린 뒤 바로 다시 분해한다 (메인 화면·화면 전환 중·처음으로 가는 중에는 하지 않는다)
+  function replayExplode() {
+    if (!cur || homeOn || trans || handoff || homing) return;
+    if (state !== 'assembled') { rest(cur); state = 'assembled'; focused = hovered = site = null; }
+    explode();
+  }
+  mBurst.addEventListener('input', () => { MOTION.burst = +mBurst.value; syncMotion(); });
+  mSpeed.addEventListener('input', () => { MOTION.speed = +mSpeed.value; syncMotion(); });
+  for (const el of [mBurst, mSpeed]) el.addEventListener('change', () => { saveMotion(); replayExplode(); });
+  for (const el of [$('m-play'), sheets.motion.querySelector('.sheet-play')]) el.addEventListener('click', replayExplode);
+  $('m-reset').addEventListener('click', () => { Object.assign(MOTION, MOTION_DEF); syncMotion(); saveMotion(); replayExplode(); });
+  docks.motion.addEventListener('click', e => showSheet('motion', e.detail === 0));
+  sheets.motion.querySelector('.sheet-x').addEventListener('click', () => { showSheet(null); docks.motion.focus(); });
+  sheets.motion.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); showSheet(null); docks.motion.focus(); } });
+  syncMotion();
   // 메인 화면의 세 칸: 마우스를 올리면 그 현장이 살짝 다가오며 기울고, 누르면 그 현장으로 들어간다
   homeEl.addEventListener('pointermove', e => { px = e.clientX / innerWidth; py = e.clientY / innerHeight; });
   homeEl.querySelectorAll('.panel').forEach((b, i) => {
