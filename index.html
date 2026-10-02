@@ -3951,8 +3951,9 @@ loader.run(() => {
   }
 
   // ---------- 현장 부품 목록 ----------
-  // 현장은 '묶음'(건물·설비 하나)과 그 안의 부품으로 나눈다. 분해하면 부품들이 먼저 묶음 안에서 따로 벌어지고(ex = 더 움직이는 양 [x, y, z]),
-  // 이어서 묶음째 멀리 옮겨 간다(drift · tilt). 울타리·시추탑·자켓 같은 격자 구조물은 한 덩어리로 둔다
+  // 현장은 '묶음'(건물·설비 하나)과 그 안의 부품으로 나눈다. 분해하면 부품이 묶음 안에서 벌어지는 쪽(ex = [x, y, z])으로 먼저 빠져나온 뒤
+  // 박스처럼 줄 맞춘 자리로 간다(build의 현장 줄 배치). 묶음의 drift · tilt는 예전 배치(묶음째 옮기기)에서 쓰던 값으로, 지금은 쓰지 않는다.
+  // 울타리·시추탑·자켓 같은 격자 구조물은 한 덩어리로 둔다
   function fieldKit() {
     const parts = [], groups = {};
     return {
@@ -5304,20 +5305,51 @@ loader.run(() => {
       pt.gk = sib.indexOf(pt);
       pt.gn = sib.length;
     }
-    // 현장: 묶음마다 가운데를 구하고, 부품마다 분해 자리(묶음 이동 + 묶음 안 벌어짐)와 반해체 자리(묶음 안에서만 벌어진 자리)를 정한다
+    // 현장: 부품마다 반해체 자리(B = 묶음 안에서 벌어지는 쪽으로 쑥 빠진 자리) — 분해할 때 처음에 곧게 빠져나오는 방향
     if (def.fieldParts) {
       const gb = {};
       for (const pt of parts) (gb[pt.group] = gb[pt.group] || new THREE.Box3()).union(pt.box.clone().translate(pt.c));
-      def.explode = {};
-      // spread = 묶음 안에서 벌어지는 거리 배율, far = 묶음끼리 멀어지는 거리 배율 (부품이 많아 뭉쳐 보이지 않게 크게 벌린다)
+      // spread = 묶음 안에서 벌어지는 거리 배율
       for (const pt of parts) {
-        const src = def.parts[pt.t], g = def.groups[pt.group];
+        const src = def.parts[pt.t];
         const ex = (src.ex ? V(...src.ex) : pt.c.clone().sub(gb[pt.group].getCenter(V())).multiplyScalar(.45)).multiplyScalar(def.spread ?? 1);
-        def.explode[pt.key] = { p: V(...g.drift).multiplyScalar(def.far ?? 1).add(ex), r: g.tilt };
         pt.B = pt.A.p.clone().add(ex.clone().multiplyScalar(1.15).add(V(0, .1, 0)).applyQuaternion(def.asm.q));
       }
     }
     const boxAt = (pt, ps) => pt.box.clone().applyMatrix4(TM(ps.p, ps.q, ps.s));
+    // 현장도 박스처럼 줄 맞춘 배치로 분해한다 (사용자 요청 — 덩어리째 떨어져 나가 현장 모양을 유지하던 배치 대신).
+    // 부품은 조립된 모습 그대로의 방향(A.q). 조립된 모습에서 위에 있던 부품일수록 위 줄, 줄 안에서는 왼쪽에 있던 것부터 —
+    // 그래서 부품이 대체로 제자리에서 바깥쪽으로 퍼지며 자리를 잡는다(서로 엇갈리는 길이 적다).
+    // 줄 폭은 여러 폭으로 미리 놓아 보고, 다 놓은 모습의 가로 : 세로가 화면에 가장 가까운 것으로(넓은 화면 2 : 1, 세로 화면 0.6 : 1). 부품이 커서 사이도 박스보다 넓게
+    if (def.fieldParts) {
+      const GAP = .6, VGAP = .8;
+      const items = parts.map(pt => { const s = boxAt(pt, { p: V(), q: pt.A.q, s: 1 }).getSize(V()); return { pt, w: Math.max(s.x, .35), h: Math.max(s.y, .35) }; });
+      const widest = Math.max(...items.map(o => o.w)), sumW = items.reduce((a, o) => a + o.w + GAP, 0);
+      const byY = [...items].sort((a, b) => b.pt.A.p.y - a.pt.A.p.y);
+      const fill = width => {
+        const rows = [[]];
+        let x = 0, maxW = 0;
+        for (const o of byY) {
+          if (rows[rows.length - 1].length && x + o.w > width) { rows.push([]); x = 0; }
+          rows[rows.length - 1].push(o);
+          x += o.w + GAP;
+          maxW = Math.max(maxW, x - GAP);
+        }
+        return { rows, ar: maxW / (rows.reduce((a, r) => a + Math.max(...r.map(o => o.h)), 0) + VGAP * (rows.length - 1)) };
+      };
+      for (const [m, aspect] of [['wide', 2], ['tall', .6]]) {
+        let best = null;
+        for (let w = widest; w <= sumW * 1.06; w *= 1.04) { const L = fill(w); if (!best || Math.abs(Math.log(L.ar / aspect)) < Math.abs(Math.log(best.ar / aspect))) best = L; }
+        let y = 0;
+        for (const row of best.rows) {
+          row.sort((a, b) => a.pt.A.p.x - b.pt.A.p.x);
+          const rh = Math.max(...row.map(o => o.h)), rw = row.reduce((a, o) => a + o.w, 0) + GAP * (row.length - 1);
+          let xx = -rw / 2;
+          for (const o of row) { (o.pt.slot = o.pt.slot || {})[m] = [xx + o.w / 2, y - rh / 2, 0]; xx += o.w + GAP; }
+          y -= rh + VGAP;
+        }
+      }
+    }
     // 자동 배치: 부품을 순서대로 한 줄에 채우다가 폭이 넘치면(또는 새 묶음이면) 다음 줄로 넘긴다
     // 'key#n' = 같은 부품 중 n번째 하나만 (왼쪽 것은 왼쪽 칸, 오른쪽 것은 오른쪽 칸에 두어 날아가는 길이 엇갈리지 않게)
     if (def.pack) {
@@ -5341,12 +5373,9 @@ loader.run(() => {
         }
       }
     }
-    // drift가 있으면(배) 조립 자리에서 그만큼 옮기고 기울인 자리가 분해 자리, 아니면 줄 맞춘 배치
+    // 분해 자리: 현장 = 줄 맞춘 배치(조립된 방향 그대로), drift가 있으면 조립 자리에서 그만큼 옮기고 기울인 자리, 아니면 줄 맞춘 배치(제 놓임 방향)
     const pose = def.fieldParts
-      ? pt => {
-        const e = def.explode[pt.key];
-        return { p: pt.A.p.clone().add(e.p.clone().applyQuaternion(def.asm.q)), q: def.asm.q.clone().multiply(Q(...e.r)).multiply(pt.q0), s: 1 };
-      }
+      ? (pt, m) => ({ p: V(...pt.slot[m]), q: pt.A.q.clone(), s: 1 })
       : def.drift ? pt => {
         const d = def.drift[pt.key];
         return { p: pt.A.p.clone().add(V(d[0], d[1], d[2]).applyQuaternion(def.asm.q)), q: def.asm.q.clone().multiply(Q(d[3], d[4], d[5])).multiply(pt.q0), s: 1 };
@@ -5881,7 +5910,7 @@ loader.run(() => {
   const siteOf = pt => { const k = field.def.box, h = hostOf(k); return pt === h || pt.group === h.group ? k : null; };
   // 설치 장소의 박스 자리(현장 좌표)를 무대 좌표로: 박스가 달린 덩어리가 분해 자리에 있을 때 기준
   function sitePoint(key) {
-    const h = hostOf(key), ps = built[SITES[key].field].pose(h);
+    const h = hostOf(key), ps = built[SITES[key].field].pose(h, mode);
     return V(...SITES[key].at).sub(h.c).applyQuaternion(ps.q).add(ps.p);
   }
   // 모아 둔 점들을 지금 각도로 돌려 하나하나 재서, 전부 화면 안에 들어오는 카메라 거리를 구한다.
@@ -5969,8 +5998,8 @@ loader.run(() => {
   // 튕김 곡선: u0에 출발해 up에 가장 멀리(1) 나갔다가, 머뭇거리지 않고 바로 돌아와 끝(1)에 0 (돌아올 때도 속도 0으로 내려앉는다)
   const burstH = (u, b) => u <= b.u0 ? 0 : u < b.up ? burstOut((u - b.u0) / (b.up - b.u0)) : 1 - smooth((u - b.up) / (1 - b.up));
   // 분해 경로의 진행도: 처음에 곧게 쑥 빠져나와(반해체 자리) 이어서 분해 자리 쪽으로.
-  // 현장(s2가 있을 때)은 두 단계: 처음에 묶음 안에서 제 자리로 벌어지고(s 0 → .5, 반해체 자리 — 난간이 갑판에서 떨어지는 등),
-  //   묶음이 분해 자리로 옮겨 가는 큰 이동(s .5 → 1)은 멀리 퍼져 있는 동안(s0 → s2) 한다 — 맞물린 다른 묶음과 화면 안에서 엇갈리지 않게
+  // 현장(s2가 있을 때)은 두 단계: 처음부터 제자리에서 벌어지고(s 0 → .5, 반해체 자리 — 부드럽게), 줄 맞춘 자리로 옮겨 가는 큰 이동(s .5 → 1)은
+  //   멀리 퍼져 있는 동안(s0 → s2) 한다 — 현장 부품은 서로 맞물려 있어서 화면 안에서 줄 자리로 바로 옮겨 가면 서로 뚫고 지나간다
   const burstS = (u, b) => b.s2 ? .5 * smoother(Math.min(u / b.s1, 1)) + .5 * smoother(clamp((u - b.s0) / (b.s2 - b.s0), 0, 1)) : snapOut(Math.min(u / b.s1, 1));
   const rv = V(), rw = V();
   function run(pt, now) {
@@ -5993,7 +6022,7 @@ loader.run(() => {
     if (u >= 1) pt.tw = null;
   }
   // 튕겨 나가는 거리·방향과 때 (부품마다 거리·방향만 다르고 시계는 모두 같다)
-  // 박스도 현장도 부품 하나하나가 처음부터 한꺼번에 흩어진다 (현장을 덩어리째 날린 뒤 덩어리 안 부품을 따로 벌렸더니 두 번에 나눠 분해되는 듯 어색했다)
+  // 박스도 현장도 똑같이: 부품 하나하나가 처음부터 한꺼번에 흩어졌다가 줄 맞춘 자리로 돌아온다
   // 거리·방향: 다 펼쳐진 모습을 화면 가운데를 중심으로 한 덩어리처럼 크게 늘였다가 돌아온다 — 화면 비율로 퍼짐 × (자리 + 바깥쪽 0.25).
   //   그래서 가장자리 것은 화면 밖까지 멀리, 가운데 것은 조금만 나가서 화면이 비는 때가 없다 (모두 밖으로 나가면 한동안 텅 빈 화면만 보인다).
   //   붙어 있던 이웃은 다 펼쳐진 자리에서 떨어진 쪽으로 더 벌어지므로 서로 엇갈리지 않는다.
@@ -6010,25 +6039,14 @@ loader.run(() => {
     // 분해된 뒤의 무대 각도 (frame과 같은 식: 돌려 놓은 각도 + 마우스 위치에 따른 살짝 기울임)
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orbit.x + (py - .5) * .07 * tiltFade, orbit.y + (px - .5) * .12 * tiltFade, 0)), qi = q.clone().invert();
     const scr = v => { v.applyQuaternion(q); return [v.x / hw, v.y / hh]; };   // 무대 방향 → 화면 비율 (가운데 → 가장자리 = 1)
-    // 현장은 바깥으로 튀는 거리·방향을 묶음(group)마다 하나로: 묶음 안 부품은 처음부터 제 자리로 벌어지면서(분해 경로) 묶음째 같은 쪽으로 튄다.
-    //   부품마다 제 방향으로 튀게 했더니 맞물린 다른 묶음 부품을 뚫고 지나가는 짝이 많았다 (방향을 조립된 배치 기준으로 해 봐도 — 바닥판 위 설비가
-    //   화면 아래쪽으로 밀려 바닥을 뚫어서 — 더 많았다). 묶음 안에서 벌어지기는 처음부터 천천히(0~45%), 묶음이 분해 자리로 옮겨 가는 것·기울기는 멀리 나가 있을 때(30~55%)
-    const field = !!cur.def.fieldParts, slotOf = new Map();
-    const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z), when = field ? { u0: .04, up: .42, s1: .45, s0: .3, s2: .55, r0: .3, r1: .55 } : { u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
-    if (field) {
-      const sum = new Map();
-      for (const pt of cur.order) { const s = sum.get(pt.group) || { v: V(), n: 0 }; s.v.add(C(pt).p); s.n++; sum.set(pt.group, s); }
-      for (const [grp, s] of sum) slotOf.set(grp, s.v.divideScalar(s.n));
-    }
-    const plan = new Map(), n = cur.order.length, Ds = new Map();
+    const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z);
+    const when = cur.def.fieldParts ? { u0: .04, up: .42, s1: .45, s0: .3, s2: .55, r0: .3, r1: .55 } : { u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
+    const plan = new Map(), n = cur.order.length;
     cur.order.forEach((pt, i) => {
-      const key = field ? pt.group : pt;
-      if (!Ds.has(key)) {
-        const [x, y] = scr((field ? slotOf.get(key).clone() : C(pt).p).sub(look)), r = Math.hypot(x, y);
-        const a = r > .02 ? Math.atan2(y, x) : Ds.size * 2.39996, m = k * (Math.min(r, 1.2) + .25);   // 가운데에 딱 놓인 것은 차례로 고르게 흩뿌림
-        Ds.set(key, V(Math.cos(a) * hw * m, Math.sin(a) * hh * m, Math.min(.2 * Math.min(hw, hh) * m, zMax)).applyQuaternion(qi));
-      }
-      plan.set(pt, { b: { ...when, D: Ds.get(key) }, start: BURST_SPREAD * i / Math.max(n - 1, 1) + BURST_PAUSE * (pt.pause || 0) });   // start = T에 대한 비율
+      const [x, y] = scr(C(pt).p.sub(look)), r = Math.hypot(x, y);
+      const a = r > .02 ? Math.atan2(y, x) : i * 2.39996, m = k * (Math.min(r, 1.2) + .25);   // 가운데에 딱 놓인 것은 차례로 고르게 흩뿌림
+      const b = { ...when, D: V(Math.cos(a) * hw * m, Math.sin(a) * hh * m, Math.min(.2 * Math.min(hw, hh) * m, zMax)).applyQuaternion(qi) };
+      plan.set(pt, { b, start: BURST_SPREAD * i / Math.max(n - 1, 1) + BURST_PAUSE * (pt.pause || 0) });   // start = T에 대한 비율
     });
     return plan;
   }
@@ -6313,7 +6331,7 @@ loader.run(() => {
     if (field && field !== built[fkey]) field.root.visible = false;
     field = ensureField(fkey, key);
     for (const pt of field.parts) {
-      const c = field.pose(pt);
+      const c = field.pose(pt, mode);
       pt.tw = null;
       pt.p.copy(c.p);
       pt.q.copy(c.q);
