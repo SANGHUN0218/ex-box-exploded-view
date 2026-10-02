@@ -6753,7 +6753,7 @@ loader.run(() => {
   }
   // 이스터에그 시계: 누르기·휠·키·마우스 움직임이 있으면 처음부터 다시 센다 (보던 이스터에그는 사라진다)
   addEventListener('pointerdown', poke, { capture: true, passive: true });
-  let escCount = 0, escAt = 0;   // 개발자 명령: 왼쪽 Ctrl 5연타로 이스터에그 바로 실행
+  let escCount = 0, escAt = 0;   // 개발자 명령: 왼쪽 Ctrl(맥은 Command) 5연타로 이스터에그 바로 실행
 
   const pin = $('pin');
   function placePin() {
@@ -7080,8 +7080,8 @@ loader.run(() => {
       return;
     }
     if (el.closest('#picker') || el.closest('.dock, .sheet') || homeOn || trans) return;
-    // 개발자 명령: 왼쪽 Ctrl을 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
-    if (e.code === 'ControlLeft') {
+    // 개발자 명령: 왼쪽 Ctrl(맥은 Command, ⌘)을 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
+    if (e.code === 'ControlLeft' || e.code === 'MetaLeft' || e.code === 'MetaRight') {
       const now = performance.now();
       escCount = now - escAt < 1000 ? escCount + 1 : 1;
       escAt = now;
