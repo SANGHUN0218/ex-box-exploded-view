@@ -5968,8 +5968,10 @@ loader.run(() => {
   const snapOut = x => 1 - (1 - x) ** 14 * (1 + 14 * x);      // 같은 모양을 아주 짧게(처음 7%에 가장 빠름): 박스에서 제자리를 곧게 빠져나오는 순간
   // 튕김 곡선: u0에 출발해 up에 가장 멀리(1) 나갔다가, 머뭇거리지 않고 바로 돌아와 끝(1)에 0 (돌아올 때도 속도 0으로 내려앉는다)
   const burstH = (u, b) => u <= b.u0 ? 0 : u < b.up ? burstOut((u - b.u0) / (b.up - b.u0)) : 1 - smooth((u - b.up) / (1 - b.up));
-  // 분해 경로의 진행도: 박스 = 처음에 곧게 쑥 빠져나와(반해체 자리) 이어서 옆으로, 현장 = 화면 밖에 나가 있는 동안(s0 → s1)만
-  const burstS = (u, b) => b.box ? snapOut(Math.min(u / b.s1, 1)) : smoother(clamp((u - b.s0) / (b.s1 - b.s0), 0, 1));
+  // 분해 경로의 진행도: 처음에 곧게 쑥 빠져나와(반해체 자리) 이어서 분해 자리 쪽으로.
+  // 현장(s2가 있을 때)은 두 단계: 처음에 묶음 안에서 제 자리로 벌어지고(s 0 → .5, 반해체 자리 — 난간이 갑판에서 떨어지는 등),
+  //   묶음이 분해 자리로 옮겨 가는 큰 이동(s .5 → 1)은 멀리 퍼져 있는 동안(s0 → s2) 한다 — 맞물린 다른 묶음과 화면 안에서 엇갈리지 않게
+  const burstS = (u, b) => b.s2 ? .5 * smoother(Math.min(u / b.s1, 1)) + .5 * smoother(clamp((u - b.s0) / (b.s2 - b.s0), 0, 1)) : snapOut(Math.min(u / b.s1, 1));
   const rv = V(), rw = V();
   function run(pt, now) {
     const w = pt.tw, b = w.burst, u = clamp((now - w.t0) / w.dur, 0, 1), e = ease(u);
@@ -5991,37 +5993,42 @@ loader.run(() => {
     if (u >= 1) pt.tw = null;
   }
   // 튕겨 나가는 거리·방향과 때 (부품마다 거리·방향만 다르고 시계는 모두 같다)
-  // 묶음: 박스 = 부품 하나하나, 현장 = 덩어리 묶음(group) 통째로 — 현장 부품은 서로 맞물려 있어서, 묶음 안 부품이 서로 벌어지는 것(분해 경로)·
-  //   제 방향으로 도는 것은 가장 멀리 나가 있는 동안(s0 → s1) 한다 (화면 안에서 따로 움직이면 뚫고 지나가는 짝이 많다)
+  // 박스도 현장도 부품 하나하나가 처음부터 한꺼번에 흩어진다 (현장을 덩어리째 날린 뒤 덩어리 안 부품을 따로 벌렸더니 두 번에 나눠 분해되는 듯 어색했다)
   // 거리·방향: 다 펼쳐진 모습을 화면 가운데를 중심으로 한 덩어리처럼 크게 늘였다가 돌아온다 — 화면 비율로 퍼짐 × (자리 + 바깥쪽 0.25).
   //   그래서 가장자리 것은 화면 밖까지 멀리, 가운데 것은 조금만 나가서 화면이 비는 때가 없다 (모두 밖으로 나가면 한동안 텅 빈 화면만 보인다).
+  //   붙어 있던 이웃은 다 펼쳐진 자리에서 떨어진 쪽으로 더 벌어지므로 서로 엇갈리지 않는다.
   //   카메라 쪽(앞)으로도 조금 (지금 카메라 거리의 30%까지만). 거리는 다 펼쳐진 뒤의 화면 크기로 잰다
-  // 때(u): 박스 = 처음 7%에 곧게 쑥 빠져나오고 4%부터 튀기 시작, 현장 = 곧바로 튐 · 가장 멀리 = 42% · 제 방향으로 돌기 = 박스 12~62%, 현장 26~60%
-  // 박스는 원래 분해 차례(order, 쉼 숫자 포함)를 아주 짧게 눌러 담아 출발한다(start): 다 같이 터지지만 앞을 막은 문·덮개가 아주 조금 먼저 비켜서
+  // 때(u): 처음 7%에 곧게 쑥 빠져나오고(반해체 방향) 4%부터 튀기 시작 · 가장 멀리 = 42% · 제 방향으로 돌기 = 12~62%
+  // 원래 분해 차례(order, 쉼 숫자 포함)를 아주 짧게 눌러 담아 출발한다(start): 다 같이 터지지만 앞을 막은 문·덮개가 아주 조금 먼저 비켜서
   //   안쪽 부품이 뚫고 나오지 않게. 늦게 출발한 부품은 그만큼 짧게 움직여 모두 같은 순간에 내려앉는다 (조립은 이것을 거꾸로)
   const BURST_SPREAD = .06, BURST_PAUSE = .1;   // 차례 전체 = T의 6%(약 0.1초 — 눈에는 한꺼번에), 쉼 숫자 1 = T의 10%
   let burstCam = null;   // 분해 튕김 동안 카메라도 같은 시계로: { t0, wait, dur, c0 = 출발할 때의 카메라, st = 그때의 화면 상태 }
   function burstPlan() {
     const k = reduced ? 0 : MOTION.burst / 100;
     if (!k) return null;
-    const field = !!cur.def.fieldParts, g = camGoal('exploded', true), hh = (g.d - g.z) * TAN, hw = hh * camera.aspect, look = V(g.x, g.y, g.z);
+    const g = camGoal('exploded', true), hh = (g.d - g.z) * TAN, hw = hh * camera.aspect, look = V(g.x, g.y, g.z);
     // 분해된 뒤의 무대 각도 (frame과 같은 식: 돌려 놓은 각도 + 마우스 위치에 따른 살짝 기울임)
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orbit.x + (py - .5) * .07 * tiltFade, orbit.y + (px - .5) * .12 * tiltFade, 0)), qi = q.clone().invert();
     const scr = v => { v.applyQuaternion(q); return [v.x / hw, v.y / hh]; };   // 무대 방향 → 화면 비율 (가운데 → 가장자리 = 1)
-    const byKey = new Map();
-    for (const pt of cur.order) {
-      const key = field ? pt.group : pt;
-      if (!byKey.has(key)) byKey.set(key, []);
-      byKey.get(key).push(pt);
+    // 현장은 바깥으로 튀는 거리·방향을 묶음(group)마다 하나로: 묶음 안 부품은 처음부터 제 자리로 벌어지면서(분해 경로) 묶음째 같은 쪽으로 튄다.
+    //   부품마다 제 방향으로 튀게 했더니 맞물린 다른 묶음 부품을 뚫고 지나가는 짝이 많았다 (방향을 조립된 배치 기준으로 해 봐도 — 바닥판 위 설비가
+    //   화면 아래쪽으로 밀려 바닥을 뚫어서 — 더 많았다). 묶음 안에서 벌어지기는 처음부터 천천히(0~45%), 묶음이 분해 자리로 옮겨 가는 것·기울기는 멀리 나가 있을 때(30~55%)
+    const field = !!cur.def.fieldParts, slotOf = new Map();
+    const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z), when = field ? { u0: .04, up: .42, s1: .45, s0: .3, s2: .55, r0: .3, r1: .55 } : { u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
+    if (field) {
+      const sum = new Map();
+      for (const pt of cur.order) { const s = sum.get(pt.group) || { v: V(), n: 0 }; s.v.add(C(pt).p); s.n++; sum.set(pt.group, s); }
+      for (const [grp, s] of sum) slotOf.set(grp, s.v.divideScalar(s.n));
     }
-    const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z);
-    const when = field ? { u0: 0, up: .42, s0: .26, s1: .6, r0: .26, r1: .6 } : { box: true, u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
-    const plan = new Map(), n = cur.order.length;
-    [...byKey.values()].forEach((parts, j) => {
-      const [x, y] = scr(parts.reduce((s, pt) => s.add(C(pt).p), V()).divideScalar(parts.length).sub(look)), r = Math.hypot(x, y);
-      const a = r > .02 ? Math.atan2(y, x) : j * 2.39996, m = k * (Math.min(r, 1.2) + .25);   // 가운데에 딱 놓인 것은 차례로 고르게 흩뿌림
-      const b = { ...when, D: V(Math.cos(a) * hw * m, Math.sin(a) * hh * m, Math.min(.2 * Math.min(hw, hh) * m, zMax)).applyQuaternion(qi) };
-      for (const pt of parts) plan.set(pt, { b, start: field ? 0 : BURST_SPREAD * cur.order.indexOf(pt) / Math.max(n - 1, 1) + BURST_PAUSE * pt.pause });   // start = T에 대한 비율
+    const plan = new Map(), n = cur.order.length, Ds = new Map();
+    cur.order.forEach((pt, i) => {
+      const key = field ? pt.group : pt;
+      if (!Ds.has(key)) {
+        const [x, y] = scr((field ? slotOf.get(key).clone() : C(pt).p).sub(look)), r = Math.hypot(x, y);
+        const a = r > .02 ? Math.atan2(y, x) : Ds.size * 2.39996, m = k * (Math.min(r, 1.2) + .25);   // 가운데에 딱 놓인 것은 차례로 고르게 흩뿌림
+        Ds.set(key, V(Math.cos(a) * hw * m, Math.sin(a) * hh * m, Math.min(.2 * Math.min(hw, hh) * m, zMax)).applyQuaternion(qi));
+      }
+      plan.set(pt, { b: { ...when, D: Ds.get(key) }, start: BURST_SPREAD * i / Math.max(n - 1, 1) + BURST_PAUSE * (pt.pause || 0) });   // start = T에 대한 비율
     });
     return plan;
   }
