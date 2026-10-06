@@ -6003,10 +6003,9 @@ loader.run(() => {
   const snapOut = x => 1 - (1 - x) ** 14 * (1 + 14 * x);      // 같은 모양을 아주 짧게(처음 7%에 가장 빠름): 박스에서 제자리를 곧게 빠져나오는 순간
   // 튕김 곡선: u0에 출발해 up에 가장 멀리(1) 나갔다가, 머뭇거리지 않고 바로 돌아와 끝(1)에 0 (돌아올 때도 속도 0으로 내려앉는다)
   const burstH = (u, b) => u <= b.u0 ? 0 : u < b.up ? burstOut((u - b.u0) / (b.up - b.u0)) : 1 - smooth((u - b.up) / (1 - b.up));
-  // 분해 경로의 진행도: 처음에 곧게 쑥 빠져나와(반해체 자리) 이어서 분해 자리 쪽으로.
-  // 현장(s2가 있을 때)은 두 단계: 처음부터 제자리에서 벌어지고(s 0 → .5, 반해체 자리 — 부드럽게), 줄 맞춘 자리로 옮겨 가는 큰 이동(s .5 → 1)은
-  //   멀리 퍼져 있는 동안(s0 → s2) 한다 — 현장 부품은 서로 맞물려 있어서 화면 안에서 줄 자리로 바로 옮겨 가면 서로 뚫고 지나간다
-  const burstS = (u, b) => b.s2 ? .5 * smoother(Math.min(u / b.s1, 1)) + .5 * smoother(clamp((u - b.s0) / (b.s2 - b.s0), 0, 1)) : snapOut(Math.min(u / b.s1, 1));
+  // 분해 경로의 진행도: 반해체 자리를 지나 분해 자리까지, 한 번의 매끄러운 곡선으로(현장도 박스도 같은 모양 — 멈췄다 다시 가는 느낌이 없게).
+  // 현장은 부품이 서로 맞물려 있어 더 느리게(s1이 더 큼) 끝까지 가서, 줄 자리로 옮기는 동안 서로 뚫지 않는다.
+  const burstS = (u, b) => (b.s1 > .6 ? snapOut : smoother)(Math.min(u / b.s1, 1));
   const rv = V(), rw = V();
   function run(pt, now) {
     const w = pt.tw, b = w.burst, u = clamp((now - w.t0) / w.dur, 0, 1), e = ease(u);
@@ -6046,7 +6045,7 @@ loader.run(() => {
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orbit.x + (py - .5) * .07 * tiltFade, orbit.y + (px - .5) * .12 * tiltFade, 0)), qi = q.clone().invert();
     const scr = v => { v.applyQuaternion(q); return [v.x / hw, v.y / hh]; };   // 무대 방향 → 화면 비율 (가운데 → 가장자리 = 1)
     const zMax = .3 * (cam ? cam.d - cam.z : g.d - g.z);
-    const when = cur.def.fieldParts ? { u0: .04, up: .42, s1: .45, s0: .3, s2: .55, r0: .3, r1: .55 } : { u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
+    const when = cur.def.fieldParts ? { u0: .04, up: .42, s1: .58, r0: .3, r1: .55 } : { u0: .04, up: .42, s1: .72, r0: .12, r1: .62 };
     const plan = new Map(), n = cur.order.length;
     const out = cur.order.map((pt, i) => {
       const [x, y] = scr(C(pt).p.sub(look)), r = Math.hypot(x, y);
