@@ -7896,6 +7896,8 @@ loader.run(() => {
   // 고른 것을 기억해(localStorage 'exbox-cut') 다음에 사이트를 열 때 그 컷신이 나온다. cutKind = 지금 틀고 있는(마지막으로 튼) 컷신
   const CUTS = { drone: '드론 비행', globe: '지구본' };
   const cutPick = () => { try { return localStorage.getItem('exbox-cut') === 'globe' ? 'globe' : 'drone'; } catch (e) { return 'drone'; } };
+  // 사이트를 열 때 틀 컷신: 주소에 ?cut=globe(또는 drone)가 있으면 그것(발표용 바로가기가 쓴다 — 기억해 둔 것과 상관없이), 없으면 기억해 둔 것
+  const cutOpen = () => (/[?&]cut=(globe|drone)(&|$)/.exec(location.search) || [])[1] || cutPick();
   let cutKind = 'drone';
   // 컷신을 틀 조건: 주소가 메인 화면이고(현장·박스로 바로 들어온 주소면 건너뜀), 움직임 줄이기 설정이 아니고, 주소에 ?cut=0이 없을 때
   const cutWanted = () => CUT_AUTO && !reduced && fromHash() === 'home' && !/[?&]cut=0(&|$)/.test(location.search);
@@ -9548,7 +9550,7 @@ loader.run(() => {
   mode = innerWidth / innerHeight < .85 ? 'tall' : 'wide';
   resize();
   select(fromHash());
-  if (cutWanted()) { try { startCut(); } catch (err) { cutFail(err); } }   // 메인 화면으로 열었으면 시작 컷신부터 (로딩창 뒤에서 첫 장면을 그려 두고, 로딩창이 걷힐 때 시계를 다시 맞춘다)
+  if (cutWanted()) { try { startCut(cutOpen()); } catch (err) { cutFail(err); } }   // 메인 화면으로 열었으면 시작 컷신부터 (로딩창 뒤에서 첫 장면을 그려 두고, 로딩창이 걷힐 때 시계를 다시 맞춘다)
   // 글꼴은 나중에 도착한다(loader): 도착하면 글자 폭이 바뀌어 머리글 높이도 달라질 수 있으니 다시 잰다
   if (document.fonts) document.fonts.ready.then(measureUI);
   // 로딩창 닫기: 첫 화면이 실제로 그려지면(다음다음 프레임) 불러오기 끝 → loader가 로고를 마저 조립하고 나면 .hide → CSS가 .25초 보여 준 뒤 부드럽게 지운다.
