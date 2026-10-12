@@ -1550,9 +1550,11 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .cut-hit:focus-visible { outline: 2px solid #fff; outline-offset: -14px; }
 .cut-skip { position: absolute; top: calc(22px + env(safe-area-inset-top, 0px)); right: 28px; opacity: .92; }
 /* 지구본 컷신(JS의 '시작 컷신 2'): 선 그림을 그리는 2D 캔버스 — 검은 바탕까지 여기에 그린다(끝에서 바탕이 걷히면 뒤의 테마 바탕이 드러난다).
-   .cut-go = 브라우저가 소리를 막고 있는 동안 화면 아래에 작게 뜨는 안내("화면을 누르면 음악이 나와요") — 컷신은 기다리지 않고 흐른다. 어디를 눌러도 되므로 누르는 것을 가로막지 않는다 */
+   .cut-go = 브라우저가 소리를 막고 있을 때 검은 화면에 뜨는 "눌러서 시작"(화면 전체가 단추, 글자는 JS가 천천히 깜빡인다) — 누르면 첫 장면부터 음악과 함께 시작한다 */
 .cut-film { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.cut-go { position: absolute; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); margin: 0; padding: 6px 14px; border-radius: 999px; background: rgba(0, 0, 0, .78); transform: translateX(-50%); color: #b4b4b4; font: 500 12.5px/1.4 var(--f-body); letter-spacing: .08em; white-space: nowrap; pointer-events: none; }
+.cut-go { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; padding: 0; border: 0; background: none; color: #dcdcdc; font: 500 14px/1.4 var(--f-body); letter-spacing: .08em; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cut-go small { font-size: 11.5px; letter-spacing: .06em; color: #8c8c8c; }
+.cut-go:focus-visible { outline: 2px solid #fff; outline-offset: -10px; }
 .cut-film[hidden], .cut-go[hidden] { display: none; }
 html.cut-on :is(.head, .home, .dock, .hint, .info, .choices, .pins, .tip, .sheet) { opacity: var(--cut-ui, 0) !important; pointer-events: none !important; transition: none !important; }
 html.cut-on:not(.cut-reveal) :is(.head, .home, .dock, .hint, .info, .choices, .pins, .tip, .sheet) { visibility: hidden !important; }
@@ -1617,13 +1619,13 @@ html.cut-on:not(.cut-reveal) :is(.head, .home, .dock, .hint, .info, .choices, .p
 <canvas class="hud" id="hud" aria-hidden="true"></canvas>
 
 <!-- 시작 컷신 위에 얹는 층: 갈색 점(= 커지면 로고 상자) · 워드마크 · 점을 누르는 단추 · 건너뛰기. 막대와 글자 모양은 JS가 #cut-data에서 채운다.
-     지구본 컷신은 #cut-film(2D 캔버스)에 그림을 다 그리고, 소리가 막혀 있는 동안 #cut-go("화면을 누르면 음악이 나와요")를 띄운다 -->
+     지구본 컷신은 #cut-film(2D 캔버스)에 그림을 다 그리고, 소리가 막혀 있으면 #cut-go로 한 번 누르기를 기다린다(누르면 첫 장면부터 음악과 함께) -->
 <div class="cut" id="cut" hidden>
   <canvas class="cut-film" id="cut-film" aria-hidden="true" hidden></canvas>
   <div class="cut-box" id="cut-box" aria-hidden="true"></div>
   <svg class="cut-word" id="cut-word" aria-hidden="true"></svg>
   <button type="button" class="cut-hit" id="cut-hit" aria-label="깜빡이는 점 — 누르면 로고가 나타나고 메인 화면으로 넘어가요" hidden><span></span></button>
-  <p class="cut-go" id="cut-go" hidden>화면을 누르면 음악이 나와요</p>
+  <button type="button" class="cut-go" id="cut-go" hidden>화면을 누르면 시작해요<small>음악이 함께 나와요</small></button>
   <button type="button" class="crumb cut-skip" id="cut-skip">건너뛰기</button>
 </div>
 
@@ -8979,11 +8981,13 @@ loader.run(() => {
 
   // ---------- 지구본 컷신: 틀기 ----------
   // 컷신 시계(CUT.e)와 겹치는 층(#cut) · 건너뛰기는 드론 컷신과 같이 쓴다. 3D 캔버스는 가려 두고(메인 화면은 뒤에서 미리 그려 둔다), 끝에서 드론 컷신과 같은 식으로 메인 화면을 드러낸다.
-  // 음악: 브라우저는 사용자가 한 번 누르기 전에는 소리를 막는다(사이트가 풀 수 없다). 컷신은 기다리지 않고 로딩이 끝나면 바로 흐르고, 음악은 소리를 낼 수 있게 되는 대로
-  //   (처음부터 풀려 있으면 처음부터, 아니면 사용자가 화면이나 키를 누른 순간) **지금 자리부터** 끼어든다 — 그때까지 화면 아래에 "화면을 누르면 음악이 나와요"(#cut-go)를 작게 띄운다.
-  //   (처음에는 검은 화면에서 한 번 누르기를 기다렸는데, 사용자가 "로딩 끝나면 클릭 없이 바로 재생되게"라고 해서 바꿈.) 소리를 꺼 두었으면 안내 없이 소리 없이 튼다.
+  // 음악: 브라우저는 사용자가 한 번 누르기 전에는 소리를 막는다(사이트가 풀 수 없다). 그래서 —
+  //   · 소리를 낼 수 있으면(컷신 칸에서 고른 직후 · 자동 재생을 허용해 연 브라우저 = 발표용 바로가기) 기다리지 않고 음악과 함께 바로 시작한다
+  //   · 막혀 있으면 검은 화면에서 "화면을 누르면 시작해요"(#cut-go, 화면 전체가 단추)로 한 번 누르기를 기다렸다가, 누르면 첫 장면부터 음악과 함께 시작한다
+  //   · 소리를 꺼 두었으면 기다리지 않고 소리 없이 튼다
+  //   (v64에서 "누르지 않아도 바로 흐르고 음악은 누를 때 끼어들기"로 바꿨다가, 사용자가 "처음부터 소리가 나야 한다"며 이 방식을 골랐다 — 음악이 컷신의 핵심이다.)
   //   음악이 나오는 동안에는 시계를 음악의 자리에 맞춘다(조금 어긋나면 살살, 많이 어긋나면 한 번에)
-  const GL = { G: null, x: null, track: null, hint: 0, w: 0, h: 0, dpr: 0, warm: false };
+  const GL = { G: null, x: null, track: null, wait: false, gate: 0, w: 0, h: 0, dpr: 0, warm: false };
   function globeStart() {
     const film = $('cut-film'), root = document.documentElement, lo = $('loading');
     if (!GL.G) {
@@ -8994,7 +8998,7 @@ loader.run(() => {
     // hold: 로딩창이 아직 가리고 있으면 시계를 세워 둔다 — 걷힐 때 풀린다(맨 아래 '로딩창 닫기'). torn = 3D 세계를 따로 짓지 않는다(메인 화면 그대로)
     Object.assign(CUT, { e: -.25, last: performance.now(), click: -1, skip: -1, out: -1, nudge: -9, torn: true, swapped: false, cue: {}, pan: null,
       hold: !lo.classList.contains('hide') && getComputedStyle(lo).display !== 'none' });
-    Object.assign(GL, { track: null, hint: 0, w: 0, h: 0, warm: false });
+    Object.assign(GL, { track: null, wait: true, gate: 0, w: 0, h: 0, warm: false });
     cutKind = 'globe';
     cutOn = true;
     root.classList.add('cut-on');
@@ -9015,19 +9019,24 @@ loader.run(() => {
     C.last = now;
     if (camera.view && camera.view.enabled) camera.clearViewOffset();
     shift.x = shift.y = 0;
-    let can = 'no';
     if (!C.hold) {
-      // 음악: 틀 수 있게 되는 대로 지금 자리부터 (다 끝나 가는 9초 뒤나 건너뛰는 중에는 새로 틀지 않는다)
-      if (!GL.track && C.e >= 0 && C.e < 9 && C.skip < 0) { can = SFX.can('globe'); if (can === 'ok') GL.track = SFX.track('globe', C.e); }
-      const p = GL.track && C.e < GL.track.dur ? GL.track.pos() : -1;   // 음악의 자리 (null = 소리가 멈춰 있다: 탭을 가렸을 때 — 화면도 멈춰 기다린다)
-      if (p !== null) {
-        C.e += step;
-        if (p >= 0) C.e += Math.abs(p - C.e) > .12 ? p - C.e : (p - C.e) * .1;
+      // 시작(e = 0): 음악을 틀 수 있으면 틀고, 한 번 눌러야 하면 기다리고(건너뛰기를 누르면 기다리지 않는다), 못 트는 환경(소리 끔 등)이면 소리 없이
+      if (GL.wait && C.e >= 0) {
+        const s = C.skip >= 0 ? 'no' : SFX.can('globe');
+        if (s === 'ok') GL.track = SFX.track('globe');
+        if (s === 'wait') { GL.gate += step; C.e = 0; } else GL.wait = false;
+      }
+      if (!GL.wait || C.e < 0) {
+        const p = GL.track && C.e < GL.track.dur ? GL.track.pos() : -1;   // 음악의 자리 (null = 소리가 멈춰 있다: 탭을 가렸을 때 — 화면도 멈춰 기다린다)
+        if (p !== null) {
+          C.e += step;
+          if (p >= 0) C.e += Math.abs(p - C.e) > .12 ? p - C.e : (p - C.e) * .1;
+        }
       }
     }
-    const e = Math.max(0, C.e), go = $('cut-go');
-    GL.hint = clamp(GL.hint + (can === 'wait' && e > .6 ? step / .5 : -step / .3), 0, 1);   // 소리가 막혀 있는 동안의 안내: 살며시 나타났다가 음악이 나오면 사라진다
-    if (go.hidden === GL.hint > 0) go.hidden = !go.hidden;
+    const e = Math.max(0, C.e), go = $('cut-go'), gate = GL.wait && GL.gate > .35;   // 기다리는 안내는 조금 뒤에(금방 풀릴 때 번쩍 보이지 않게), 천천히 깜빡인다
+    if (go.hidden === gate) go.hidden = !gate;
+    if (gate) go.style.opacity = .5 + .5 * Math.cos((GL.gate - .35) / 1.6 * Math.PI * 2) ** 2;
     if (GL.w !== vw || GL.h !== vh || GL.dpr !== dpr) { Object.assign(GL, { w: vw, h: vh, dpr }); film.width = Math.round(vw * dpr); film.height = Math.round(vh * dpr); }
     GL.x.setTransform(dpr, 0, 0, dpr, 0, 0);
     globeFilm(GL.x, e, vw, vh, GL.G);
@@ -9048,7 +9057,6 @@ loader.run(() => {
       if (to >= GT.outDur) { globeEnd(); return; }
     }
     film.style.opacity = fa * ov;
-    go.style.opacity = GL.hint * ov * (C.out >= 0 ? 0 : 1);
     $('cut-skip').style.opacity = .92 * ov;
     canvas.style.opacity = view;
     // 메인 화면: 맨 처음 한 장(로딩창 뒤에서 — 모양과 셰이더를 그래픽카드에 올려 둔다)과, 로고가 선 뒤부터(선 그림이 움직이는 동안에는 3D를 그리지 않는다 — 끊기지 않게)
