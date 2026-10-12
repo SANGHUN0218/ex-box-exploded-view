@@ -2069,7 +2069,23 @@ loader.run(() => {
   // 시작 컷신이 날아가는 동안에는 유리 면을 넣지 않는다(모노 라인과 같은 선 그림): 진짜 선체를 긴 선체로 바꿔칠 때 유리의 진하기가 달라 보이면 안 된다.
   // 3D가 걷힐 때(cutTear) 풀어서 메인 화면부터 유리가 들어간다
   let glassHold = false;
-  const prismU = [];   // 프리즘 라인: 저절로 움직이는 무지개용 셰이더 시간 유니폼(재질마다 하나, frame()의 t를 매 프레임 넣는다)
+  // 프리즘 라인: 유리 면에 얹는 무지개. 보는 각도가 비스듬할수록(프레넬) 진해지고(.35), 시간에 따라 저절로 돈다(prismTime — 모든 재질이 같이 쓰는 값, frame()이 매 프레임 넣는다).
+  // 재질의 셰이더를 바꾸는 것이라 다른 테마로 가면 반드시 떼어야 한다(setPrism(m, false) → 보통 셰이더로 돌아간다). 안 떼면 그 뒤 모든 테마의 면에 무지개가 남는다
+  const prismTime = { value: 0 };
+  const prismShader = shader => {
+    shader.uniforms.prismTime = prismTime;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
+      uniform float prismTime;`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      float prismFres = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.2);
+      float prismHue = fract(prismFres * 1.6 + normal.x * .4 + normal.y * .3 + normal.z * .2 + prismTime * .06);
+      vec3 prismRgb = clamp(vec3(abs(prismHue * 6.0 - 3.0) - 1.0, 2.0 - abs(prismHue * 6.0 - 2.0), 2.0 - abs(prismHue * 6.0 - 4.0)), 0.0, 1.0);
+      totalEmissiveRadiance += prismRgb * prismFres * .35;`);
+  };
+  function setPrism(m, on) {
+    if ((m.onBeforeCompile === prismShader) === on) return;
+    if (on) m.onBeforeCompile = prismShader; else delete m.onBeforeCompile;
+    m.needsUpdate = true;
+  }
   function holdGlass(v) {
     glassHold = v;
     if ((curTheme().mat || {}).glass) for (const b of Object.values(built)) styleBuilt(b);
@@ -2085,6 +2101,7 @@ loader.run(() => {
       m.userData.glass = false;
       m.userData.base = o.base; m.opacity = o.op; m.transparent = o.tr; m.depthWrite = o.dw; m.depthFunc = o.df; m.blending = o.bl;
     }
+    if (!(mode && mode.prism)) setPrism(m, false);   // 프리즘 라인이 아니면 무지개 셰이더를 뗀다
     // 꼭짓점마다 색을 가진 것(바깥 불꽃: 노랑 → 붉은 주황)은 선 · 흑백 강조 테마에서 그 색을 끈다 — 이것만은 셰이더를 다시 만든다(작은 재질 두셋뿐)
     const vc = o.vc && !(mode && /^(line|mono)$/.test(mode.kind));
     if (m.vertexColors !== vc) { m.vertexColors = vc; m.needsUpdate = true; }
@@ -2148,24 +2165,7 @@ loader.run(() => {
           m.userData.base = m.opacity = o.glass;
           if (m.emissive) {
             m.color.setScalar(0); m.emissive.copy(g); if (o.rough !== undefined) { m.metalness = 1; m.envMapIntensity = 0; }
-            if (mode.prism && !m.userData.prismSet) {   // 프리즘 라인: 보는 각도가 비스듬할수록(프레넬) 옅은 무지개를 emissive에 얹는다(.35) + 시간에 따라 저절로 돈다(prismTime)
-              m.userData.prismSet = true;
-              m.onBeforeCompile = shader => {
-                shader.uniforms.prismTime = { value: 0 };
-                m.userData.prismUniform = shader.uniforms.prismTime;
-                shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `
-                #include <common>
-                uniform float prismTime;`).replace('#include <emissivemap_fragment>', `
-                #include <emissivemap_fragment>
-                float prismFres = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.2);
-                float prismHue = fract(prismFres * 1.6 + normal.x * .4 + normal.y * .3 + normal.z * .2 + prismTime * .06);
-                vec3 prismRgb = clamp(vec3(abs(prismHue * 6.0 - 3.0) - 1.0, 2.0 - abs(prismHue * 6.0 - 2.0), 2.0 - abs(prismHue * 6.0 - 4.0)), 0.0, 1.0);
-                totalEmissiveRadiance += prismRgb * prismFres * .35;
-              `);
-              };
-              m.needsUpdate = true;
-              prismU.push(m);
-            }
+            if (mode.prism) setPrism(m, true);
           } else m.color.copy(g);
           m.transparent = false; m.depthWrite = true; m.depthFunc = THREE.AlwaysDepth;
           m.blending = THREE.CustomBlending; m.blendSrcAlpha = THREE.OneFactor;   // (캔버스의 알파는 보통의 섞기처럼 쌓는다)
@@ -7615,7 +7615,7 @@ loader.run(() => {
     // 테마를 바꾸면 3D 조명도 화면과 같은 빠르기(약 0.7초)로 따라간다
     lightStep(k(4.5));
     lineLodStep();   // 선 테마: 선을 부품마다 그릴지 모델째 묶어 그릴지
-    for (const m of prismU) { const u = m.userData.prismUniform; if (u) u.value = t; }   // 프리즘 라인: 무지개가 저절로 도는 시간
+    prismTime.value = t;   // 프리즘 라인: 무지개가 저절로 도는 시간
     // 시작 컷신 동안에는 컷신이 화면을 맡는다
     if (cutOn) {
       try { cutFrame(now, t); } catch (err) { cutFail(err); }
