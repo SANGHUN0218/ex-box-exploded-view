@@ -1952,7 +1952,7 @@ loader.run(() => {
     // callout = 분해하면 부품 종류마다 이름표가 펼쳐지고 부품에서 이름표까지 선이 뻗는다(아래 hudStep)
     { id: 'arline', ko: 'AR 라인', en: 'AR Callout', desc: '글라스 라인 + 이름표 — 분해하면 부품마다 선이 뻗어 나가 모든 이름이 펼쳐진다 (영화 속 홀로그램 AR 화면 참고)',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C' }, callout: true },
-    { id: 'prismline', ko: '프리즘 라인', en: 'Prism Line', desc: '글라스 라인의 유리 면에 옅은 무지개 — 천천히 색이 돌고, 그 빛이 안개 속 조명처럼 은은하게 번져 연기처럼 일렁인다',
+    { id: 'prismline', ko: '프리즘 라인', en: 'Prism Line', desc: '글라스 라인의 모든 유리 면에 옅은 무지개 — 천천히 색이 돌고, 그 빛이 안개 속 조명처럼 은은하게 번져 연기처럼 일렁인다',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C', prism: true } },
     { id: 'charcoal', ko: '차콜', en: 'Charcoal', desc: '스튜디오의 밤 — 따뜻한 숯색 어둠, 윤곽 빛을 올린 3D',
       l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', 1.3], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#3d3a35', hemi: .2, exp: 1 }, mat: null },
@@ -2069,21 +2069,30 @@ loader.run(() => {
   // 시작 컷신이 날아가는 동안에는 유리 면을 넣지 않는다(모노 라인과 같은 선 그림): 진짜 선체를 긴 선체로 바꿔칠 때 유리의 진하기가 달라 보이면 안 된다.
   // 3D가 걷힐 때(cutTear) 풀어서 메인 화면부터 유리가 들어간다
   let glassHold = false;
-  // 프리즘 라인: 유리 면에 얹는 무지개. 보는 각도가 비스듬할수록(프레넬) 진해지고(.35), 시간에 따라 저절로 돈다(prismTime — 모든 재질이 같이 쓰는 값, frame()이 매 프레임 넣는다).
+  // 프리즘 라인: 유리 면에 얹는 무지개. 모든 면에 깔리고(PRISM.base), 보는 각도가 비스듬할수록(프레넬) 진해지며, 시간에 따라 저절로 돈다(prismTime — 모든 재질이 같이 쓰는 값, frame()이 매 프레임 넣는다).
+  // 색은 면의 방향 · 보는 각도 · 화면에서의 자리에 따라 달라진다(넓은 면에는 색이 천천히 번져 가고, 가는 기둥에도 색 띠가 선다).
+  // 유리의 진하기(10 ~ 80%, 재질마다 무작위)와 상관없이 같은 세기로 보이게 재질마다 진하기로 나눈 값(prismGain)을 준다 — 안 그러면 옅은 유리(가는 기둥 · 격자)에서는 무지개가 안 보인다.
   // 재질의 셰이더를 바꾸는 것이라 다른 테마로 가면 반드시 떼어야 한다(setPrism(m, false) → 보통 셰이더로 돌아간다). 안 떼면 그 뒤 모든 테마의 면에 무지개가 남는다
+  const PRISM = { amt: .35, base: .2 };   // amt = 무지개의 진하기(가장 비스듬한 면 한 겹), base = 정면으로 보는 면에 남기는 몫
   const prismTime = { value: 0 };
-  const prismShader = shader => {
-    shader.uniforms.prismTime = prismTime;
+  const prismWire = (u, m) => { u.prismTime = prismTime; u.prismGain = ORIG.get(m).prism; };
+  function prismShader(shader) {   // (three가 재질의 것으로 부른다: this = 재질)
+    prismWire(shader.uniforms, this);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
-      uniform float prismTime;`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-      float prismFres = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.2);
-      float prismHue = fract(prismFres * 1.6 + normal.x * .4 + normal.y * .3 + normal.z * .2 + prismTime * .06);
+      uniform float prismTime, prismGain;`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      float prismFres = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 1.6);
+      float prismHue = fract(prismFres * .7 + normal.x * .25 + normal.y * .2 + normal.z * .12 + dot(vViewPosition.xy, vec2(.11, .07)) + prismTime * .06);
       vec3 prismRgb = clamp(vec3(abs(prismHue * 6.0 - 3.0) - 1.0, 2.0 - abs(prismHue * 6.0 - 2.0), 2.0 - abs(prismHue * 6.0 - 4.0)), 0.0, 1.0);
-      totalEmissiveRadiance += prismRgb * prismFres * .35;`);
-  };
+      totalEmissiveRadiance += prismRgb * mix(${PRISM.base}, 1.0, prismFres) * prismGain;`);
+  }
   function setPrism(m, on) {
     if ((m.onBeforeCompile === prismShader) === on) return;
-    if (on) m.onBeforeCompile = prismShader; else delete m.onBeforeCompile;
+    if (on) {
+      m.onBeforeCompile = prismShader;
+      // 전에 만들어 둔 무지개 셰이더를 다시 쓸 때는 three가 '마지막으로 만든 셰이더'의 값 목록을 그대로 쓴다(그게 보통 셰이더의 것이면 무지개 값이 없어 색이 멈춘다) → 다시 꽂아 준다
+      const u = renderer.properties.get(m).uniforms;
+      if (u) prismWire(u, m);
+    } else delete m.onBeforeCompile;
     m.needsUpdate = true;
   }
   // 프리즘 라인의 빛 안개: 안개 낀 날 켜 둔 조명처럼, 면의 무지개 빛이 둘레로 은은하게 번지고 연기처럼 천천히 일렁인다(광선 · 줄기 모양은 쓰지 않는다 — 싸 보인다는 사용자 지적).
@@ -2091,7 +2100,7 @@ loader.run(() => {
   //    색을 먼저 고른 뒤 흐린다(순서가 반대면 무지개 색이 서로 섞여 회색이 돼 버린다). 흰 선은 색 성분이 없어 번지지 않는다 → 선은 또렷하게 남는다.
   // 연기 = 천천히 흐르는 잡음(fbm): 빛이 번지는 자리를 살짝 밀고(뭉게뭉게), 짙고 옅은 곳을 만든다. 색은 면의 무지개를 따라 천천히 바뀐다.
   // 화면을 다 그린 뒤 덧그리는 것이라 3D 재질은 건드리지 않는다(다른 테마에서는 아예 돌지 않는다)
-  const RAY = { gain: 8 };   // gain = 안개의 밝기. 번지는 넓이는 셰이더의 흐린 단계(lod0 + 1 ~ 5 = 화면 높이의 1 ~ 16%쯤, 넓을수록 옅게)
+  const RAY = { gain: 16 };   // gain = 안개의 밝기. 번지는 넓이는 셰이더의 흐린 단계(lod0 + 1 ~ 5 = 화면 높이의 1 ~ 16%쯤, 넓을수록 옅게)
   const rayTex = new THREE.DataTexture(null, 1, 1, THREE.RGBAFormat);
   rayTex.minFilter = rayTex.magFilter = THREE.LinearFilter;
   rayTex.needsUpdate = true;
@@ -2130,9 +2139,10 @@ loader.run(() => {
         float smoke = fbm(p * 3.2 + w * 2.6 + vec2(0., -t * 1.6));
         vec2 uv = vUv + w * .05 * vec2(res.y / res.x, 1.);
         vec3 g = haze(uv, lod0 + 1.) * .1 + haze(uv, lod0 + 2.) * .2 + haze(uv, lod0 + 3.) * .3 + haze(uv, lod0 + 4.) * .25 + haze(uv, lod0 + 5.) * .15;
-        g = mix(vec3(dot(g, vec3(.333))), g, .8);   // 안개에 섞인 빛처럼 조금 옅은 색으로
+        g = mix(vec3(dot(g, vec3(.333))), g, .7);   // 안개에 섞인 빛처럼 옅은 색으로
         // 면 위에는 조금만(면의 무지개가 진해지지 않게), 빈 바탕으로 번져 나간 곳에서 또렷하게
         g *= gain * (.2 + 1.5 * smoke * smoke) * mix(.1, 1., 1. - smoothstep(0., .22, texture2D(map, vUv).a));
+        g /= 1. + 3.5 * max(g.r, max(g.g, g.b));   // 밝은 곳은 눌러 준다: 옅은 번짐은 그대로 보이고, 진한 면 곁에서도 네온처럼 튀지 않는다
         g += (hash(vUv * res + time) - .5) / 255.;   // 어두운 번짐에 띠가 생기지 않게 아주 고운 알갱이
         g = max(g, 0.);
         gl_FragColor = vec4(g, max(g.r, max(g.g, g.b)));
@@ -2241,7 +2251,7 @@ loader.run(() => {
           m.userData.base = m.opacity = o.glass;
           if (m.emissive) {
             m.color.setScalar(0); m.emissive.copy(g); if (o.rough !== undefined) { m.metalness = 1; m.envMapIntensity = 0; }
-            if (mode.prism) setPrism(m, true);
+            if (mode.prism) { if (!o.prism) o.prism = { value: PRISM.amt / o.glass }; setPrism(m, true); }
           } else m.color.copy(g);
           m.transparent = false; m.depthWrite = true; m.depthFunc = THREE.AlwaysDepth;
           m.blending = THREE.CustomBlending; m.blendSrcAlpha = THREE.OneFactor;   // (캔버스의 알파는 보통의 섞기처럼 쌓는다)
