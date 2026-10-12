@@ -677,7 +677,7 @@ try {
 /* 모노 라인 — 라인과 모노 포인트를 합친 것 (사용자 주문): 검은 바탕에 흰 선만, 색은 방폭박스의 주황 하나.
    화면은 라인처럼 가는 선 테두리 · 빗금 버튼 · 속이 빈 제목 · 맞춤표(모두 흰 선). 3D도 흰 선만 — 속까지 비쳐 보이므로 방폭박스가 건물 속에 있어도
    건물이 아니라 박스의 선만 주황으로 깜빡인다. 박스를 눌러 들어가면 깜빡임이 멎는다 (JS의 blinkStep) */
-[data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"] {
+[data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"] {
   --ink: #EDEDEB; --on-ink: #111110; --ink-hover: #fff; --muted: #A6A6A3;
   --glass: rgb(17 17 16 / .86); --solid: rgb(20 20 19 / .97); --card: rgb(17 17 16 / .9); --btn: transparent;
   --lift: rgb(255 255 255 / .14); --hover: rgb(255 255 255 / .08); --panel-hover: rgb(255 255 255 / .04);
@@ -694,12 +694,15 @@ try {
 }
 /* 글라스 라인 — 모노 라인의 선 사이에 유리 면을 끼운 것 (사용자 주문): 선 · 바탕 · 깜빡임은 모노 라인 그대로(위 묶음을 같이 쓴다).
    3D의 면은 빛 반사 없는 반투명 유리 — 진하기는 면마다 10 ~ 80%에서 무작위 (JS의 restyle). 화면의 판도 반사 없이 뒤가 비치는 유리판 */
-[data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"] {
+[data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"] {
   --glass: rgb(142 142 140 / .2); --card: rgb(142 142 140 / .24); --solid: rgb(34 34 33 / .95);
   --blur: 10px;
 }
 /* 프리즘 라인 — 글라스 라인에서 파생 (사용자 주문: "반투명한 면에 영상처럼 살짝의 프리즘 효과로 무지개 느낌, 너무 과하면 안되지만 티가 안나면 안 됨").
    화면은 글라스 라인 그대로, 3D의 유리 면에만 보는 각도에 따라 옅은 무지개 빛이 번지고(JS의 setPrism), 그 빛이 안개 속 조명처럼 둘레로 은은하게 번져 연기처럼 일렁인다(JS의 prismRays) */
+
+/* 데이터랜드 — 프리즘 라인에서 파생 (사용자가 준 영상 참고: 차콜 면 + 가는 흰 윤곽선 + 면 위에 번지는 옅은 무지개). 화면은 더 깊은 차콜 */
+[data-theme="dataland"] { --bg: #0A0A0B; --base: #0A0A0B; --ring: #0A0A0B; --on-ink: #0A0A0B; --edge: #E4E4E2; --glass: rgb(26 26 28 / .78); --card: rgb(26 26 28 / .86); --solid: rgb(18 18 19 / .96); }
 
 /* 테마를 바꿀 때: 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·둥글기·무늬까지 한꺼번에 부드럽게).
    그 기능이 없는 브라우저는 .theme-anim을 잠깐 붙여 색만이라도 0.7초에 걸쳐 바뀌게 한다 */
@@ -1431,12 +1434,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
               linear-gradient(rgb(27 47 69 / .4), rgb(27 47 69 / .4)) 50% 50% / 100% 1px no-repeat;
 }
 /* 라인 · 모노 라인: 제목은 속이 빈 외곽선 글자(화살표는 글자색으로), Ex 동그라미와 핀도 채우지 않고 선으로, 네 귀퉁이 맞춤표. 선의 색 = 그 테마의 테두리 색(--edge) */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) :is(.title, .info h2, .p-name), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .tv-t { color: transparent; -webkit-text-stroke: 1px var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .chev { color: var(--ink); -webkit-text-stroke: 0; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .title { font-size: clamp(24px, 2.9vw, 36px); }   /* 속이 빈 글자는 조금 커야 읽힌다 */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .tv-dot { background: var(--base); color: var(--edge); border: 1.5px solid var(--edge); box-shadow: none; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .pin::after { width: 1.5px; background: var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .fx::before {
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.title, .info h2, .p-name), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-t { color: transparent; -webkit-text-stroke: 1px var(--edge); }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .chev { color: var(--ink); -webkit-text-stroke: 0; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .title { font-size: clamp(24px, 2.9vw, 36px); }   /* 속이 빈 글자는 조금 커야 읽힌다 */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { background: var(--base); color: var(--edge); border: 1.5px solid var(--edge); box-shadow: none; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin::after { width: 1.5px; background: var(--edge); }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .fx::before {
   content: ''; position: absolute; inset: 14px; opacity: .75;
   background: linear-gradient(var(--edge), var(--edge)) 0 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 0 0 / 1px 22px,
               linear-gradient(var(--edge), var(--edge)) 100% 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 100% 0 / 1px 22px,
@@ -1445,19 +1448,19 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   background-repeat: no-repeat;
 }
 /* 모노 포인트 · 모노 라인: 방폭박스를 가리키는 것(핀)만 주황. 고르기 카드의 포인트 점은 3D처럼 깜빡인다 */
-:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .pin { background: var(--accent); color: #fff; border-color: var(--accent); }
-:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .pin::after { background: var(--accent); }
-.tv:is([data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .tv-dot { background: var(--accent); border-color: var(--accent); }
-.tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .tv-dot { animation: mono-blink 1.15s ease-in-out infinite; }
+:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin { background: var(--accent); color: #fff; border-color: var(--accent); }
+:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin::after { background: var(--accent); }
+.tv:is([data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { background: var(--accent); border-color: var(--accent); }
+.tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { animation: mono-blink 1.15s ease-in-out infinite; }
 @keyframes mono-blink { 50% { opacity: .15; } }
-@media (prefers-reduced-motion: reduce) { .tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .tv-dot { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { animation: none; } }
 @media (max-width: 640px) {
   .head { top: calc(16px + env(safe-area-inset-top, 0px)); left: 18px; right: 18px; }
   .title { font-size: 20px; }
   :root[data-theme="swiss"] .title { font-size: 23px; }
   /* 라인 · 모노 라인: 휴대폰의 작은 글자는 속을 비우면 읽기 어렵다 → 선 색으로 채운 글자 */
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) .title { font-size: 21px; }
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"]) :is(.title, .info h2, .p-name) { color: var(--edge); -webkit-text-stroke: 0; }
+  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .title { font-size: 21px; }
+  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.title, .info h2, .p-name) { color: var(--edge); -webkit-text-stroke: 0; }
   .chev { width: 24px; height: 24px; margin-left: 8px; }
   .sub { font-size: 12px; }
   .act { padding: 10px 14px; font-size: 13px; }
@@ -1686,7 +1689,7 @@ const STYLE = (() => {
     aurora: ['gothic'], kit: ['plex', 'sunflower', 'plexmono'], retro: ['nanum'], noir: ['myeongjo', 'hahmlet', 'noto'],
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
     steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
-    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'blackhan', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'blackhan', 'plexmono'], glassline: ['plex', 'blackhan', 'plexmono'], arline: ['plex', 'blackhan', 'plexmono'], prismline: ['plex', 'blackhan', 'plexmono'],
+    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'blackhan', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'blackhan', 'plexmono'], glassline: ['plex', 'blackhan', 'plexmono'], arline: ['plex', 'blackhan', 'plexmono'], prismline: ['plex', 'blackhan', 'plexmono'], dataland: ['plex', 'blackhan', 'plexmono'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -1984,6 +1987,8 @@ loader.run(() => {
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C' }, callout: true },
     { id: 'prismline', ko: '프리즘 라인', en: 'Prism Line', desc: '글라스 라인의 모든 유리 면에 옅은 무지개 — 천천히 색이 돌고, 그 빛이 안개 속 조명처럼 은은하게 번져 연기처럼 일렁인다',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C', prism: true } },
+    { id: 'dataland', ko: '데이터랜드', en: 'Dataland', desc: '차콜빛 유리 면 + 가는 흰 윤곽선, 면 위에 은은히 번지는 무지개 — 데이터랜드 뮤지엄 스터디 영상 참고',
+      l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#101010', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#F2F2F0', blink: '#F0842A', glass: '#2E2E32', prism: true, amt: .1, fog: 5 } },
     { id: 'charcoal', ko: '차콜', en: 'Charcoal', desc: '스튜디오의 밤 — 따뜻한 숯색 어둠, 윤곽 빛을 올린 3D',
       l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', 1.3], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#3d3a35', hemi: .2, exp: 1 }, mat: null },
     { id: 'vision', ko: '비전', en: 'Vision', desc: '공간에 떠 있는 유리 — Apple visionOS·iOS의 재질 참고',
@@ -2103,7 +2108,7 @@ loader.run(() => {
   // 색은 면의 방향 · 보는 각도 · 화면에서의 자리에 따라 달라진다(넓은 면에는 색이 천천히 번져 가고, 가는 기둥에도 색 띠가 선다).
   // 유리의 진하기(10 ~ 80%, 재질마다 무작위)와 상관없이 같은 세기로 보이게 재질마다 진하기로 나눈 값(prismGain)을 준다 — 안 그러면 옅은 유리(가는 기둥 · 격자)에서는 무지개가 안 보인다.
   // 재질의 셰이더를 바꾸는 것이라 다른 테마로 가면 반드시 떼어야 한다(setPrism(m, false) → 보통 셰이더로 돌아간다). 안 떼면 그 뒤 모든 테마의 면에 무지개가 남는다
-  const PRISM = { amt: .35, base: .2 };   // amt = 무지개의 진하기(가장 비스듬한 면 한 겹), base = 정면으로 보는 면에 남기는 몫
+  const PRISM = { amt: .16, base: .12 };   // amt = 무지개의 진하기(가장 비스듬한 면 한 겹), base = 정면으로 보는 면에 남기는 몫
   const prismTime = { value: 0 };
   const prismWire = (u, m) => { u.prismTime = prismTime; u.prismGain = ORIG.get(m).prism; };
   function prismShader(shader) {   // (three가 재질의 것으로 부른다: this = 재질)
@@ -2130,7 +2135,7 @@ loader.run(() => {
   //    색을 먼저 고른 뒤 흐린다(순서가 반대면 무지개 색이 서로 섞여 회색이 돼 버린다). 흰 선은 색 성분이 없어 번지지 않는다 → 선은 또렷하게 남는다.
   // 연기 = 천천히 흐르는 잡음(fbm): 빛이 번지는 자리를 살짝 밀고(뭉게뭉게), 짙고 옅은 곳을 만든다. 색은 면의 무지개를 따라 천천히 바뀐다.
   // 화면을 다 그린 뒤 덧그리는 것이라 3D 재질은 건드리지 않는다(다른 테마에서는 아예 돌지 않는다)
-  const RAY = { gain: 16 };   // gain = 안개의 밝기. 번지는 넓이는 셰이더의 흐린 단계(lod0 + 1 ~ 5 = 화면 높이의 1 ~ 16%쯤, 넓을수록 옅게)
+  const RAY = { gain: 6 };   // gain = 안개의 밝기. 번지는 넓이는 셰이더의 흐린 단계(lod0 + 1 ~ 5 = 화면 높이의 1 ~ 16%쯤, 넓을수록 옅게)
   const rayTex = new THREE.DataTexture(null, 1, 1, THREE.RGBAFormat);
   rayTex.minFilter = rayTex.magFilter = THREE.LinearFilter;
   rayTex.needsUpdate = true;
@@ -2195,6 +2200,7 @@ loader.run(() => {
     renderer.setRenderTarget(rayRT);
     renderer.render(rayScene, rayCam);
     renderer.setRenderTarget(null);
+    rayMat.uniforms.gain.value = curTheme().mat.fog || RAY.gain;
     rayMat.uniforms.res.value.copy(raySize);
     rayMat.uniforms.lod0.value = Math.log2(raySize.y / 818);   // 화면이 촘촘하면(휴대폰 · 큰 모니터) 그만큼 더 흐린 단계를 써서 번지는 넓이를 같게
     rayQuad.material = rayMat;
@@ -2281,7 +2287,7 @@ loader.run(() => {
           m.userData.base = m.opacity = o.glass;
           if (m.emissive) {
             m.color.setScalar(0); m.emissive.copy(g); if (o.rough !== undefined) { m.metalness = 1; m.envMapIntensity = 0; }
-            if (mode.prism) { if (!o.prism) o.prism = { value: PRISM.amt / o.glass }; setPrism(m, true); }
+            if (mode.prism) { if (!o.prism) o.prism = { value: 0 }; o.prism.value = (mode.amt || PRISM.amt) / o.glass; setPrism(m, true); }
           } else m.color.copy(g);
           m.transparent = false; m.depthWrite = true; m.depthFunc = THREE.AlwaysDepth;
           m.blending = THREE.CustomBlending; m.blendSrcAlpha = THREE.OneFactor;   // (캔버스의 알파는 보통의 섞기처럼 쌓는다)
