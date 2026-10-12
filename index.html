@@ -8717,47 +8717,44 @@ loader.run(() => {
   // 사용자가 준 참고 영상(10초, 선으로만 그린 영상)과 스토리보드 '지구본 컷신.pdf'를 따른다. 빠르기와 음악(#snd-data의 "globe")도 그 영상 그대로:
   //   검은 화면 → 선 하나가 왼쪽에서 자람 → 작은 점들이 돋아 가로선으로 늘어남 → 화면 가득한 가로줄 → 줄이 휘며 지구본의 위도선이 됨
   //   → (음악의 "쿵") 바다 위의 선이 걷히고 땅 위의 선만 남음 = 선으로 된 지구본 → 지구본이 돌아 아메리카 · 아프리카 · 아시아를 지나 부산으로 확대
-  //   → 검은 화면 → 다시 선이 가득 들어와 휘고 → 하나둘 사라짐 → 두 선이 가운데로 감겨 들어와 로고 상자의 테두리가 됨 → 흰 상자에 검은 막대(흑백 로고)
+  //   → 선이 부산의 점 쪽으로 접혀 사라지고 점도 꺼짐 → 검은 화면 → 선(호) 몇 개가 그어져 나와 가운데로 감겨 들어 로고 상자의 테두리가 됨 → 흰 상자에 검은 막대(흑백 로고)
   //   → ("쿵") 워드마크 → 색이 부드럽게 브랜드 색으로 바뀌며 지금 테마의 바탕이 드러남 → 메인 화면.
-  // 선은 모두 '위도선'이다: 위도선마다 "그릴 경도 구간"만 정하면 된다 — 가로줄 = 평평하게 편 지구(m = 0), 휘는 줄 = 지구가 둥글게 말리는 중(m 0 → 1),
-  //   지구본 = 땅인 구간만(#globe-data: 위도선마다 미리 계산해 둔 땅 구간. Natural Earth 1:50m, 도구 globe/build_land.js), 다시 나오는 선 = 북극 가까이에서 본 위도선.
+  //   (처음에는 참고 영상처럼 부산 다음에 화면이 뚝 끊기고 선이 가득 들어왔는데, 사용자가 "선이 너무 많게 뚝 끊기듯이 나온다"고 해서 지금처럼 바꿈 — 스토리보드의 흐름: 선이 없어졌다가 검은 화면에서 선들이 나오며 로고)
+  // 지구본의 선은 모두 '위도선'이다: 위도선마다 "그릴 경도 구간"만 정하면 된다 — 가로줄 = 평평하게 편 지구(m = 0), 휘는 줄 = 지구가 둥글게 말리는 중(m 0 → 1),
+  //   지구본 = 땅인 구간만(#globe-data: 위도선마다 미리 계산해 둔 땅 구간. Natural Earth 1:50m, 도구 globe/build_land.js).
   // 그림은 2D 캔버스(#cut-film) 한 장에 그린다. 3D 캔버스는 그동안 가려 두고, 끝에서 메인 화면이 드러난다.
   // 시간은 컷신 시계 CUT.e 하나(초). 음악이 나오면 음악의 자리에 시계를 맞춘다(화면이 잠깐 버벅여도 소리와 어긋나지 않게)
   const GLOBE_BUSAN = [129.04, 35.1];
-  // 때(초) — 참고 영상에서 잰 값. rev0 = 음악의 "쿵"(2.27초), cut = 음악이 뚝 끊기는 곳(5.4초), lock0 = 마지막 "쿵"(8.0초)
+  // 때(초) — 참고 영상에서 잰 값. rev0 = 음악의 "쿵"(2.27초), fold0 = 음악이 뚝 끊기는 곳(5.4초) 바로 앞, lock0 = 마지막 "쿵"(8.0초)
   const GT = {
     line0: .03, seed0: .55, full: 1.47,        // 첫 선이 자라기 시작 · 점이 돋기 시작 · 모든 줄이 끝까지 참
     rev0: 2.27, rev1: 2.62,                    // 바다 위의 선이 걷힘
-    dot0: 4.98, cut: 5.4, in0: 5.43,           // 부산의 점 · 검은 화면 · 다시 선이 들어옴
-    thin0: 5.74, thin1: 6.47,                  // 선이 하나둘 사라짐
-    swirl0: 6.5, edge0: 6.84, fill0: 7.02, bars0: 7.1,   // 두 선이 감겨 들어옴 · 위아래 긴 선 · 상자가 흰색으로 참 · 막대
+    dot0: 4.98, fold0: 5.36, fold1: 5.8,       // 부산의 점 · 선이 부산의 점 쪽으로 접혀 사라짐 · 다 사라짐(이어서 점도 꺼져 검은 화면)
+    arcs0: 6, swirl0: 6.42, ring0: 6.8,        // 검은 화면에서 선(호)들이 그어져 나옴 · 가운데로 감겨 듦 · 원이 네모(상자의 테두리)로
+    edge0: 6.84, fill0: 7.02, bars0: 7.1,      // 위아래 긴 선 · 상자가 흰색으로 참 · 막대
     edge1: 7.94, lock0: 8, lockDur: .32,       // 긴 선이 물러남 · 상자가 올라가고 워드마크가 나타남
     tint0: 9.15, tint1: 9.95,                  // 흑백 → 브랜드 색, 검은 바탕 → 테마 바탕
     out0: 10.45, outDur: 1.2,                  // 로고가 사라지고 메인 화면이 나타남
   };
-  // 카메라 열쇠 장면: [때, 가운데 경도, 가운데 위도, 확대(1 = 지구본이 화면에 알맞게 차는 크기), 기울임(도, + = 시계 방향), 말림 m(0 = 평평하게 편 것, 1 = 공), 옆으로 · 아래로 비켜남(지구 반지름의 배수)].
+  const GLOBE_ARCS = 12;   // 검은 화면에서 나와 로고로 모이는 선(호)의 수
+  // 카메라 열쇠 장면: [때, 가운데 경도, 가운데 위도, 확대(1 = 지구본이 화면에 알맞게 차는 크기), 기울임(도, + = 시계 방향), 말림 m(0 = 평평하게 편 것, 1 = 공)].
   // zf = 가로줄 38줄이 화면에 들어가는 확대값, fl = 공이 화면 구석까지 덮는 확대값 — 땅이 드러나기 전(~ rev0)에는 화면이 선으로 꽉 차 있어야 한다(공의 둥근 가장자리가 미리 보이지 않게).
   //   그래서 공은 덜 말린 채로(m < 1) 다가오고, 바다 위의 선이 걷히는 동안 마저 말리며 물러나 지구본이 된다
   const GLOBE_A = (zf, fl) => [
-    [0,    -168, 0,  zf,       0,   0,   0, 0],
-    [1.27, -168, 0,  zf,       0,   0,   0, 0],
-    [1.6,  -166, 3,  zf * .93, 9,   .45, 0, 0],
-    [1.92, -160, 7,  1.25,     22,  .62, 0, 0],
-    [2.27, -148, 10, Math.max(1.08, fl * .81), -13, .78, 0, 0],
-    [2.62, -134, 10, 1.06,     -9,  1,   0, 0],
-    [2.95, -112, 9,  1,        -7,  1,   0, 0],
-    [3.5,  -80,  7,  1,        -5,  1,   0, 0],      // 아메리카
-    [4,    -32,  8,  1.03,     -2,  1,   0, 0],      // 대서양
-    [4.5,  14,   12, 1.12,     0,   1,   0, 0],      // 유럽 · 아프리카
-    [4.94, 108,  30, 1.5,      5,   1,   0, 0],      // 아시아
-    [5.08, GLOBE_BUSAN[0], GLOBE_BUSAN[1], 2.1, 8, 1, 0, 0],
-    [5.4,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 17, 14, 1, 0, 0],   // 부산으로
-  ];
-  // 다시 나오는 선: 북극 가까이를 비스듬히 — 극이 화면 오른쪽 위 바깥에 있어, 위도선이 그 둘레를 도는 둥근 호로 보인다
-  const GLOBE_B = [
-    [5.43, 30, 58, 2.6, -14, 1, .3, -.34],
-    [5.9,  44, 62, 2.2, -6,  1, .27, -.32],
-    [6.5,  62, 67, 1.7, 6,   1, .22, -.3],
+    [0,    -168, 0,  zf,       0,   0],
+    [1.27, -168, 0,  zf,       0,   0],
+    [1.6,  -166, 3,  zf * .93, 9,   .45],
+    [1.92, -160, 7,  1.25,     22,  .62],
+    [2.27, -148, 10, Math.max(1.08, fl * .81), -13, .78],
+    [2.62, -134, 10, 1.06,     -9,  1],
+    [2.95, -112, 9,  1,        -7,  1],
+    [3.5,  -80,  7,  1,        -5,  1],      // 아메리카
+    [4,    -32,  8,  1.03,     -2,  1],      // 대서양
+    [4.5,  14,   12, 1.12,     0,   1],      // 유럽 · 아프리카
+    [4.94, 108,  30, 1.5,      5,   1],      // 아시아
+    [5.08, GLOBE_BUSAN[0], GLOBE_BUSAN[1], 2.1, 8, 1],
+    [5.4,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 17, 14, 1],    // 부산으로
+    [5.9,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 24, 16, 1],    // 선이 접혀 사라지는 동안 천천히 더 다가간다
   ];
   const globeWrap = v => ((v + 180) % 360 + 360) % 360 - 180;
   // 위도선: 단계 L의 k번째 선의 위도 = a·k + b (0단계 = 1.5°마다, 확대할수록 사이사이에 선이 더 들어간다 — build_land.js와 같은 식)
@@ -8779,16 +8776,16 @@ loader.run(() => {
     while (i < P.length - 2 && e >= P[i + 1][0]) i++;
     const a = P[i], b = P[i + 1], T = b[0] - a[0], u = clamp((e - a[0]) / T, 0, 1), u2 = u * u, u3 = u2 * u;
     const v = c => a[c] * (2 * u3 - 3 * u2 + 1) + a.m[c] * (u3 - 2 * u2 + u) * T + b[c] * (-2 * u3 + 3 * u2) + b.m[c] * (u3 - u2) * T;
-    return { lon: v(1), lat: v(2), z: 2 ** v(3), roll: v(4), m: v(5), px: v(6), py: v(7) };
+    return { lon: v(1), lat: v(2), z: 2 ** v(3), roll: v(4), m: v(5) };
   }
   // 선 그림 한 장: 컷신 시계 e에서의 위도선들을 x(2D 캔버스)에 그린다. G = globeMake()가 만든 것
   function globeLines(x, e, vw, vh, G) {
     // 지구본의 기본 크기(확대 1): 화면이 넓든 길든 비슷한 몫이 보이게 가로 · 세로를 섞어 잡는다(참고 영상은 세로 4:5 화면에 반지름이 높이의 0.6배쯤)
     const B = .6 * vh ** .74 * vw ** .26, flatR = vh / 38 / deg(G.d), key = vw + 'x' + vh;
-    if (G.key !== key) { G.key = key; G.hole = null; G.A = globeKeys(GLOBE_A(flatR / B, Math.hypot(vw, vh) / 2 / B)); G.B = globeKeys(GLOBE_B); }
-    const late = e >= GT.in0, cam = globePose(late ? G.B : G.A, e), R = cam.z * B;
+    if (G.key !== key) { G.key = key; G.hole = null; G.A = globeKeys(GLOBE_A(flatR / B, Math.hypot(vw, vh) / 2 / B)); }
+    const cam = globePose(G.A, e), R = cam.z * B;
     const m = Math.max(cam.m, 1e-3), rho = R / m, p0 = deg(cam.lat) * m, s0 = Math.sin(p0), c0 = Math.cos(p0), cr = Math.cos(deg(cam.roll)), sr = Math.sin(deg(cam.roll));
-    const X0 = vw / 2 + cam.px * R, Y0 = vh / 2 + cam.py * R, far = Math.hypot(vw, vh) / 2 + Math.hypot(cam.px, cam.py) * R + 4;
+    const X0 = vw / 2, Y0 = vh / 2, far = Math.hypot(vw, vh) / 2 + 4;
     // 화면에 걸리는 위도 범위
     const ext = far >= rho ? 180 : Math.asin(far / rho) / m / deg(1), latA = Math.max(-89.9, cam.lat - ext), latB = Math.min(89.9, cam.lat + ext);
     const out = [];
@@ -8823,14 +8820,7 @@ loader.run(() => {
       const [sa, sb] = globeStep(L, G.d), lv = G.lv[L];
       for (let k = Math.ceil((latA - sb) / sa); k <= Math.floor((latB - sb) / sa); k++) { out.length = 0; fn(k, sa * k + sb, lv.rows[k - lv.k0]); line(sa * k + sb, k); }
     };
-    if (late) {
-      // ---- 다시 나오는 선: 오른쪽에서 밀려 들어왔다가(가장자리는 물가처럼 구불구불) 줄마다 다른 때에 오른쪽으로 물러나 사라진다 ----
-      each(0, k => {
-        const wob = .5 + .5 * Math.sin(k * .37 + 1.3) * Math.sin(k * .11 + .4), from = 60 - 250 * clamp((e - GT.in0 - .05 * wob) / .12, 0, 1);
-        const t0 = GT.thin0 + (GT.thin1 - GT.thin0 - .22) * cutRnd(k, 51) ** .8, gone = -190 + 250 * clamp((e - t0) / (.12 + .1 * cutRnd(k, 52)), 0, 1) ** 1.5;
-        if (Math.max(from, gone) < 60) out.push(Math.max(from, gone), 60);
-      });
-    } else if (e < GT.full) {
+    if (e < GT.full) {
       // ---- 가로줄: 첫 선이 왼쪽에서 자라고, 줄마다 점이 돋아 양옆으로 늘어나 서로 이어진다 (자리는 화면 폭을 1로 본 값 → 경도로 바꿔 지구에 붙여 둔다: 휘기 시작해도 그대로 따라 휜다) ----
       const sc = vw / flatR / deg(1), lon0 = G.A[0][1], grow = Math.max(0, (e - 1.12) / .34) ** 2 * 1.2, dot = 1.2 / vw;
       const [sa, sb] = globeStep(0, G.d), first = Math.round((-.18 * vh / flatR / deg(1) - sb) / sa);   // 첫 선 = 화면 높이의 68% 자리에 가장 가까운 줄
@@ -8854,6 +8844,7 @@ loader.run(() => {
     else {
       // ---- 지구본: 땅인 구간만. 처음(rev0 ~ rev1)에는 바다 위의 선이 한 점에서부터 양옆으로 걷혀 나간다(줄마다 조금씩 달리) ----
       const z = Math.log2(cam.z), hr = e < GT.rev1 ? 250 * ((e - GT.rev0) / (GT.rev1 - GT.rev0)) ** 1.7 : 1e9, hole = G.hole || (G.hole = (h => [h.lon + 14, h.lat - 4])(globePose(G.A, GT.rev0)));
+      const fold = clamp((e - GT.fold0) / (GT.fold1 - GT.fold0), 0, 1);
       for (let L = 0; L < G.lv.length; L++) {
         // 확대하면 사이사이의 선이 땅 가운데에서부터 자라 나온다 (화면에서 선 사이가 늘 비슷하게)
         const g = L ? smooth(clamp((z - (L - 1) - .55) / .45, 0, 1)) : 1;
@@ -8861,17 +8852,23 @@ loader.run(() => {
         each(L, (k, lat, row) => {
           const w2 = hr * hr - 4 * (lat - hole[1]) ** 2;
           if (w2 <= 0) { out.push(-180, 180); return; }
-          for (let i = 0; row && i < row.length; i += 2) { const c = (row[i] + row[i + 1]) / 200, h = (row[i + 1] - row[i]) / 200 * g; rel(c - h, c + h); }
+          // 부산에 다 들어가면(fold0 ~ fold1): 선이 부산의 경도 쪽으로 접혀 들어가 사라진다 — 점에서 먼 줄부터, 점 곁의 줄이 맨 나중에(모두 점으로 빨려 드는 것처럼)
+          const q = fold > 0 ? smooth(clamp((fold - .45 * (1 - Math.min(1, Math.abs(lat - GLOBE_BUSAN[1]) / ext))) / .55, 0, 1)) : 0;
+          if (q >= 1) return;
+          for (let i = 0; row && i < row.length; i += 2) {
+            const c = (row[i] + row[i + 1]) / 200, h = (row[i + 1] - row[i]) / 200 * g, to = clamp(GLOBE_BUSAN[0], c - h, c + h);
+            rel(c - h + (to - c + h) * q, c + h + (to - c - h) * q);
+          }
           const w = Math.sqrt(w2), wl = w * (.6 + .8 * cutRnd(k, 31)), wr = w * (.6 + .8 * cutRnd(k, 32));
           if (wl + wr < 360) rel(hole[0] + wr, hole[0] - wl + 360);
         });
       }
     }
     x.stroke();
-    // 부산: 작은 점 하나와 퍼져 나가는 고리 (지구본이 부산에 다 와 갈 때부터)
-    if (!late && e > GT.dot0) {
+    // 부산: 작은 점 하나와 퍼져 나가는 고리 (지구본이 부산에 다 와 갈 때부터. 선이 다 접혀 들어간 뒤 점도 작아지며 꺼진다)
+    if (e > GT.dot0) {
       const dl = deg(globeWrap(GLOBE_BUSAN[0] - cam.lon)) * m, ph = deg(GLOBE_BUSAN[1]) * m, sx = rho * Math.cos(ph) * Math.sin(dl), sy = -rho * (Math.sin(ph) * c0 - Math.cos(ph) * s0 * Math.cos(dl));
-      const X = X0 + sx * cr - sy * sr, Y = Y0 + sx * sr + sy * cr, a = clamp((e - GT.dot0) / .08, 0, 1), r = Math.max(2.5, vh / 260), w = ((e - GT.dot0) / .3) % 1;
+      const X = X0 + sx * cr - sy * sr, Y = Y0 + sx * sr + sy * cr, a = clamp((e - GT.dot0) / .08, 0, 1), r = Math.max(2.5, vh / 260) * (1 - smooth(clamp((e - GT.fold1) / .1, 0, 1))), w = ((e - GT.dot0) / .3) % 1;
       x.save();
       x.globalAlpha = a;
       x.beginPath();
@@ -8913,20 +8910,27 @@ loader.run(() => {
     f1 -= base;
     if (f1 <= 1) part(f0 * total, f1 * total); else { part(f0 * total, total); part(0, (f1 - 1) * total); }
   }
-  // 로고가 만들어지는 장면부터 끝까지(swirl0 ~): 감겨 들어오는 두 선 → 상자 테두리 · 위아래 긴 선 → 흰 상자 → 검은 막대 → 워드마크 → 색 바뀜
+  // 로고가 만들어지는 장면부터 끝까지(arcs0 ~): 검은 화면에 그어져 나오는 선(호)들 → 가운데로 감겨 듦 → 상자 테두리 · 위아래 긴 선 → 흰 상자 → 검은 막대 → 워드마크 → 색 바뀜
   function globeLogo(x, e, vw, vh, G, lineW) {
-    const lg = G.logo, LW = cutLockW(vw, vh), u = LW / CUT_LOCK.w, bw = lg.box[0] * u, bh = lg.box[1] * u;
+    // 로고 묶음의 폭: 드론 컷신의 절반(사용자: "로고 크기가 너무 크니깐 반절 정도 줄여줘"). 세로 화면(휴대폰)은 글자가 너무 작아지지 않게 0.68배까지만
+    const lg = G.logo, LW = cutLockW(vw, vh) * (vw >= vh ? .5 : .68), u = LW / CUT_LOCK.w, bw = lg.box[0] * u, bh = lg.box[1] * u;
     const lock = e < GT.lock0 ? 0 : 1 - (1 - clamp((e - GT.lock0) / GT.lockDur, 0, 1)) ** 4;   // 상자만 한가운데 → 묶음(상자 + 워드마크)의 자리로: "쿵"과 함께 빠르게 떠나 부드럽게 선다
     const L1 = (vw - LW) / 2, T1 = (vh - CUT_LOCK.h * u) / 2, bx = (vw - bw) / 2 + (L1 - (vw - bw) / 2) * lock, by = (vh - bh) / 2 + (T1 - (vh - bh) / 2) * lock, cx = bx + bw / 2, cy = by + bh / 2;
     const tint = smoother(clamp((e - GT.tint0) / (GT.tint1 - GT.tint0), 0, 1)), mix = (a, b) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * tint))})`;
     const WHITE = [255, 255, 255], BRAND = [195, 101, 25], INK = [0, 0, 0];
     x.lineWidth = lineW;
     x.beginPath();
-    // 두 선이 화면 바깥에서 가운데로 감겨 들어오고(원), 원이 네모로 바뀌며 서로 이어져 상자의 테두리가 된다
+    // 검은 화면에서 선(호)들이 하나씩 그어져 나온다: 가운데를 둘러싼 크고 작은 원의 조각들이 제 가운데에서 양쪽으로 자라며 천천히 돈다(arcs0 ~).
+    // 이어서 소용돌이처럼 가운데로 감겨 들어(swirl0 ~) 마주 보는 두 줄로 겹치고, 원이 네모로 바뀌며(ring0 ~) 서로 이어져 상자의 테두리가 된다
     if (e < GT.fill0 + .2) {
-      const s = clamp((e - GT.swirl0) / .44, 0, 1), q = smooth(clamp((e - GT.swirl0 - .3) / .3, 0, 1)), r = Math.hypot(vw, vh) * .56 + (bh * .62 - Math.hypot(vw, vh) * .56) * (1 - (1 - s) ** 3);
-      const turn = .12 + .72 * (1 - (1 - s) ** 2.4) + .16 * q, half = .13 + .12 * q;   // 감기는 방향으로 돌면서, 마지막에 서로 닿을 만큼 길어진다
-      for (let k = 0; k < 2; k++) globeRing(x, cx, cy, r + (bw / 2 - r) * q, r + (bh / 2 - r) * q, r * (1 - q), turn + k / 2 - half, turn + k / 2 + half);
+      const far = Math.hypot(vw, vh) / 2, g = smoother(clamp((e - GT.swirl0) / .52, 0, 1)), q = smooth(clamp((e - GT.ring0) / .3, 0, 1));
+      for (let i = 0; i < GLOBE_ARCS; i++) {
+        const grow = 1 - (1 - clamp((e - GT.arcs0 - .03 * (i * 5 % GLOBE_ARCS)) / .34, 0, 1)) ** 3;   // 하나씩(순서는 섞어서) 부드럽게 자란다
+        if (grow <= 0) continue;
+        const r = bh * .62 + (far * (.3 + .95 * (i + .5 * cutRnd(i, 61)) / GLOBE_ARCS) - bh * .62) * (1 - g);   // 화면 안쪽 ~ 구석 너머까지 고르게 흩어진 반지름 → 모두 같은 원으로
+        const at = 1 + i % 2 / 2 - (.35 + .5 * cutRnd(i, 62) - .04 * (e - GT.swirl0)) * (1 - g), half = grow * (.04 + .09 * cutRnd(i, 63)) * (1 - g) + (.13 + .12 * q) * g;   // 자리 · 길이(둘레를 1로 본 값)
+        globeRing(x, cx, cy, r + (bw / 2 - r) * q, r + (bh / 2 - r) * q, r * (1 - q), at - half, at + half);
+      }
     }
     // 위아래 긴 선: 상자의 윗변은 왼쪽 끝에서, 아랫변은 오른쪽 끝에서 자라 화면을 가로지르고, 워드마크가 나오기 직전에 반대쪽으로 물러난다
     if (e > GT.edge0 && e < GT.edge1 + .16) {
@@ -8968,8 +8972,8 @@ loader.run(() => {
     x.strokeStyle = x.fillStyle = '#cfcfcf';
     x.lineWidth = lineW;
     x.lineJoin = 'round';
-    if (e < GT.cut || (e >= GT.in0 && e < GT.thin1 + .05)) globeLines(x, e, vw, vh, G);
-    if (e >= GT.swirl0) globeLogo(x, e, vw, vh, G, lineW);
+    if (e < GT.fold1 + .1) globeLines(x, e, vw, vh, G);
+    if (e >= GT.arcs0) globeLogo(x, e, vw, vh, G, lineW);
   }
 
   // ---------- 지구본 컷신: 틀기 ----------
