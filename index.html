@@ -677,7 +677,7 @@ try {
 /* 모노 라인 — 라인과 모노 포인트를 합친 것 (사용자 주문): 검은 바탕에 흰 선만, 색은 방폭박스의 주황 하나.
    화면은 라인처럼 가는 선 테두리 · 빗금 버튼 · 속이 빈 제목 · 맞춤표(모두 흰 선). 3D도 흰 선만 — 속까지 비쳐 보이므로 방폭박스가 건물 속에 있어도
    건물이 아니라 박스의 선만 주황으로 깜빡인다. 박스를 눌러 들어가면 깜빡임이 멎는다 (JS의 blinkStep) */
-[data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"] {
+[data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"] {
   --ink: #EDEDEB; --on-ink: #111110; --ink-hover: #fff; --muted: #A6A6A3;
   --glass: rgb(17 17 16 / .86); --solid: rgb(20 20 19 / .97); --card: rgb(17 17 16 / .9); --btn: transparent;
   --lift: rgb(255 255 255 / .14); --hover: rgb(255 255 255 / .08); --panel-hover: rgb(255 255 255 / .04);
@@ -694,7 +694,7 @@ try {
 }
 /* 글라스 라인 — 모노 라인의 선 사이에 유리 면을 끼운 것 (사용자 주문): 선 · 바탕 · 깜빡임은 모노 라인 그대로(위 묶음을 같이 쓴다).
    3D의 면은 빛 반사 없는 반투명 유리 — 진하기는 면마다 10 ~ 80%에서 무작위 (JS의 restyle). 화면의 판도 반사 없이 뒤가 비치는 유리판 */
-[data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"] {
+[data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"] {
   --glass: rgb(142 142 140 / .2); --card: rgb(142 142 140 / .24); --solid: rgb(34 34 33 / .95);
   --blur: 10px;
 }
@@ -703,6 +703,11 @@ try {
 
 /* 데이터랜드 — 프리즘 라인에서 파생 (사용자가 준 영상 참고: 차콜 면 + 가는 흰 윤곽선 + 면 위에 번지는 옅은 무지개). 화면은 더 깊은 차콜 */
 [data-theme="dataland"] { --bg: #0A0A0B; --base: #0A0A0B; --ring: #0A0A0B; --on-ink: #0A0A0B; --edge: #E4E4E2; --glass: rgb(26 26 28 / .78); --card: rgb(26 26 28 / .86); --solid: rgb(18 18 19 / .96); }
+
+/* 투명 케이스 — 글라스 라인에서 파생 (사용자가 준 사진 참고: 검은 어둠 속 투명 휴대폰 케이스 접사). 거의 검은 바탕 + 은은한 필름 알갱이, 선은 따뜻한 크림빛 흰색,
+   유리 면은 짙은 회색, 선 위로 빛이 천천히 흐르고(JS의 glint) 초점에서 먼 선은 번진다(JS의 DOF — 초점은 지금 보는 것을 따라간다) */
+[data-theme="phonecase"] { --bg: var(--noise), radial-gradient(70% 60% at 30% 35%, #14161A 0%, transparent 70%), #040506; --base: #040506; --ring: #040506; --on-ink: #040506; --edge: #E9E6DE; --ink: #ECE9E1;
+  --glass: rgb(22 24 27 / .74); --card: rgb(22 24 27 / .84); --solid: rgb(12 13 15 / .96); }
 
 /* 테마를 바꿀 때: 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·둥글기·무늬까지 한꺼번에 부드럽게).
    그 기능이 없는 브라우저는 .theme-anim을 잠깐 붙여 색만이라도 0.7초에 걸쳐 바뀌게 한다 */
@@ -1434,12 +1439,12 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
               linear-gradient(rgb(27 47 69 / .4), rgb(27 47 69 / .4)) 50% 50% / 100% 1px no-repeat;
 }
 /* 라인 · 모노 라인: 제목은 속이 빈 외곽선 글자(화살표는 글자색으로), Ex 동그라미와 핀도 채우지 않고 선으로, 네 귀퉁이 맞춤표. 선의 색 = 그 테마의 테두리 색(--edge) */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.title, .info h2, .p-name), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-t { color: transparent; -webkit-text-stroke: 1px var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .chev { color: var(--ink); -webkit-text-stroke: 0; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .title { font-size: clamp(24px, 2.9vw, 36px); }   /* 속이 빈 글자는 조금 커야 읽힌다 */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { background: var(--base); color: var(--edge); border: 1.5px solid var(--edge); box-shadow: none; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin::after { width: 1.5px; background: var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .fx::before {
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.title, .info h2, .p-name), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-t { color: transparent; -webkit-text-stroke: 1px var(--edge); }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .chev { color: var(--ink); -webkit-text-stroke: 0; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .title { font-size: clamp(24px, 2.9vw, 36px); }   /* 속이 빈 글자는 조금 커야 읽힌다 */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { background: var(--base); color: var(--edge); border: 1.5px solid var(--edge); box-shadow: none; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin::after { width: 1.5px; background: var(--edge); }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .fx::before {
   content: ''; position: absolute; inset: 14px; opacity: .75;
   background: linear-gradient(var(--edge), var(--edge)) 0 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 0 0 / 1px 22px,
               linear-gradient(var(--edge), var(--edge)) 100% 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 100% 0 / 1px 22px,
@@ -1448,19 +1453,19 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   background-repeat: no-repeat;
 }
 /* 모노 포인트 · 모노 라인: 방폭박스를 가리키는 것(핀)만 주황. 고르기 카드의 포인트 점은 3D처럼 깜빡인다 */
-:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin { background: var(--accent); color: #fff; border-color: var(--accent); }
-:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .pin::after { background: var(--accent); }
-.tv:is([data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { background: var(--accent); border-color: var(--accent); }
-.tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { animation: mono-blink 1.15s ease-in-out infinite; }
+:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin { background: var(--accent); color: #fff; border-color: var(--accent); }
+:root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin::after { background: var(--accent); }
+.tv:is([data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { background: var(--accent); border-color: var(--accent); }
+.tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { animation: mono-blink 1.15s ease-in-out infinite; }
 @keyframes mono-blink { 50% { opacity: .15; } }
-@media (prefers-reduced-motion: reduce) { .tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .tv-dot { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tv:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { animation: none; } }
 @media (max-width: 640px) {
   .head { top: calc(16px + env(safe-area-inset-top, 0px)); left: 18px; right: 18px; }
   .title { font-size: 20px; }
   :root[data-theme="swiss"] .title { font-size: 23px; }
   /* 라인 · 모노 라인: 휴대폰의 작은 글자는 속을 비우면 읽기 어렵다 → 선 색으로 채운 글자 */
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) .title { font-size: 21px; }
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"]) :is(.title, .info h2, .p-name) { color: var(--edge); -webkit-text-stroke: 0; }
+  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .title { font-size: 21px; }
+  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.title, .info h2, .p-name) { color: var(--edge); -webkit-text-stroke: 0; }
   .chev { width: 24px; height: 24px; margin-left: 8px; }
   .sub { font-size: 12px; }
   .act { padding: 10px 14px; font-size: 13px; }
@@ -1690,6 +1695,7 @@ const STYLE = (() => {
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
     steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
     holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'blackhan', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'blackhan', 'plexmono'], glassline: ['plex', 'blackhan', 'plexmono'], arline: ['plex', 'blackhan', 'plexmono'], prismline: ['plex', 'blackhan', 'plexmono'], dataland: ['plex', 'blackhan', 'plexmono'],
+    phonecase: ['plex', 'blackhan', 'plexmono'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -1989,6 +1995,9 @@ loader.run(() => {
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C', prism: true } },
     { id: 'dataland', ko: '데이터랜드', en: 'Dataland', desc: '차콜빛 유리 면 + 가는 흰 윤곽선, 면 위에 은은히 번지는 무지개 — 데이터랜드 뮤지엄 스터디 영상 참고',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#101010', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#F2F2F0', blink: '#F0842A', glass: '#2E2E32', prism: true, amt: .1, fog: 5 } },
+    // glint = 선 위를 비스듬히 흐르는 빛 띠의 세기, dof = 초점 흐림(초점면에서 먼 선이 번진다 — 아래 DOF. 초점은 지금 보는 것을 따라간다)
+    { id: 'phonecase', ko: '투명 케이스', en: 'Clear Case', desc: '어둠 속에서 찍은 투명 케이스 접사처럼 — 크림빛 가는 윤곽선 위로 빛이 천천히 흐르고, 초점에서 먼 곳은 번진다',
+      l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#060708', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#D9D5CB', blink: '#F0842A', glass: '#4A4F54', glint: .25, dof: 1 } },
     { id: 'charcoal', ko: '차콜', en: 'Charcoal', desc: '스튜디오의 밤 — 따뜻한 숯색 어둠, 윤곽 빛을 올린 3D',
       l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', 1.3], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#3d3a35', hemi: .2, exp: 1 }, mat: null },
     { id: 'vision', ko: '비전', en: 'Vision', desc: '공간에 떠 있는 유리 — Apple visionOS·iOS의 재질 참고',
@@ -2339,10 +2348,13 @@ loader.run(() => {
     let out = EDGES.get(geo);
     if (out) return out;
     const P = geo.attributes.position.array, I = geo.index ? geo.index.array : null, nTri = (I ? I.length : P.length / 3) / 3;
-    // 같은 자리의 꼭짓점을 하나로: 1/1024 눈금 번호 세 개를 한 숫자로 묶어 찾는다(글자 열쇠보다 훨씬 빠르다. ±64 안에서만 겹치지 않는다 — 모델은 모두 그 안)
+    // 같은 자리의 꼭짓점을 하나로: 눈금 번호 세 개를 한 숫자로 묶어 찾는다(글자 열쇠보다 훨씬 빠르다). 눈금 = 1/4096, 그 모양의 한쪽 구석에서부터 잰다(칸 번호 17비트 × 3 — 32보다 긴 모양은 눈금을 그만큼 성기게)
+    // (전에는 1/1024였는데, 모따기 .008짜리 상자는 모따기의 첫 단이 옆 단과 .001밖에 안 떨어져 있어서 놓인 자리에 따라 한 점으로 붙기도 했다 → 띠가 찌그러져, 같은 상자가 어디서는 모서리 선이 나오고 어디서는 빠졌다)
+    if (!geo.boundingBox) geo.computeBoundingBox();
+    const bb = geo.boundingBox, ox = bb.min.x, oy = bb.min.y, oz = bb.min.z, grid = Math.min(4096, 131072 / Math.max(bb.max.x - ox, bb.max.y - oy, bb.max.z - oz, 1e-9));
     const weld = new Map(), ids = new Int32Array(P.length / 3);
     for (let i = 0, n = ids.length; i < n; i++) {
-      const key = (Math.round(P[i * 3] * 1024) + 65536) * 17179869184 + (Math.round(P[i * 3 + 1] * 1024) + 65536) * 131072 + (Math.round(P[i * 3 + 2] * 1024) + 65536);
+      const key = Math.round((P[i * 3] - ox) * grid) * 17180131329 + Math.round((P[i * 3 + 1] - oy) * grid) * 131073 + Math.round((P[i * 3 + 2] - oz) * grid);   // (131073² · 131073 · 1)
       let id = weld.get(key);
       if (id === undefined) weld.set(key, id = weld.size);
       ids[i] = id;
@@ -2382,23 +2394,171 @@ loader.run(() => {
       start.push(nl);
     }
     const seg = [], smoothAll = !!geo.userData.smooth, vert = (t, e) => (I ? I[t * 3 + e % 3] : t * 3 + e % 3) * 3;   // 세모 t의 e번째 꼭짓점이 P에서 시작하는 자리
-    // 세모 t가 속한 면이 모서리 e에서 뻗은 쪽(dx · dy · dz에 남긴다)과, 그쪽으로 잰 그 면의 폭
+    // 세모 t가 속한 면이 모서리 e에서 뻗은 쪽(dx · dy · dz에 남긴다)과, 그쪽으로 잰 그 면의 폭(own = 그 세모 하나의 높이만)
     let dx = 0, dy = 0, dz = 0;
-    const far = (t, e) => {
+    const far = (t, e, own) => {
       const p = vert(t, e), q = vert(t, e + 1), r = vert(t, e + 2), nx = N[t * 3], ny = N[t * 3 + 1], nz = N[t * 3 + 2], ex = P[q] - P[p], ey = P[q + 1] - P[p + 1], ez = P[q + 2] - P[p + 2];
       dx = ny * ez - nz * ey; dy = nz * ex - nx * ez; dz = nx * ey - ny * ex;
-      const dl = Math.hypot(dx, dy, dz) || 1, across = v => (P[v] - P[p]) * dx + (P[v + 1] - P[p + 1]) * dy + (P[v + 2] - P[p + 2]) * dz;
+      const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1, across = v => (P[v] - P[p]) * dx + (P[v + 1] - P[p + 1]) * dy + (P[v + 2] - P[p + 2]) * dz;
       dx /= dl; dy /= dl; dz /= dl;
       if (across(r) < 0) { dx = -dx; dy = -dy; dz = -dz; }
-      const i0 = start[reg[t]], i1 = start[reg[t] + 1], step = Math.max(1, (i1 - i0) >> 4);   // (세모가 많은 면은 스무남은 개만 훑는다 — 폭은 어림이면 되고, 다 훑으면 테마를 처음 바꿀 때 0.4초 더 걸린다)
       let w = across(r);
+      if (own) return w;   // (이 세모의 높이만 — 방향은 dx · dy · dz에 남는다)
+      const i0 = start[reg[t]], i1 = start[reg[t] + 1], step = Math.max(1, (i1 - i0) >> 4);   // (세모가 많은 면은 스무남은 개만 훑는다 — 폭은 어림이면 되고, 다 훑으면 테마를 처음 바꿀 때 0.4초 더 걸린다)
       for (let i = i0; i < i1; i += step) for (let k = 0; k < 3; k++) w = Math.max(w, across(vert(list[i], k)));
       return w;
     };
+    // ---- 둥글린 모서리 ----
+    // 모서리를 살짝 둥글린 모양(rbox · 모따기한 extrude · 어깨를 둥글린 lathe)은 그 자리가 한 번에 꺾이지 않고 좁은 띠 여러 장으로 조금씩(4° ~ 30°) 돌아간다.
+    // 위의 규칙으로는 어느 띠 사이도 ①이 아니라서 두 면이 다 보이는 모서리(지붕과 벽 사이)에 선이 하나도 없고, 띠가 아주 잘면(③에서도 빠진다) 윤곽에도 선이 없다
+    // — 건물 · 기계 상자 · 바닥 판의 바깥선이 군데군데 비어 보인다(사용자 지적: 해양플랜트 거주구는 층마다 아웃라인이 끊겨 있다).
+    // 그래서 넓은 면에서 출발해 좁은 띠들을 가로질러 다음 면까지 건너가 본다(fillet):
+    //   · 건너온 폭이 양쪽 면에 견주어 좁으면(FIL.tight) 한가운데 띠 모서리를 '그 두 면 사이의 꺾인 모서리 ①'로 뽑는다 — 이웃은 띠가 아니라 양쪽의 넓은 면(c0 · c1을 그 면의 폭으로 준다).
+    //     닿은 면이 좁으면(얇은 판의 옆면) 그 면도 둥글림의 일부로 치고 더 건너간다. 그렇게 반 바퀴 가까이 돌아가면(가장자리를 통째로 둥글린 판) 한가운데가 아니라 윗면 · 아랫면이 끝나는 자리에 한 줄씩.
+    //     양쪽이 다 가는 띠면(배관이 굽은 곳 — 띠가 길을 따라 이어질 뿐, 모서리가 아니다) 뽑지 않는다
+    //   · 띠 사이가 5°보다 완만해서 ③에서 빠진 둥글림은 15°쯤마다 한 줄씩 ③으로 뽑는다(이웃 = 앞뒤로 뽑은 줄 → 어느 쪽에서 봐도 그 가운데 하나가 윤곽이 된다).
+    //     이것은 통째로 둥근 모양(선체)에도 한다 — 배 밑이 옆구리로 돌아가는 자리의 윤곽
+    const FIL = { face: 3, tight: 1.5, max: .6, step: deg(15), round: Math.cos(deg(150)) }, skip = new Set(), filSeen = new Set(), walked = new Set();
+    {
+      const other = x => adj[(x >> 2) * 3 + (x & 3)], ekey = x => Math.min(x, other(x));   // (모서리 x = 세모 번호 × 4 + 그 세모에서의 모서리 번호)
+      const ndot = (a, b) => N[a * 3] * N[b * 3] + N[a * 3 + 1] * N[b * 3 + 1] + N[a * 3 + 2] * N[b * 3 + 2], ang = (a, b) => Math.acos(clamp(ndot(a, b), -1, 1));
+      const mid = x => { const p = vert(x >> 2, x & 3), q = vert(x >> 2, (x & 3) + 1); return [(P[p] + P[q]) / 2, (P[p + 1] + P[q + 1]) / 2, (P[p + 2] + P[q + 2]) / 2]; };
+      const toward = (a, b) => { const x = b[0] - a[0], y = b[1] - a[1], z = b[2] - a[2], l = Math.hypot(x, y, z) || 1; return [x / l, y / l, z / l]; };
+      const emit = (x, c0, c1) => { const p = vert(x >> 2, x & 3), q = vert(x >> 2, (x & 3) + 1); seg.push(P[p], P[p + 1], P[p + 2], P[q], P[q + 1], P[q + 2], c0[0], c0[1], c0[2], c1[0], c1[1], c1[2]); skip.add(ekey(x)); };
+      const seen = (kind, a, b) => { const key = kind + Math.min(a, b) + ':' + Math.max(a, b); if (filSeen.has(key)) return true; filSeen.add(key); return false; };   // (같은 둥글림을 양쪽 면에서 한 번씩 건너온다)
+      // 면의 폭(far와 같되 싸게): 세모 몇 장짜리 면 — 띠 · 벽 — 은 그대로 재고, 세모가 많은 넓은 면 — 뚜껑 — 은 한 번 재 둔 어림값(그 면을 감싸는 상자의 둘째로 긴 변)을 쓴다.
+      // (여기서는 넓은지 좁은지만 가리면 된다. 뚜껑 둘레의 모서리마다 그 면을 훑으면 테마를 처음 바꿀 때 1초가 더 걸렸다)
+      const bigW = new Float32Array(start.length).fill(-1);
+      const width = (t, e) => {
+        const r = reg[t], i0 = start[r], i1 = start[r + 1];
+        if (i1 - i0 <= 8) return far(t, e);
+        const h = far(t, e, true);
+        if (bigW[r] < 0) {
+          let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+          for (let i = i0; i < i1; i++) for (let k = 0; k < 3; k++) { const v = vert(list[i], k), x = P[v], y = P[v + 1], z = P[v + 2]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+          const a = x1 - x0, b = y1 - y0, c = z1 - z0;
+          bigW[r] = a + b + c - Math.max(a, b, c) - Math.min(a, b, c);
+        }
+        return Math.max(h, bigW[r]);
+      };
+      // 그 면이 모서리 방향으로 얼마나 긴가(벽 · 뚜껑은 길고, 배관의 옆줄 한 장은 좁다)
+      const along = (t, e) => {
+        const p = vert(t, e), q = vert(t, e + 1), ex = P[q] - P[p], ey = P[q + 1] - P[p + 1], ez = P[q + 2] - P[p + 2], el = Math.hypot(ex, ey, ez) || 1;
+        const i0 = start[reg[t]], i1 = start[reg[t] + 1], st = Math.max(1, (i1 - i0) >> 4);
+        let lo = Infinity, hi = -Infinity;
+        for (let i = i0; i < i1; i += st) for (let k = 0; k < 3; k++) { const v = vert(list[i], k), d = ((P[v] - P[p]) * ex + (P[v + 1] - P[p + 1]) * ey + (P[v + 2] - P[p + 2]) * ez) / el; if (d < lo) lo = d; if (d > hi) hi = d; }
+        return hi - lo;
+      };
+      // 띠(세모 u, 들어온 모서리 eu)의 건너편 모서리: 그 띠의 테두리 가운데 들어온 모서리와 꼭짓점을 나누지 않고(나누는 것은 띠의 양 끝이다) 거의 나란한 것, 여럿이면 가장 가까운 것.
+      // 둥근 귀퉁이의 네모는 살짝 뒤틀려서 세모 둘이 서로 다른 면으로 갈려 있다 → 들어온 세모의 옆 모서리(대각선) 건너 세모까지 본다
+      const exit = (u, eu) => {
+        const r = reg[u], i0 = start[r], i1 = start[r + 1];
+        if (i1 - i0 > 64) return -1;   // (띠는 세모 몇 장 ~ 몇십 장짜리다)
+        const p = vert(u, eu), q = vert(u, eu + 1), a = ids[p / 3], b = ids[q / 3], ex = P[q] - P[p], ey = P[q + 1] - P[p + 1], ez = P[q + 2] - P[p + 2], el2 = .81 * (ex * ex + ey * ey + ez * ez);
+        const mx = P[p] + P[q], my = P[p + 1] + P[q + 1], mz = P[p + 2] + P[q + 2];   // (가운데의 두 배)
+        let best = -1, bd = Infinity;
+        const look = (tt, rr) => {
+          for (let k = 0; k < 3; k++) {
+            const mm = adj[tt * 3 + k];
+            if (mm === -2 || (mm >= 0 && reg[mm >> 2] === rr)) continue;
+            const p2 = vert(tt, k), q2 = vert(tt, k + 1), c = ids[p2 / 3], d = ids[q2 / 3];
+            if (c === a || c === b || d === a || d === b) continue;
+            const fx = P[q2] - P[p2], fy = P[q2 + 1] - P[p2 + 1], fz = P[q2 + 2] - P[p2 + 2];
+            const ef = ex * fx + ey * fy + ez * fz;
+            if (ef * ef < el2 * (fx * fx + fy * fy + fz * fz)) continue;   // (나란하지 않다: 사이 각의 cos가 .9보다 작다)
+            const dd = (P[p2] + P[q2] - mx) ** 2 + (P[p2 + 1] + P[q2 + 1] - my) ** 2 + (P[p2 + 2] + P[q2 + 2] - mz) ** 2;
+            if (dd < bd) { bd = dd; best = tt * 4 + k; }
+          }
+        };
+        for (let i = i0; i < i1; i++) look(list[i], r);
+        for (let k = 1; k < 3; k++) { const mm = adj[u * 3 + (eu + k) % 3]; if (mm >= 0 && reg[mm >> 2] !== r) look(mm >> 2, reg[mm >> 2]); }
+        return best;
+      };
+      // 건너온 모서리들 chain[i0 … i1](띠 한 묶음의 양 끝 = 면과 맞닿은 두 모서리) 가운데 15°쯤마다 한 줄씩 ③으로. da · db = 양 끝에서 면 쪽을 가리키는 방향
+      const soften = (chain, i0, i1, da, db) => {
+        if (i1 <= i0) return;
+        for (let i = i0; i <= i1; i++) if (ndot(chain[i] >> 2, other(chain[i]) >> 2) <= SOFT_COS) return;   // 5° 넘게 꺾이는 띠들은 아래에서 뽑는다
+        if (seen('s', ekey(chain[i0]), ekey(chain[i1]))) return;
+        const pick = [i0];
+        for (let i = i0 + 1, last = i0; i < i1; i++) if (ang(other(chain[last]) >> 2, other(chain[i]) >> 2) >= FIL.step) { pick.push(i); last = i; }
+        pick.push(i1);
+        const M = pick.map(i => mid(chain[i])), k = SOFT_W;
+        if (i0) da = toward(M[0], mid(chain[i0 - 1]));
+        pick.forEach((ci, j) => {
+          const m = M[j], d0 = j ? toward(m, M[j - 1]) : da, d1 = j < pick.length - 1 ? toward(m, M[j + 1]) : db;
+          emit(chain[ci], [m[0] + d0[0] * k, m[1] + d0[1] * k, m[2] + d0[2] * k], [m[0] + d1[0] * k, m[1] + d1[1] * k, m[2] + d1[2] * k]);
+        });
+      };
+      const fillet = (t, e, wA, da) => {
+        const chain = [t * 4 + e];   // 건너온 모서리들
+        let x = adj[t * 3 + e], W = 0, strip = 0, run = 0, turned = 1;
+        for (let n = 0; n < 72; n++) {
+          const cur = x >> 2, ce = x & 3, turn = ndot(t, cur);
+          if (reg[cur] === reg[t]) return;   // 한 바퀴 돌아 제자리(모서리를 둥글린 가는 막대): 꺾인 모서리가 아니다
+          // 둥글림은 한쪽으로만 돌아간다: 도로 펴지거나(나사산 · 주름 — 지그재그) 여섯 장을 건너도 5°를 못 돌면(나란한 홈) 둥글림이 아니다
+          if (turn > turned + 1e-3 || (n >= 6 && turn > SOFT_COS)) return;
+          turned = turn;
+          const w = width(cur, ce);
+          if (n && w > FIL.face * strip) {   // 띠가 아니라 면에 닿았다
+            const db = [dx, dy, dz];
+            soften(chain, run, chain.length - 1, da, db);
+            if (turn > EDGE_COS || W > wA / FIL.tight) return;   // 거의 안 꺾였거나, 출발한 면에 견주어 둥글림이 넓다
+            if (W <= w / FIL.tight) {
+              walked.add(ekey(chain[chain.length - 1]));   // (건너편 면에서 거꾸로 건너와도 같은 결과다 → 다시 건너지 않는다)
+              if (!smoothAll && Math.max(along(t, e), along(cur, ce)) >= FIL.face * W && !seen('c', ekey(chain[0]), ekey(chain[chain.length - 1]))) {
+                // 한가운데(출발한 면에서 꺾인 각도가 절반인 곳)에 가장 가까운 띠 모서리
+                const last = chain.length - 1, half = ang(t, cur) / 2, ma = mid(chain[0]), mb = mid(chain[last]);
+                const ca = [ma[0] + da[0] * wA, ma[1] + da[1] * wA, ma[2] + da[2] * wA], cb = [mb[0] + db[0] * w, mb[1] + db[1] * w, mb[2] + db[2] * w];
+                let best = 0, bd = Infinity, prev = 0;
+                chain.forEach((c, i) => { const next = ang(t, other(c) >> 2), d = Math.abs((prev + next) / 2 - half); if (d < bd) { bd = d; best = i; } prev = next; });
+                if (turn >= FIL.round) emit(chain[best], ca, cb);
+                else {
+                  // 반 바퀴 가까이 돌아가는 둥글림(가장자리를 통째로 둥글린 판): 두 면이 한꺼번에 보일 일이 없으니 한가운데 선은 윤곽과 겹줄이 될 뿐이다
+                  // → 윗면 · 아랫면이 끝나는 자리(양 끝 모서리)에 한 줄씩. 이웃은 그 면과, 둥글림의 절반(한가운데까지)
+                  const mm = mid(chain[best]);
+                  emit(chain[0], ca, mm);
+                  emit(chain[last], cb, mm);
+                }
+              }
+              return;
+            }
+            run = chain.length;   // 닿은 면이 좁다 → 둥글림의 일부로 치고 계속 건너간다
+          } else strip = Math.max(strip, w);
+          W += w;
+          if (W > FIL.max) return;
+          const out = exit(cur, ce);
+          if (out < 0 || (x = other(out)) < 0) return;
+          chain.push(out);
+        }
+      };
+      // 세모 t의 높이(모서리 e에서 맞은편 꼭짓점까지)의 제곱 — 싸게 걸러 내는 데 쓴다
+      const high2 = (t, e) => {
+        const p = vert(t, e), q = vert(t, e + 1), r = vert(t, e + 2), ex = P[q] - P[p], ey = P[q + 1] - P[p + 1], ez = P[q + 2] - P[p + 2], rx = P[r] - P[p], ry = P[r + 1] - P[p + 1], rz = P[r + 2] - P[p + 2];
+        const cx = ey * rz - ez * ry, cy = ez * rx - ex * rz, cz = ex * ry - ey * rx;
+        return (cx * cx + cy * cy + cz * cz) / (ex * ex + ey * ey + ez * ez || 1);
+      };
+      // 면(세모 t, 모서리 e)에서 띠(세모 u, 모서리 eu)로 넘어가는 자리인가 → 그러면 건너가 본다. ht2 · hu2 = 두 세모의 높이의 제곱.
+      // 건너편 세모의 높이(그 띠의 폭은 이보다 작지 않다)가 이쪽 면 폭의 3분의 1을 넘으면 아니다.
+      // 양쪽이 비슷한 띠(원통의 옆줄 · 나사산 — 모서리의 대부분이 이것이다)는 세모 높이만 보고 넘긴다(세모 두 장짜리 면의 폭은 세모 높이와 같다)
+      const start9 = FIL.face * FIL.face;
+      const tryFrom = (t, e, u, eu, ht2, hu2) => {
+        if (start[reg[t] + 1] - start[reg[t]] <= 2 && hu2 * start9 > 4 * ht2) return;
+        if (walked.has(Math.min(t * 4 + e, u * 4 + eu))) return;   // (건너편 면에서 이미 건너와 본 둥글림)
+        const wA = width(t, e), ax = dx, ay = dy, az = dz;
+        if (hu2 * start9 <= wA * wA && width(u, eu) * FIL.face <= wA) fillet(t, e, wA, [ax, ay, az]);
+      };
+      for (let t = 0; t < nTri; t++) for (let e = 0; e < 3; e++) {
+        const m = adj[t * 3 + e], u = m >> 2;
+        if (m < 0 || u < t || reg[u] === reg[t] || ndot(t, u) <= EDGE_COS) continue;   // (모서리마다 한 번. 20° 넘게 꺾인 곳은 이미 ①이다)
+        const ht2 = high2(t, e), hu2 = high2(u, m & 3);
+        tryFrom(t, e, u, m & 3, ht2, hu2);
+        tryFrom(u, m & 3, t, e, hu2, ht2);
+      }
+    }
     for (let t = 0; t < nTri; t++) for (let e = 0; e < 3; e++) {
       const m = adj[t * 3 + e], u = m >> 2, bend = m < 0 ? -1 : N[u * 3] * N[t * 3] + N[u * 3 + 1] * N[t * 3 + 1] + N[u * 3 + 2] * N[t * 3 + 2];
-      // (짝이 있는 모서리는 번호가 작은 세모 쪽에서 한 번만)
-      if (m === -2 || (m >= 0 && (u < t || bend > GENTLE_COS))) continue;
+      // (짝이 있는 모서리는 번호가 작은 세모 쪽에서 한 번만. 둥글린 모서리로 이미 뽑은 것은 건너뛴다)
+      if (m === -2 || (m >= 0 && (u < t || bend > GENTLE_COS || skip.has(Math.min(t * 4 + e, m))))) continue;
       const p = vert(t, e), q = vert(t, e + 1), mx = (P[p] + P[q]) / 2, my = (P[p + 1] + P[q + 1]) / 2, mz = (P[p + 2] + P[q + 2]) / 2, soft = bend > EDGE_COS || (m >= 0 && smoothAll);
       const w0 = far(t, e), x0 = dx, y0 = dy, z0 = dz, w1 = m < 0 ? 0 : far(u, m & 3);
       if (soft && Math.max(w0, w1) < (bend > SOFT_COS ? SOFT_WIDE : SOFT_MIN)) continue;
@@ -2421,7 +2581,16 @@ loader.run(() => {
   // ① 가늘어도 사라지지 않게: 띠는 늘 1px 넘는 폭으로 칠하되 가장자리를 부드럽게 풀고, 1px보다 가는 굵기는 진하기로 낸다 → 움직이는 동안에도 끊기거나 깜빡이지 않는다.
   // ② 뭉치지 않게: 윤곽이 아닌 모서리는 양옆의 면이 둘 다 화면에서 몇 px로 좁아지면 옅어지다 사라진다 — 가는 관(난간 · 배관 · 트러스)의 옆줄 여러 가닥이
   //    한 줄로 떡지지 않고 윤곽 두 줄만 남는다. 가까이 당겨 면이 넓어지면 다시 다 보인다
-  const LINE_W = .8, LINE_U = { lineRes: { value: new THREE.Vector2(1, 1) }, linePx: { value: new THREE.Vector2(1, 1) } }, lineVp = new THREE.Vector4();
+  // 투명 케이스의 초점 흐림(mat.dof): 초점면에서 멀리 있는 선일수록 굵게 번진다 — 선마다 가운데의 깊이로 정한다(긴 선도 처음부터 끝까지 한 값).
+  //   at = 초점까지의 거리, range = 깊이 폭(초점면에서 이만큼 벗어나면 끝까지 번진다. 그 12% 안쪽은 또렷하다), px = 끝까지 번진 선의 번짐(CSS px)
+  //   · 현장 · 박스 화면(frame): 초점 = 지금 보는 것(바라보는 점. 부품 하나를 볼 때는 그 부품, 박스 자리에서는 박스 한가운데), 폭 = 보는 거리의 16%, 번짐 7px.
+  //     휠로 당겨도 폭은 그대로 둔다(zoomR로 나눈다): 당길수록 더 번지면 들여다볼 수가 없다 — 초점만 가리킨 곳으로 옮겨 간다
+  //   · 메인 화면의 칸(soloRender): 그 현장의 페이지를 그대로 줄여 놓은 그림 — 폭은 현장 페이지에서의 값(pageFit), 번짐은 줄어든 비율만큼 가늘게.
+  //     (칸의 카메라는 현장 페이지보다 훨씬 멀다 → 칸의 거리로 폭을 정하면 같은 현장이 메인 화면에서는 덜 번지고, 들어가면 더 번진다)
+  //   · 시작 컷신이 나는 동안: 흐리지 않는다(세 현장과 슬로건이 또렷이 보여야 한다 — frame의 맨 위)
+  const DOF = { range: .16, px: 7 };
+  function dofSet(at, range, px) { LINE_U.dofAt.value = at; LINE_U.dofR.value = Math.max(range, 1e-3); LINE_U.dofPx.value = px; }
+  const LINE_W = .8, LINE_U = { lineRes: { value: new THREE.Vector2(1, 1) }, linePx: { value: new THREE.Vector2(1, 1) }, glint: { value: 0 }, glintT: { value: 0 }, dof: { value: 0 }, dofAt: { value: 6 }, dofR: { value: 1 }, dofPx: { value: 7 } }, lineVp = new THREE.Vector4();
   scene.onBeforeRender = r => {   // 그릴 때마다(메인 화면은 칸마다): 그리는 영역의 크기와 선 굵기 · CSS 1px(모두 기기 px)
     const pr = r.getPixelRatio();
     r.getCurrentViewport(lineVp);
@@ -2436,8 +2605,8 @@ loader.run(() => {
       Object.assign(sh.uniforms, LINE_U);
       sh.vertexShader = sh.vertexShader.replace('#include <common>', `#include <common>
         attribute vec3 la; attribute vec3 lb; attribute vec3 lc; attribute vec3 ld;
-        uniform vec2 lineRes; uniform vec2 linePx;
-        varying vec2 vLine;`).replace('#include <project_vertex>', `
+        uniform vec2 lineRes; uniform vec2 linePx; uniform float dof, dofAt, dofR, dofPx;
+        varying vec2 vLine; varying vec3 vGl;`).replace('#include <project_vertex>', `
         vec4 lA = modelViewMatrix * vec4(la, 1.0), lB = modelViewMatrix * vec4(lb, 1.0);
         float lShow = 1.0;
         if (lc != ld) {
@@ -2453,15 +2622,21 @@ loader.run(() => {
         else if (lB.z > -lNear) lB = mix(lB, lA, (lB.z + lNear) / (lB.z - lA.z));
         vec4 pA = projectionMatrix * lA, pB = projectionMatrix * lB;
         vec2 lHalf = lineRes * 0.5, lDir = pB.xy / pB.w * lHalf - pA.xy / pA.w * lHalf;
-        float lLen = length(lDir), lWide = max(linePx.x, 1.0) * 0.5 + 1.0;
+        float lLen = length(lDir), lBlur = dof * clamp(abs(-(lA.z + lB.z) * 0.5 - dofAt) / dofR - 0.12, 0.0, 1.0), lWide = max(linePx.x, 1.0) * 0.5 + 1.0 + lBlur * dofPx * linePx.y;
         lDir = lLen > 1e-5 ? lDir / lLen : vec2(1.0, 0.0);
         vec4 mvPosition = position.x < 0.5 ? lA : lB;
         gl_Position = position.x < 0.5 ? pA : pB;
         gl_Position.xy += vec2(-lDir.y, lDir.x) * (position.y * lWide) / lHalf * gl_Position.w;
-        vLine = vec2(position.y * lWide, lShow);
+        vLine = vec2(position.y * lWide, lShow); vGl = vec3(mvPosition.xy, lBlur);
         if (lShow < 0.004) gl_Position = vec4(0.0, 0.0, 2.0, 1.0);`);
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec2 linePx;\nvarying vec2 vLine;').replace('#include <map_fragment>',
-        'diffuseColor.a *= vLine.y * min(linePx.x, 1.0) * clamp(max(linePx.x, 1.0) * 0.5 + 0.5 - abs(vLine.x), 0.0, 1.0);\n#include <map_fragment>');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec2 linePx; uniform float glint, glintT, dofPx;\nvarying vec2 vLine; varying vec3 vGl;').replace('#include <map_fragment>',
+        `float lPx = vGl.z * dofPx, lSoft = 1.0 + lPx * 0.714286;   // (번짐 7px일 때 가장자리 5px에 걸쳐 풀리고 진하기는 1 / 2.6 — 번짐이 가늘면 그만큼 덜)
+        diffuseColor.a *= vLine.y * min(linePx.x, 1.0) * clamp((max(linePx.x, 1.0) * 0.5 + 0.5 + lPx * linePx.y - abs(vLine.x)) / lSoft, 0.0, 1.0) / (1.0 + lPx * 0.228571);
+        // 빛 흐름: 넓고 느린 빛 띠가 화면을 비스듬히 쓸고 지나가며 선을 잠깐 밝힌다(glint = 0이면 없음)
+        float lGl = sin(dot(vGl.xy, vec2(0.55, 0.3)) * 1.7 - glintT * 0.35) * 0.5 + 0.5;
+        diffuseColor.rgb *= 1.0 + glint * 3.0 * pow(lGl, 6.0) * (1.0 - min(vGl.z, 1.0));
+        diffuseColor.a *= 1.0 + glint * 1.5 * pow(lGl, 6.0);
+        #include <map_fragment>`);
     };
     mat.customProgramCacheKey = () => 'line';
     return mat;
@@ -6574,6 +6749,8 @@ loader.run(() => {
   let homeOn = false, homeHover = -1, trans = null, headBottom = 110;
   // 휠 확대: 기본 카메라(camGoal)에서 얼마나 당겼는지. r = 거리 비율(1 = 기본), x·y·z = 바라보는 점이 옮겨 간 양. 화면 상태가 바뀌면(ui) 풀린다
   let zoom = null, zoomAt = -1e9;
+  // 투명 케이스의 초점: dofOff = 초점면이 바라보는 점보다 카메라 쪽으로 얼마나 나와 있는지(부품 하나를 볼 때 · 박스 자리), zoomR = 지금 휠로 당겨 있는 비율(카메라와 같은 빠르기로 따라간다)
+  let dofOff = 0, zoomR = 1;
   // 옮기기(분해 화면에서 우클릭 끌기·두 손가락): 바라보는 점을 무대 좌표에서 옮긴 양. 거리는 그대로라 X·Y로만 움직인다. 화면 상태가 바뀌면(ui) 풀린다
   const pan = V();
   // 그림 옮기기(px): 휴대폰에서 모델을 머리글·카드를 피한 빈 자리로 (frame에서 goalDy·cardRight를 부드럽게 따라감)
@@ -6627,6 +6804,11 @@ loader.run(() => {
   function bandFit(my) {
     const H = innerHeight, e = H / (2 * my), top = Math.max(H / 2 - e, headBottom), bot = Math.min(H / 2 + e, H - bottomUI - 6);
     return bot - top > 2 * e - 1 ? { my, dy: 0 } : { my: H / Math.max(bot - top, H * .3), dy: (top + bot) / 2 - H / 2 };
+  }
+  // 조립된 현장이 현장 페이지(화면 전체)에 꽉 차는 카메라 거리 — camGoal의 조립 화면과 같은 값. 메인 화면의 칸이 '현장 페이지를 줄여 놓은 그림'이 되게 맞추는 기준(soloRender)
+  function pageFit(b, rx, ry) {
+    const c = b.abox.getCenter(V());
+    return fitPts(b.apts, c.setZ(0), fq.setFromEuler(eu.set(rx, ry, 0)), bandFit(1.5).my, 1.35, innerWidth / innerHeight);
   }
   let goalDy = 0;   // 지금 화면의 camGoal이 정한 dy (frame이 그림을 그만큼 내린다)
   // 이름표 테마(callout): 분해 화면의 양옆에 이름표 줄(HUD_COL px씩)이 서므로 그만큼 좁게 맞춘다. 좁은 화면(HUD_MIN 미만)에는 이름표를 넣을 자리가 없다
@@ -6874,7 +7056,7 @@ loader.run(() => {
   function mountOf(b) {
     const s = SITES[b.def.key], h = hostOf(b.def.key), inv = TM(b.def.asm.p, b.def.asm.q).invert(), body = b.parts[0];
     const bb = body.box.clone().applyMatrix4(inv.clone().multiply(TM(body.A.p, body.A.q))), c = bb.getCenter(V()), sc = .42 / bb.getSize(V()).y;
-    b.mount = { p: V(), q: new THREE.Quaternion(), s: V() };
+    b.mount = { p: V(), q: new THREE.Quaternion(), s: V(), d: bb.getSize(V()).z * sc };   // d = 붙은 박스 몸통의 깊이(현장 좌표) — 박스 자리 화면의 초점
     TM(V(...s.at).sub(h.c), undefined, sc).multiply(TM(V(-c.x, -c.y, -bb.min.z))).multiply(inv).decompose(b.mount.p, b.mount.q, b.mount.s);
   }
   function nest(b) {
@@ -7173,8 +7355,9 @@ loader.run(() => {
     return { d: fitPts(f.apts, look, fq.setFromEuler(eu.set(ps.rx, ps.ry, 0)), my, mx, a) * zoom, x: look.x, y: look.y, z: 0 };
   }
   // 캔버스의 한 구역(r)에 현장 하나만 그린다. c = 카메라 {d, x, y, z}, rx·ry = 그 현장의 기울기
-  function soloRender(root, r, c, rx, ry) {
-    const H = innerHeight, vis = stage.children.map(o => o.visible), asp = camera.aspect, rot = stage.rotation.clone(), pos = stage.position.clone();
+  // from · mix: 현장 페이지가 제 칸으로 줄어드는 동안에만 준다 — 줄어들기 시작할 때 현장 페이지가 쓰던 초점 흐림(from, 당겨 보던 중이면 기본값과 다르다)에서 칸의 값으로 이어 간다(mix 1 → 0)
+  function soloRender(b, r, c, rx, ry, from = null, mix = 0) {
+    const root = b.root, H = innerHeight, vis = stage.children.map(o => o.visible), asp = camera.aspect, rot = stage.rotation.clone(), pos = stage.position.clone();
     stage.children.forEach(o => { o.visible = o === root; });
     renderer.setViewport(r.x, H - r.y - r.h, r.w, r.h);
     renderer.setScissor(r.x, H - r.y - r.h, r.w, r.h);
@@ -7183,6 +7366,13 @@ loader.run(() => {
     camera.updateProjectionMatrix();
     camera.position.set(c.x, c.y, c.d);
     camera.lookAt(c.x, c.y, c.z);
+    if (LINE_U.dof.value) {
+      // 투명 케이스의 초점 흐림: 칸 = 현장 페이지를 줄여 놓은 그림 — 깊이 폭은 현장 페이지의 값, 번짐은 줄어든 비율(small)만큼.
+      // 칸이 화면 전체로 커지는 동안에도 이대로다(다 커지면 small = 1 → 현장 페이지의 값과 똑같아진다)
+      const at = c.d - c.z, page = pageFit(b, rx, ry), small = r.h * page / (H * at), range = DOF.range * page;
+      if (from) dofSet(at - from.off * mix, range + (from.range - range) * mix, DOF.px * (small + (1 - small) * mix));
+      else dofSet(at, range, DOF.px * small);
+    }
     stage.rotation.set(rx, ry, 0);
     pivot.set(c.x, c.y, c.z);
     stage.position.copy(pivot).sub(tmp.copy(pivot).applyEuler(stage.rotation));
@@ -7193,7 +7383,7 @@ loader.run(() => {
     camera.aspect = asp;
     camera.updateProjectionMatrix();
   }
-  const drawPanel = i => soloRender(built[FIELD_KEYS[i]].root, panelRect(i), panelCam(i, panelState[i].z), panelState[i].rx, panelState[i].ry);
+  const drawPanel = i => soloRender(built[FIELD_KEYS[i]], panelRect(i), panelCam(i, panelState[i].z), panelState[i].rx, panelState[i].ry);
   function showMain() {
     homeRun++;
     homing = false;
@@ -7221,6 +7411,7 @@ loader.run(() => {
     const ps = panelState[i], from = panelCam(i, ps.z);
     select(FIELD_KEYS[i]);
     cam = { ...from };
+    dofOff = 0; zoomR = 1;   // (투명 케이스의 초점: 새로 들어가는 현장 페이지는 기본값에서 시작)
     stage.rotation.set(ps.rx, ps.ry, 0);
     trans = { i, dir: 1, t0: performance.now(), dur: reduced ? 1 : 900, from };
   }
@@ -7230,7 +7421,7 @@ loader.run(() => {
     resetOrbit();
     for (const key of FIELD_KEYS) if (key !== cur.def.key) { const f = ensureField(key); rest(f); setAll(f, 1); }
     focused = hovered = site = null;
-    trans = { i: FIELD_KEYS.indexOf(cur.def.key), dir: -1, t0: performance.now(), dur: reduced ? 1 : 950, from: { ...cam } };
+    trans = { i: FIELD_KEYS.indexOf(cur.def.key), dir: -1, t0: performance.now(), dur: reduced ? 1 : 950, from: { ...cam }, dof: { range: LINE_U.dofR.value, off: dofOff } };
     SFX.air(.95, 900, 250, .1);
     ui();
   }
@@ -7239,7 +7430,7 @@ loader.run(() => {
     const u = clamp((now - trans.t0) / trans.dur, 0, 1), g = trans.dir > 0 ? ease(u) : 1 - ease(u), p = panelRect(trans.i), W = innerWidth, H = innerHeight;
     renderer.setScissorTest(true);
     FIELD_KEYS.forEach((key, j) => { if (j !== trans.i) drawPanel(j); });
-    soloRender(cur.root, { x: p.x * (1 - g), y: p.y * (1 - g), w: p.w + (W - p.w) * g, h: p.h + (H - p.h) * g }, cam, stage.rotation.x, stage.rotation.y);
+    soloRender(cur, { x: p.x * (1 - g), y: p.y * (1 - g), w: p.w + (W - p.w) * g, h: p.h + (H - p.h) * g }, cam, stage.rotation.x, stage.rotation.y, trans.dof, g);
     if (u < 1) return;
     if (trans.dir > 0) { trans = null; return; }
     Object.assign(panelState[trans.i], { rx: stage.rotation.x, ry: stage.rotation.y, z: 1 });
@@ -7763,6 +7954,7 @@ loader.run(() => {
     lightStep(k(4.5));
     lineLodStep();   // 선 테마: 선을 부품마다 그릴지 모델째 묶어 그릴지
     prismTime.value = t;   // 프리즘 라인: 무지개가 저절로 도는 시간
+    { const m = curTheme().mat || {}; LINE_U.glintT.value = t; LINE_U.glint.value = m.glint || 0; LINE_U.dof.value = cutOn && !CUT.torn ? 0 : m.dof || 0; }   // 투명 케이스: 빛 흐름 · 초점 흐림(시작 컷신이 나는 동안은 흐리지 않는다)
     // 시작 컷신 동안에는 컷신이 화면을 맡는다
     if (cutOn) {
       try { (cutKind === 'globe' ? globeFrame : cutFrame)(now, t); } catch (err) { cutFail(err); }
@@ -7781,7 +7973,8 @@ loader.run(() => {
       return;
     }
     const g = zoomGoal(panGoal(camGoal()));
-    if (!cam) cam = { d: g.d * (reduced ? 1 : 1.35), x: g.x, y: g.y, z: g.z };
+    if (!cam) { cam = { d: g.d * (reduced ? 1 : 1.35), x: g.x, y: g.y, z: g.z }; dofOff = 0; zoomR = 1; }
+    let zf = k(6);   // (휠 확대 비율 zoomR이 따라가는 빠르기 — 카메라가 평소처럼 따라갈 때는 카메라와 같은 값)
     if (trans) {
       // 칸 ↔ 화면 전체 전환: 카메라도 같은 속도 곡선으로 칸 카메라와 현장 카메라 사이를 오간다
       const e = ease(clamp((now - trans.t0) / trans.dur, 0, 1)), to = trans.dir > 0 ? g : panelCam(trans.i);
@@ -7801,7 +7994,7 @@ loader.run(() => {
       } else {
         // 휠을 돌린 직후에는 빠르게, 끌어서 옮기는 동안에는 손을 바짝 따라간다. 네 값을 같은 비율로 옮겨야 가리킨 곳이 화면에서 움직이지 않는다
         // 이스터에그 때는 천천히(영화처럼) 다가가고 물러난다
-        const f = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : 2.4);
+        const f = zf = k(down && down.pan ? 20 : egg || now < eggCalm ? 1 : now - zoomAt < 600 ? 10 : 2.4);
         cam.d += (g.d - cam.d) * f;
         cam.x += (g.x - cam.x) * f;
         cam.y += (g.y - cam.y) * f;
@@ -7810,6 +8003,15 @@ loader.run(() => {
     }
     camera.position.set(cam.x, cam.y, cam.d);
     camera.lookAt(cam.x, cam.y, cam.z);
+    {
+      // 투명 케이스의 초점: 바라보는 점. 부품 하나를 가져와 볼 때는 그 부품(앞으로 나와 있다), 박스 자리에서는 벽이 아니라 박스 한가운데 — 바뀔 때는 부드럽게 옮겨 간다.
+      // 휠로 당긴 동안에는 가리킨 곳(= 바라보는 점)이 초점이다
+      const off = focused && !zoom ? focused.obj.getWorldPosition(tmp).z - cam.z : state === 'site' && site ? built[site].mount.d / 2 : 0;
+      dofOff += (off - dofOff) * k(6);
+      zoomR += ((zoom ? zoom.r : 1) - zoomR) * zf;
+      const at = Math.max(cam.d - cam.z - dofOff, .3);
+      dofSet(at, DOF.range * at / zoomR, DOF.px);
+    }
     // 멀리서 배 전체를 볼 때는 가까운 한계를 뒤로 물려 깊이 정밀도를 높인다 (겹친 면이 번갈아 비치는 것 방지). 휠로 바짝 당기면 가깝게
     const near = clamp((cam.d - cam.z) * .06, .02, 2.5);
     if (Math.abs(camera.near - near) > .01) { camera.near = near; camera.updateProjectionMatrix(); }
