@@ -1,13 +1,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- 테마·글꼴: 전에 고른 것을 화면을 그리기 전에 바로 적용한다 (기본으로 그렸다가 바뀌며 번쩍이지 않게). 고르기는 오른쪽 아래 스타일 버튼 -->
+<!-- 테마·글꼴: 전에 고른 것을 화면을 그리기 전에 바로 적용한다 (기본으로 그렸다가 바뀌며 번쩍이지 않게). 고르기는 오른쪽 아래 스타일 버튼.
+     처음 열면 모노 라인 (v70, 사용자: "전체적인 테마는 모노라인"). 그 전에 기억해 둔 것(exbox-theme · exbox-font)은 한 번 비우고 새 이름(…2)으로 기억한다 — 모두 모노 라인에서 다시 시작하게 -->
 <script>
 try {
-  let t = localStorage.getItem('exbox-theme'), f = localStorage.getItem('exbox-font');
-  if (t === 'dark') t = 'charcoal';   // 라이트/다크 두 가지뿐이던 때 저장한 값
-  if (t && t !== 'light' && t !== 'studio' && /^[a-z]+$/.test(t)) document.documentElement.dataset.theme = t;
+  const t = localStorage.getItem('exbox-theme2'), f = localStorage.getItem('exbox-font2');
+  document.documentElement.dataset.theme = t && /^[a-z]+$/.test(t) ? t : 'monoline';
   if (f && /^[a-z0-9]+$/.test(f)) document.documentElement.dataset.font = f;
-} catch (e) { /* 저장소를 못 쓰는 환경이면 기본(스튜디오) */ }
+} catch (e) { document.documentElement.dataset.theme = 'monoline'; /* 저장소를 못 쓰는 환경이면 기본(모노 라인) */ }
 </script>
 <title>선박 현장 분해도</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -643,7 +643,7 @@ try {
   --t-w: 400; --t-ls: .01em; --l-ls: .14em; --l-w: 700;
 }
 /* 라인 — 선으로만 그린 분해도 (분해 축측도 같은 건축·제품 선 그림 참고, 사용자가 준 '선 디자인' 그림): 살구빛 종이 위에 PFA 로고 색(#C36519) 선 하나뿐.
-   판은 채우지 않고 가는 선 테두리만, 주 버튼은 빗금, 제목은 속이 빈 외곽선 글자, 네 귀퉁이에 맞춤표.
+   판은 채우지 않고 가는 선 테두리만, 글자는 가는 고딕(v70, 사용자: "폰트가 너무 볼드함 · 네 꼭짓점의 프레임 · 버튼의 사선을 다 지울 것" — 전에는 굵은 제목체의 속 빈 외곽선 글자, 빗금 버튼, 네 귀퉁이 맞춤표).
    3D도 면 없이 선만 — 속까지 다 비쳐 보이되 가려진 선은 옅게, 보이는 선은 진하게 (JS의 lineUp) */
 [data-theme="line"] {
   --ink: #8A4410; --on-ink: #FBF3EA; --ink-hover: #C36519; --muted: #A8683A;
@@ -651,13 +651,13 @@ try {
   --lift: rgb(195 101 25 / .12); --hover: rgb(195 101 25 / .08); --panel-hover: rgb(195 101 25 / .05);
   --edge: #C36519; --sh: 195 101 25; --sh-k: 0; --ring: #F6EBDF;
   --accent: #C36519; --on-accent: #FBF3EA; --accent-soft: rgb(195 101 25 / .1); --badge-bd: #C36519;
-  --act-bg: repeating-linear-gradient(-45deg, rgb(195 101 25 / .36) 0 1px, transparent 1px 6px); --act-fg: #8A4410; --act-bd: #C36519;
-  --act-hover: repeating-linear-gradient(-45deg, rgb(195 101 25 / .62) 0 1px, transparent 1px 4px);
+  --act-bg: transparent; --act-fg: #8A4410; --act-bd: #C36519; --act-hover: rgb(195 101 25 / .1);
   --bg: #F6EBDF; --base: #F6EBDF;
   --r-pill: 0; --r-card: 0; --r-small: 0; --blur: 0px;
   --sh-card: none; --sh-btn: none; --sh-pop: none;
-  --f-body: var(--sans); --f-display: 'Black Han Sans', var(--kr); --f-label: var(--mono);
-  --t-w: 400; --t-ls: .03em; --l-ls: .2em;
+  --f-body: var(--sans); --f-display: var(--sans); --f-label: var(--mono);
+  --t-w: 300; --t-ls: .01em; --l-ls: .2em; --l-w: 400;
+  --halo: rgb(246 235 223 / .62);   /* 설명 글줄 뒤에 까는 흐림의 색(바탕색) */
 }
 /* 모노 포인트 — 흑백 사진 속 주황 하나 (어두운 흑백 제품 분해 사진 참고, 사용자가 준 '흑백과 강조 갈색' 그림): 회색 스튜디오 바탕, 검은 유리판과 흰 글자.
    색은 PFA 주황 하나뿐이고 방폭박스에만 쓴다 — 3D는 흑백이고, 방폭박스가 있는 곳(건물 속에 숨어 있으면 그 건물)만 주황으로 깜빡인다.
@@ -674,22 +674,23 @@ try {
   --t-w: 600; --t-ls: -.01em; --l-ls: .18em;
   color-scheme: dark;
 }
-/* 모노 라인 — 라인과 모노 포인트를 합친 것 (사용자 주문): 검은 바탕에 흰 선만, 색은 방폭박스의 주황 하나.
-   화면은 라인처럼 가는 선 테두리 · 빗금 버튼 · 속이 빈 제목 · 맞춤표(모두 흰 선). 3D도 흰 선만 — 속까지 비쳐 보이므로 방폭박스가 건물 속에 있어도
-   건물이 아니라 박스의 선만 주황으로 깜빡인다. 박스를 눌러 들어가면 깜빡임이 멎는다 (JS의 blinkStep) */
+/* 모노 라인 — 라인과 모노 포인트를 합친 것 (사용자 주문, v70부터 처음 열면 이 테마): 검은 바탕에 흰 선만, 색은 방폭박스의 주황 하나.
+   화면은 라인처럼 가는 선 테두리 · 가는 고딕 글자(모두 흰 선). 3D도 흰 선만 — 속까지 비쳐 보이므로 방폭박스가 건물 속에 있어도
+   건물이 아니라 박스의 선만 주황으로 깜빡인다. 박스를 눌러 들어가면 깜빡임이 멎는다 (JS의 blinkStep).
+   메인 화면의 현장 칸에 마우스를 올리면 그 칸만 모노 포인트로 바뀐다 (JS의 monoHover) */
 [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"] {
   --ink: #EDEDEB; --on-ink: #111110; --ink-hover: #fff; --muted: #A6A6A3;
   --glass: rgb(17 17 16 / .86); --solid: rgb(20 20 19 / .97); --card: rgb(17 17 16 / .9); --btn: transparent;
   --lift: rgb(255 255 255 / .14); --hover: rgb(255 255 255 / .08); --panel-hover: rgb(255 255 255 / .04);
   --edge: #D2D2CF; --sh: 0 0 0; --sh-k: 0; --ring: #111110;
   --accent: #C36519; --on-accent: #fff; --accent-soft: rgb(195 101 25 / .24); --badge-bd: #D2D2CF;
-  --act-bg: repeating-linear-gradient(-45deg, rgb(255 255 255 / .34) 0 1px, transparent 1px 6px); --act-fg: #EDEDEB; --act-bd: #D2D2CF;
-  --act-hover: repeating-linear-gradient(-45deg, rgb(255 255 255 / .6) 0 1px, transparent 1px 4px);
+  --act-bg: transparent; --act-fg: #EDEDEB; --act-bd: #D2D2CF; --act-hover: rgb(255 255 255 / .08);
   --bg: #111110; --base: #111110;
   --r-pill: 0; --r-card: 0; --r-small: 0; --blur: 0px;
   --sh-card: none; --sh-btn: none; --sh-pop: none;
-  --f-body: var(--sans); --f-display: 'Black Han Sans', var(--kr); --f-label: var(--mono);
-  --t-w: 400; --t-ls: .03em; --l-ls: .2em;
+  --f-body: var(--sans); --f-display: var(--sans); --f-label: var(--mono);
+  --t-w: 300; --t-ls: .01em; --l-ls: .2em; --l-w: 400;
+  --halo: rgb(10 10 9 / .4);   /* 설명 글줄 뒤에 까는 흐림의 색 */
   color-scheme: dark;
 }
 /* 글라스 라인 — 모노 라인의 선 사이에 유리 면을 끼운 것 (사용자 주문): 선 · 바탕 · 깜빡임은 모노 라인 그대로(위 묶음을 같이 쓴다).
@@ -738,8 +739,15 @@ button { font: inherit; color: inherit; touch-action: manipulation; }   /* manip
 button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 #view { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #view:focus-visible { box-shadow: inset 0 0 0 3px var(--ink); }
-/* 이름표(AR 라인 테마): 3D 위에 겹쳐 그리는 2D 판 — 부품에서 뻗는 선과 이름 (JS의 hudStep). 누르기는 그대로 3D가 받는다 */
-.hud { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* 부품 이름 목록(AR 라인 테마, v70): 분해하면 화면 왼쪽에 한 줄에 하나씩 위에서 아래로(넘치면 옆 단으로) — 번호 · 선 없이 글만.
+   누르면 그 글씨와 그 부품들이 로고 색으로 깜빡인다 (JS의 listStep · pickStep). 글자는 매트릭스처럼 흘러나온다(MX) */
+.plist { position: fixed; left: 28px; top: 120px; display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 30), auto); column-gap: 22px; justify-content: start; align-items: start; pointer-events: none; }
+.pn { appearance: none; display: block; max-width: 190px; margin: 0; padding: 0; border: 0; background: none; color: var(--muted); font: 300 12px/17px var(--f-body); letter-spacing: .01em; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; pointer-events: auto; transition: color .2s; }
+.pn:hover { color: var(--ink); }
+.plist.fade { animation: plist-in .45s ease both; }
+.plist.off { opacity: 0; transition: opacity .25s; }
+@keyframes plist-in { from { opacity: 0; transform: translateY(-6px); } }
+.pn:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
 
 .head {
   position: fixed;
@@ -1103,7 +1111,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .pin::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 14px; background: var(--ink); transform: translateX(-50%); }
 
 /* ===================== 스타일 고르기 (오른쪽 아래, 모든 화면) =====================
-   [◐ 테마 · 스튜디오] [▷ 컷신 · 드론 비행] [가 글꼴 · 테마 기본] [모션] — 누르면 위로 고르기 창이 열리고, 고르는 즉시 바뀐다(창은 열린 채라 계속 비교할 수 있다. 컷신만은 고르면 창을 닫고 바로 튼다).
+   [◐ 테마 · 모노 라인] [▷ 컷신 · 지구본] [가 글꼴 · 테마 기본] — 누르면 위로 고르기 창이 열리고, 고르는 즉시 바뀐다(창은 열린 채라 계속 비교할 수 있다. 컷신만은 고르면 창을 닫고 바로 튼다).
    아래쪽 안내·카드와 가로로 겹치는 화면(휴대폰 세로 등)에서는 그 위로 비켜 선다: --dock = 화면 아래에서 띄울 거리(JS가 잼) */
 .dock {
   position: fixed;
@@ -1154,8 +1162,8 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .dock-ico.th { background: linear-gradient(90deg, var(--base) 50%, var(--accent) 50%); }
 .dock-k { color: var(--muted); font-weight: 500; }
 .dock-v { max-width: 8.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 칸이 넷(테마 · 컷신 · 글꼴 · 모션)이라, 화면이 넓지 않으면 칸 이름은 빼고 값만 보여 준다 — 메인 화면의 칸 버튼을 전보다 더 가리지 않게 */
-@media (max-width: 1180px) { .dock-k { display: none; } }
+/* 칸이 셋(테마 · 컷신 · 글꼴)이라, 화면이 넓지 않으면 칸 이름은 빼고 값만 보여 준다 — 메인 화면의 칸 버튼을 가리지 않게 */
+@media (max-width: 1080px) { .dock-k { display: none; } }
 .sheet {
   --sel: var(--ink);   /* 고른 것 표시 색 = 페이지(지금 테마)의 글자색 — 카드 안은 제 테마로 칠해져도 이 값은 그대로 이어받는다 */
   position: fixed;
@@ -1274,24 +1282,7 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
 .fo-s { overflow: hidden; font-size: 20px; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
 .fo-n { font: var(--l-w) 10.5px/1.2 var(--f-label); letter-spacing: calc(var(--l-ls) * .45); text-transform: var(--l-tt); color: var(--muted); }
 .fo-tag { grid-column: 2; grid-row: 1 / span 2; font-size: 11px; font-weight: 600; color: var(--muted); }
-/* 분해 모션 창: 컨트롤바 두 개(이름·설명 | 지금 값, 막대, 눈금) + 다시 보기·기본값 버튼. 막대 색은 테마의 포인트 색 */
 .dock-ico svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.ctl { margin: 4px 4px 18px; }
-.ctl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-.ctl-k { font: var(--t-w) 16px/1.2 var(--f-display); letter-spacing: var(--t-ls); text-shadow: var(--glow); }
-.ctl-k small { display: block; margin-top: 3px; font: 400 12px/1.35 var(--f-body); letter-spacing: 0; color: var(--muted); text-shadow: none; }
-.ctl-v { flex: none; font: 600 22px/1 var(--f-label); font-variant-numeric: tabular-nums; letter-spacing: 0; }
-.ctl input[type="range"] { display: block; width: 100%; height: 30px; margin: 0; accent-color: var(--accent); cursor: pointer; }
-.ctl input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-/* 눈금 글자: 막대 손잡이 가운데(양 끝 8px 안쪽)에 맞춘다. 첫 글자는 왼쪽 끝, 마지막 글자는 오른쪽 끝에 붙인다 */
-.ctl-scale { position: relative; height: 14px; margin-top: 3px; font: var(--l-w) 10.5px/1 var(--f-label); letter-spacing: 0; color: var(--muted); }
-.ctl-scale span { position: absolute; top: 0; left: calc(8px + (100% - 16px) * var(--f)); transform: translateX(-50%); white-space: nowrap; }
-.ctl-scale span:first-child { transform: translateX(-8px); }
-.ctl-scale span:last-child { transform: translateX(calc(8px - 100%)); }
-.ctl-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 4px 4px; }
-.ctl-row .btn { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 12px; }
-.ctl-row .btn svg, .sheet-play svg { fill: currentColor; stroke: none; }
-.ctl-row .btn svg { width: 14px; height: 14px; }
 
 /* ===================== 테마만의 장식 =====================
    토큰으로 안 되는 몇 가지: 버튼 모양·표지판·겹테두리·빛 번짐·바닥 격자.
@@ -1438,20 +1429,43 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
               linear-gradient(rgb(194 37 92 / .6), rgb(194 37 92 / .6)) 50% 50% / 1.5px 100% no-repeat,
               linear-gradient(rgb(27 47 69 / .4), rgb(27 47 69 / .4)) 50% 50% / 100% 1px no-repeat;
 }
-/* 라인 · 모노 라인: 제목은 속이 빈 외곽선 글자(화살표는 글자색으로), Ex 동그라미와 핀도 채우지 않고 선으로, 네 귀퉁이 맞춤표. 선의 색 = 그 테마의 테두리 색(--edge) */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.title, .info h2, .p-name), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-t { color: transparent; -webkit-text-stroke: 1px var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .chev { color: var(--ink); -webkit-text-stroke: 0; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .title { font-size: clamp(24px, 2.9vw, 36px); }   /* 속이 빈 글자는 조금 커야 읽힌다 */
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { background: var(--base); color: var(--edge); border: 1.5px solid var(--edge); box-shadow: none; }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin::after { width: 1.5px; background: var(--edge); }
-:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .fx::before {
-  content: ''; position: absolute; inset: 14px; opacity: .75;
-  background: linear-gradient(var(--edge), var(--edge)) 0 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 0 0 / 1px 22px,
-              linear-gradient(var(--edge), var(--edge)) 100% 0 / 22px 1px, linear-gradient(var(--edge), var(--edge)) 100% 0 / 1px 22px,
-              linear-gradient(var(--edge), var(--edge)) 0 100% / 22px 1px, linear-gradient(var(--edge), var(--edge)) 0 100% / 1px 22px,
-              linear-gradient(var(--edge), var(--edge)) 100% 100% / 22px 1px, linear-gradient(var(--edge), var(--edge)) 100% 100% / 1px 22px;
-  background-repeat: no-repeat;
+/* 라인 · 모노 라인 계열: Ex 동그라미와 핀은 채우지 않고 선으로(선의 색 = 그 테마의 테두리 색 --edge). 글자는 모두 가늘게 — 제목 · 본문 · 버튼 · 안내 모두 300(Light),
+   고정폭 라벨만 400(고정폭 글꼴은 300이 없어 읽기 어렵다). 검은 바탕의 흰 글자는 같은 굵기라도 더 굵어 보여서 한 단계 더 가늘게 했다.
+   (v70에서 지운 것 — 사용자: "폰트가 너무 볼드함", "네 꼭짓점에 있는 프레임 너무 짜침", "버튼 박스의 사선이 우리가 추구하는 것과 다름":
+    굵은 제목체의 속 빈 외곽선 글자, 네 귀퉁이 맞춤표(.fx::before), 주 버튼의 빗금) */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(body, .act, .crumb, .p-go, .hint, .btn, .dock-btn, .dock-ico, .count, .choices-label, .tip, .fo-tag, .c-name) { font-weight: 300; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tc-name { font-weight: 400; }   /* (고르기 창의 테마 이름: 굵은 700 대신) */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.badge, .pin), .tv:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .tv-dot { background: var(--base); color: var(--edge); border: 1px solid var(--edge); box-shadow: none; font-weight: 400; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin::after { width: 1px; background: var(--edge); }
+/* 설명(왼쪽 아래): 상자 없이 글자만 (v70, 사용자: "설명 박스 대신 매트릭스 영화처럼 글자들이 주루룩 나오게, 박스는 없이").
+   글자는 JS(MX)가 한 글자씩 왼쪽부터 무작위 글자(가타카나 · 숫자)로 떨어져 내리다 제 글자로 바뀌며 나타나고, 사라질 때도 왼쪽부터 무작위 글자로 바뀌며 아래로 흘러내린다.
+   읽기 쉽게 글줄마다 뒤를 살짝 흐리고 어둡게(--halo) 깐다 — 가장자리를 부드럽게 풀어 상자로 보이지 않게(보이지 않는 흐림) */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info {
+  padding: 0; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; outline: 0;
 }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info :is(.count, h2, .en, .desc, .how) { position: relative; width: fit-content; max-width: 100%; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info :is(.count, h2, .en, .desc, .how)::before {
+  content: ''; position: absolute; inset: -11px -26px; z-index: -1; pointer-events: none;
+  background: var(--halo); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 26px, #000 calc(100% - 26px), transparent), linear-gradient(transparent, #000 11px, #000 calc(100% - 11px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 26px, #000 calc(100% - 26px), transparent), linear-gradient(transparent, #000 11px, #000 calc(100% - 11px), transparent);
+  mask-composite: intersect;
+  opacity: 0; transition: opacity .45s ease .15s;
+}
+/* 글줄 뒤 흐림: 그 줄의 글자가 흘러나오기 시작하면 서서히 깔리고, 그 줄의 글자가 다 흘러내리면 걷힌다(JS가 줄마다 .mx-on) — 글자 없이 흐림만 남아 상자처럼 보이지 않게.
+   번호 동그라미 · 버튼: 글자가 흘러나온 뒤에 서서히(사라질 때는 먼저) */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info :is(.badge, .nav) { opacity: 0; transition: opacity .2s; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info .badge { display: flex; justify-content: center; align-items: center; }   /* (번호가 글자마다 나뉘어도 한 줄로) */
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info .mx-on::before { opacity: 1; transition: opacity .3s; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info.mx-show :is(.badge, .nav) { opacity: 1; transition: opacity .45s ease .3s; }
+:root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .info:not(.mx-show) .nav { pointer-events: none; }
+.mx-c { position: relative; }
+.mx-c.h { color: transparent; }   /* 아직 안 나온(또는 사라진) 글자: 자리는 그대로 두고 안 보이게 — 줄바꿈이 흔들리지 않는다 */
+.mx-c[data-g]::after { content: attr(data-g) / ""; position: absolute; left: 0; top: 0; color: var(--muted); animation: mx-drop .18s cubic-bezier(.2, .8, .2, 1) both; }
+.mx-c.o[data-g]::after { animation: mx-fall .13s ease-in both; }
+@keyframes mx-drop { from { transform: translateY(-.6em); opacity: 0; } }
+@keyframes mx-fall { to { transform: translateY(.5em); opacity: 0; } }
 /* 모노 포인트 · 모노 라인: 방폭박스를 가리키는 것(핀)만 주황. 고르기 카드의 포인트 점은 3D처럼 깜빡인다 */
 :root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin { background: var(--accent); color: #fff; border-color: var(--accent); }
 :root:is([data-theme="mono"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .pin::after { background: var(--accent); }
@@ -1463,9 +1477,6 @@ body.field.exploded .pins { opacity: 1; transition: opacity .5s ease .9s; }
   .head { top: calc(16px + env(safe-area-inset-top, 0px)); left: 18px; right: 18px; }
   .title { font-size: 20px; }
   :root[data-theme="swiss"] .title { font-size: 23px; }
-  /* 라인 · 모노 라인: 휴대폰의 작은 글자는 속을 비우면 읽기 어렵다 → 선 색으로 채운 글자 */
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) .title { font-size: 21px; }
-  :root:is([data-theme="line"], [data-theme="monoline"], [data-theme="glassline"], [data-theme="arline"], [data-theme="prismline"], [data-theme="dataland"], [data-theme="phonecase"]) :is(.title, .info h2, .p-name) { color: var(--edge); -webkit-text-stroke: 0; }
   .chev { width: 24px; height: 24px; margin-left: 8px; }
   .sub { font-size: 12px; }
   .act { padding: 10px 14px; font-size: 13px; }
@@ -1624,7 +1635,6 @@ html.cut-on:not(.cut-reveal) :is(.head, .home, .dock, .hint, .info, .choices, .p
 
 <div class="fx" aria-hidden="true"></div>
 <canvas id="view" tabindex="0" aria-label="방폭박스 3D 뷰어. Enter 키로 분해하고, 좌우 화살표로 부품을 넘기고, Esc로 돌아갑니다."></canvas>
-<canvas class="hud" id="hud" aria-hidden="true"></canvas>
 
 <!-- 시작 컷신 위에 얹는 층: 갈색 점(= 커지면 로고 상자) · 워드마크 · 점을 누르는 단추 · 건너뛰기. 막대와 글자 모양은 JS가 #cut-data에서 채운다.
      지구본 컷신은 #cut-film(2D 캔버스)에 그림을 다 그리고, 소리가 막혀 있으면 #cut-go로 한 번 누르기를 기다린다(누르면 첫 장면부터 음악과 함께) -->
@@ -1659,7 +1669,7 @@ const STYLE = (() => {
   const S = "'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif", M = "'AppleMyungjo', 'Batang', serif";
   // gf = 통째로 부를 때의 이름·굵기, pv = 미리보기(글자 몇 개만 담은 작은 글꼴)용 굵기, one = 굵기가 하나뿐(제목을 가짜로 굵게 만들지 않게 400)
   const FONTS = {
-    plex:       { ko: 'IBM 플렉스 산스', en: 'IBM Plex Sans KR', fam: `'IBM Plex Sans KR', ${S}`, gf: 'IBM+Plex+Sans+KR:wght@400;500;600;700', pv: 'IBM+Plex+Sans+KR:wght@600', tag: '기술 고딕' },
+    plex:       { ko: 'IBM 플렉스 산스', en: 'IBM Plex Sans KR', fam: `'IBM Plex Sans KR', ${S}`, gf: 'IBM+Plex+Sans+KR:wght@300;400;500;600;700', pv: 'IBM+Plex+Sans+KR:wght@600', tag: '기술 고딕' },   // (300 = 선 테마의 가는 제목)
     noto:       { ko: '본고딕', en: 'Noto Sans KR', fam: `'Noto Sans KR', ${S}`, gf: 'Noto+Sans+KR:wght@400;500;700', pv: 'Noto+Sans+KR:wght@700', tag: '반듯한 고딕' },
     gothic:     { ko: '고딕 A1', en: 'Gothic A1', fam: `'Gothic A1', ${S}`, gf: 'Gothic+A1:wght@400;500;700;800', pv: 'Gothic+A1:wght@700', tag: '또렷한 고딕' },
     nanum:      { ko: '나눔고딕', en: 'Nanum Gothic', fam: `'Nanum Gothic', ${S}`, gf: 'Nanum+Gothic:wght@400;700;800', pv: 'Nanum+Gothic:wght@700', tag: '익숙한 고딕' },
@@ -1694,8 +1704,8 @@ const STYLE = (() => {
     aurora: ['gothic'], kit: ['plex', 'sunflower', 'plexmono'], retro: ['nanum'], noir: ['myeongjo', 'hahmlet', 'noto'],
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
     steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
-    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'blackhan', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'blackhan', 'plexmono'], glassline: ['plex', 'blackhan', 'plexmono'], arline: ['plex', 'blackhan', 'plexmono'], prismline: ['plex', 'blackhan', 'plexmono'], dataland: ['plex', 'blackhan', 'plexmono'],
-    phonecase: ['plex', 'blackhan', 'plexmono'],
+    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'plexmono'], glassline: ['plex', 'plexmono'], arline: ['plex', 'plexmono'], prismline: ['plex', 'plexmono'], dataland: ['plex', 'plexmono'],
+    phonecase: ['plex', 'plexmono'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -1805,6 +1815,7 @@ const loader = (() => {
     <button type="button" class="btn back" id="back">전체 부품</button>
   </div>
 </section>
+<nav class="plist" id="plist" aria-label="부품 이름 — 누르면 그 부품이 깜빡여요" hidden></nav>
 
 <nav class="choices" id="choices" aria-label="방폭박스 설치 장소">
   <p class="choices-label">이 현장의 방폭박스</p>
@@ -1814,12 +1825,11 @@ const loader = (() => {
 </nav>
 <div class="pins" id="pins" aria-hidden="true"><span class="pin" id="pin">Ex</span></div>
 
-<!-- 스타일 고르기·컷신 고르기·분해 모션 조절: 오른쪽 아래(모든 화면). 버튼을 누르면 창(.sheet)이 열리고, 테마 카드·글꼴은 JS가 채운다 -->
-<div class="dock" id="dock" role="group" aria-label="화면 스타일 · 컷신 · 분해 모션">
-  <button type="button" class="dock-btn" id="dock-theme" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-theme" aria-label="테마 고르기"><span class="dock-ico th" aria-hidden="true"></span><span class="dock-k">테마</span><span class="dock-v" id="dock-theme-v">스튜디오</span></button>
-  <button type="button" class="dock-btn" id="dock-cut" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-cut" aria-label="컷신 고르기"><span class="dock-ico" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M9.2 7.2v9.6l7.6-4.8z"/></svg></span><span class="dock-k">컷신</span><span class="dock-v" id="dock-cut-v">드론 비행</span></button>
+<!-- 스타일 고르기·컷신 고르기: 오른쪽 아래(모든 화면). 버튼을 누르면 창(.sheet)이 열리고, 테마 카드·글꼴은 JS가 채운다 -->
+<div class="dock" id="dock" role="group" aria-label="화면 스타일 · 컷신">
+  <button type="button" class="dock-btn" id="dock-theme" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-theme" aria-label="테마 고르기"><span class="dock-ico th" aria-hidden="true"></span><span class="dock-k">테마</span><span class="dock-v" id="dock-theme-v">모노 라인</span></button>
+  <button type="button" class="dock-btn" id="dock-cut" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-cut" aria-label="컷신 고르기"><span class="dock-ico" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M9.2 7.2v9.6l7.6-4.8z"/></svg></span><span class="dock-k">컷신</span><span class="dock-v" id="dock-cut-v">지구본</span></button>
   <button type="button" class="dock-btn" id="dock-font" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-font" aria-label="글꼴 고르기"><span class="dock-ico" aria-hidden="true">가</span><span class="dock-k">글꼴</span><span class="dock-v" id="dock-font-v">테마 기본</span></button>
-  <button type="button" class="dock-btn" id="dock-motion" aria-haspopup="dialog" aria-expanded="false" aria-controls="sheet-motion" aria-label="분해 모션 조절"><span class="dock-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4"/><path d="M12 2.8v3.4M12 17.8v3.4M2.8 12h3.4M17.8 12h3.4M5.5 5.5l2.4 2.4M16.1 16.1l2.4 2.4M5.5 18.5l2.4-2.4M16.1 7.9l2.4-2.4"/></svg></span><span class="dock-k">모션</span><span class="dock-v" id="dock-motion-v">130% · 1.0×</span></button>
 </div>
 <section class="sheet" id="sheet-theme" role="dialog" aria-label="테마 고르기" hidden>
   <header class="sheet-head">
@@ -1843,8 +1853,8 @@ const loader = (() => {
   <div class="sheet-body">
     <p class="sheet-note">사이트를 열 때 처음 나오는 영상이에요. 고르면 바로 틀어 보여 주고, 다음에 열 때도 그 컷신이 나와요. 보는 중에는 '건너뛰기'나 Esc로 넘길 수 있어요.</p>
     <div class="clist" id="clist" role="radiogroup" aria-label="컷신">
-      <button type="button" class="fopt" role="radio" aria-checked="false" data-id="drone"><span class="fo-s">드론 비행</span><span class="fo-n">섬의 공장 → 해양플랜트 → 배의 선체 → 슬로건 → 로고</span><span class="fo-tag">기본 · 3D</span></button>
-      <button type="button" class="fopt" role="radio" aria-checked="false" data-id="globe"><span class="fo-s">지구본</span><span class="fo-n">선 → 지구본 → 부산 → 로고 · 음악과 함께 10초</span><span class="fo-tag">선 그림 · 음악</span></button>
+      <button type="button" class="fopt" role="radio" aria-checked="false" data-id="globe"><span class="fo-s">지구본</span><span class="fo-n">선으로 그린 세 현장 → 지구본 → 부산 깜빡임 → 로고 · 음악과 함께 10초</span><span class="fo-tag">기본 · 선 그림 · 음악</span></button>
+      <button type="button" class="fopt" role="radio" aria-checked="false" data-id="drone"><span class="fo-s">드론 비행</span><span class="fo-n">섬의 공장 → 해양플랜트 → 배의 선체 → 슬로건 → 로고</span><span class="fo-tag">3D</span></button>
     </div>
   </div>
 </section>
@@ -1861,32 +1871,6 @@ const loader = (() => {
     <div class="flist" id="flist" role="radiogroup" aria-label="글꼴"></div>
   </div>
 </section>
-<!-- 분해 모션 조절: 컨트롤바 두 개(퍼짐 %, 속도 배). 값은 이 기기에 기억하고, 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해 보여 준다 -->
-<section class="sheet" id="sheet-motion" role="dialog" aria-label="분해 모션 조절" hidden>
-  <header class="sheet-head">
-    <h3>분해 모션</h3><span class="sheet-sp"></span>
-    <button type="button" class="sheet-nav sheet-play" aria-label="다시 분해해서 보기" title="다시 분해해서 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.8v12.4L18.4 12z"/></svg></button>
-    <button type="button" class="sheet-nav sheet-x" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  </header>
-  <div class="sheet-body">
-    <p class="sheet-note">분해할 때 부품이 다 같이 화면 밖까지 퍼져 나갔다가 한꺼번에 제자리로 돌아와요(조립은 그 반대). 퍼짐 0%면 예전처럼 차례로 움직여요. 컨트롤바에서 손을 떼면 그 값으로 바로 다시 분해해서 보여 줘요.</p>
-    <div class="ctl">
-      <div class="ctl-head"><label class="ctl-k" for="m-burst">퍼짐<small>화면 밖까지 날아가는 거리</small></label><output class="ctl-v" id="m-burst-v" for="m-burst">130%</output></div>
-      <input type="range" id="m-burst" min="0" max="300" step="5" value="130">
-      <div class="ctl-scale" aria-hidden="true"><span style="--f:0">0%</span><span style="--f:.3333">100% 화면 끝</span><span style="--f:.6667">200%</span><span style="--f:1">300%</span></div>
-    </div>
-    <div class="ctl">
-      <div class="ctl-head"><label class="ctl-k" for="m-speed">속도<small>분해·조립이 빠른 정도</small></label><output class="ctl-v" id="m-speed-v" for="m-speed">1.0×</output></div>
-      <input type="range" id="m-speed" min="0.2" max="3" step="0.1" value="1">
-      <div class="ctl-scale" aria-hidden="true"><span style="--f:0">0.2× 느리게</span><span style="--f:.2857">1×</span><span style="--f:.6429">2×</span><span style="--f:1">빠르게 3×</span></div>
-    </div>
-    <div class="ctl-row">
-      <button type="button" class="btn" id="m-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.8v12.4L18.4 12z"/></svg>다시 분해해 보기</button>
-      <button type="button" class="btn" id="m-reset">기본값 (130% · 1.0×)</button>
-    </div>
-  </div>
-</section>
-
 <div class="tip" id="tip" hidden></div>
 <p class="fail" id="fail" hidden>3D 화면을 불러오지 못했어요. 인터넷 연결을 확인하거나 다른 브라우저로 열어 주세요.</p>
 
@@ -1977,19 +1961,19 @@ loader.run(() => {
   //       · line = 면 없이 윤곽선만(c = 선 색, 아래 lineUp. glass = 유리색을 주면 선 사이의 면을 반투명 유리로 채운다) · mono = 어두운 흑백 + 강조색 c 하나
   //       blink = 방폭박스가 있는 곳을 이 색으로 깜빡인다(아래 blinkStep — 면 테마는 박스가 숨은 건물이나 드러난 박스, 선 테마는 언제나 박스의 선)
   const THEMES = [
-    { id: 'studio', ko: '스튜디오', en: 'Studio', desc: '제품 촬영 스튜디오의 따뜻한 회백색 — 기본',
+    { id: 'studio', ko: '스튜디오', en: 'Studio', desc: '제품 촬영 스튜디오의 따뜻한 회백색',
       l: { key: ['#fff2e0', 1.2], rim: ['#dde8ff', .8], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#b9b4aa', hemi: .2, exp: 1 }, mat: null },
     // (스튜디오 바로 다음의 셋은 사용자가 그림을 주고 주문한 테마 — 목록의 앞쪽에 둔다)
     { id: 'line', ko: '라인', en: 'Line Art', desc: '선으로만 그린 분해도 — 속까지 다 비쳐 보이지만 모양은 또렷하게, 선은 PFA 로고 색 하나',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#e8d9c8', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#C36519' } },
     { id: 'mono', ko: '모노 포인트', en: 'Mono Accent', desc: '흑백 사진 속 주황 하나 — 방폭박스가 있는 곳만 깜빡이고, 눌러 들어가면 멎는다',
       l: { key: ['#ffffff', .95], rim: ['#ffffff', 1.9], fill: ['#ffffff', .1], sky: '#dcdcdc', ground: '#101010', hemi: .2, exp: 1 }, mat: { kind: 'mono', c: '#C36519', blink: '#C36519' } },
-    { id: 'monoline', ko: '모노 라인', en: 'Mono Line', desc: '검은 바탕에 흰 선만 — 속까지 비치는 선 그림에서 방폭박스의 선만 주황으로 깜빡인다',
+    { id: 'monoline', ko: '모노 라인', en: 'Mono Line', desc: '검은 바탕에 흰 선만 — 속까지 비치는 선 그림에서 방폭박스의 선만 주황으로 깜빡인다. 메인 화면의 현장에 마우스를 올리면 모노 포인트로 — 기본',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A' } },
     { id: 'glassline', ko: '글라스 라인', en: 'Glass Line', desc: '모노 라인의 선 사이에 유리 면 — 빛 반사 없는 반투명 유리, 면마다 진하기가 10 ~ 80%로 제각각',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C' } },
-    // callout = 분해하면 부품 종류마다 이름표가 펼쳐지고 부품에서 이름표까지 선이 뻗는다(아래 hudStep)
-    { id: 'arline', ko: 'AR 라인', en: 'AR Callout', desc: '글라스 라인 + 이름표 — 분해하면 부품마다 선이 뻗어 나가 모든 이름이 펼쳐진다 (영화 속 홀로그램 AR 화면 참고)',
+    // callout = 분해하면 화면 왼쪽에 부품 이름이 한 줄에 하나씩 흘러나오고, 이름을 누르면 그 부품이 로고 색으로 깜빡인다(아래 listStep · pickStep)
+    { id: 'arline', ko: 'AR 라인', en: 'AR Callout', desc: '글라스 라인 + 부품 이름 — 분해하면 왼쪽에 모든 부품 이름이 흘러나오고, 이름을 누르면 그 부품이 깜빡인다 (영화 속 홀로그램 AR 화면 참고)',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C' }, callout: true },
     { id: 'prismline', ko: '프리즘 라인', en: 'Prism Line', desc: '글라스 라인의 모든 유리 면에 옅은 무지개 — 천천히 색이 돌고, 그 빛이 안개 속 조명처럼 은은하게 번져 연기처럼 일렁인다',
       l: { key: ['#ffffff', 1.1], rim: ['#ffffff', .6], fill: ['#ffffff', 0], sky: '#ffffff', ground: '#202020', hemi: .4, exp: 1 }, mat: { kind: 'line', c: '#E8E8E6', blink: '#F0842A', glass: '#8E8E8C', prism: true } },
@@ -2058,7 +2042,7 @@ loader.run(() => {
       l: { key: ['#fff6ec', 1.25], rim: ['#ff9ecf', .9], fill: ['#9ee6d0', .45], sky: '#fffaf0', ground: '#c8b6ff', hemi: .5, exp: 1.08 }, mat: null },
   ];
   const themeOf = id => THEMES.find(t => t.id === id) || THEMES[0];
-  const curTheme = () => themeOf(document.documentElement.dataset.theme || 'studio');
+  const curTheme = () => themeOf(document.documentElement.dataset.theme || 'monoline');
   // 조명: 목표(LG)를 정해 두면 frame이 약 0.7초에 걸쳐 그쪽으로 옮긴다(lightStep)
   const LG = { key: col('#fff2e0'), rim: col('#dde8ff'), fill: col('#ffffff'), sky: col('#ffffff'), ground: col('#b9b4aa'), keyI: 1.2, rimI: .8, fillI: 0, hemi: .2, exp: 1 };
   function lightGoal(t) {
@@ -2762,7 +2746,7 @@ loader.run(() => {
     // 시작 컷신의 배만은 부품마다 — 긴 선체로 바꿔칠 때 부품을 골라 숨겨야 한다. 컷신의 3D가 걷히면(torn) 곧바로 메인 화면의 묶음으로 바꾼다:
     // 묶는 데 0.05초쯤 걸리는데, 그때는 3D가 가려져 있고 로고도 멈춰 있어서 티가 나지 않는다(컷신이 끝나는 순간에 하면 메인 화면이 나타나며 한 번 멈칫했다)
     const flying = cutOn && !CUT.torn, all = Object.values(built);
-    const how = b => !homeOn ? 'parts' : !b.def.fieldParts ? (mode.blink && !flying ? 'one' : 'none') : flying && b === built.ship ? 'parts' : 'one', key = all.map(b => how(b)).join();
+    const how = b => dfly && cur ? (b.def.fieldParts ? 'one' : b === built[cur.def.box] ? 'parts' : mode.blink ? 'one' : 'none') : !homeOn ? 'parts' : !b.def.fieldParts ? (mode.blink && !flying ? 'one' : 'none') : flying && b === built.ship ? 'parts' : 'one', key = all.map(b => how(b)).join();
     if (key === lineLodKey) return;
     lineLodKey = key;
     for (const b of all) lineLod(b, how(b));
@@ -6267,19 +6251,11 @@ loader.run(() => {
   // 부품이 다 같이 움직이는(분해·조립) 동안은 이 시각까지 카메라가 넉넉히 물러나 있는다
   let moveUntil = 0;
   const markMove = (dur, stagger, n) => { moveUntil = performance.now() + dur + stagger * n + 120; };
-  // 분해 모션 조절(오른쪽 아래 [모션] 창의 컨트롤바 둘). 이 기기에 기억한다
+  // 분해 모션: 한 가지로 고정 (v70, 사용자: "퍼짐 110% 속도 0.8x로 고정" — 오른쪽 아래의 [모션] 조절 창은 없앴다)
   // burst = 퍼짐(%): 분해할 때 부품이 분해 자리보다 얼마나 더 바깥(화면 밖)까지 날아갔다가 돌아오는지.
-  //         화면 가운데 → 가장자리 거리에 대한 비율 (100% = 화면 가운데에 놓일 부품도 화면 끝까지, 0% = 예전처럼 분해 자리까지만)
+  //         화면 가운데 → 가장자리 거리에 대한 비율 (100% = 화면 가운데에 놓일 부품도 화면 끝까지)
   // speed = 속도(배): 분해·조립에 걸리는 시간을 이 값으로 나눈다
-  const MOTION_DEF = { burst: 130, speed: 1 };
-  const MOTION = { ...MOTION_DEF };
-  try {
-    const m = JSON.parse(localStorage.getItem('exbox-motion') || 'null');
-    if (m && isFinite(m.burst) && isFinite(m.speed)) {
-      MOTION.burst = clamp(Math.round(m.burst / 5) * 5, 0, 300);
-      MOTION.speed = clamp(Math.round(m.speed * 10) / 10, .2, 3);
-    }
-  } catch (e) { /* 저장소를 못 쓰는 환경이면 기본값 */ }
+  const MOTION = { burst: 110, speed: .8 };
 
   // ---------- 소리: 파일 없이 Web Audio로 그 자리에서 합성한다 ----------
   // 현장에 들어갈 때 대표 소리(선박 = 뱃고동, 해양플랜트 = 플레어 불길, 화학공장 = 멀리서 작게 빵빵), 머무는 동안 은은한 바람(해양플랜트는 불길, 화학공장은 가끔 경적),
@@ -6811,9 +6787,23 @@ loader.run(() => {
     return fitPts(b.apts, c.setZ(0), fq.setFromEuler(eu.set(rx, ry, 0)), bandFit(1.5).my, 1.35, innerWidth / innerHeight);
   }
   let goalDy = 0;   // 지금 화면의 camGoal이 정한 dy (frame이 그림을 그만큼 내린다)
-  // 이름표 테마(callout): 분해 화면의 양옆에 이름표 줄(HUD_COL px씩)이 서므로 그만큼 좁게 맞춘다. 좁은 화면(HUD_MIN 미만)에는 이름표를 넣을 자리가 없다
-  const HUD_MIN = 900, HUD_COL = 200;
-  const hudWanted = () => !!curTheme().callout && innerWidth >= HUD_MIN;
+  // 부품 이름 목록(모든 테마): 분해 화면의 왼쪽에 목록이 서므로, 3D는 그 오른쪽 빈자리에 담는다 —
+  // 그 폭만큼 좁게 맞추고(camGoal) 그림을 그 절반만큼 오른쪽으로 옮긴다(frame의 그림 옮기기). 좁은 화면(LIST_MIN 미만 — 휴대폰)에는 목록을 두지 않는다.
+  // 목록의 배치(몇 줄 몇 단 · 폭)는 글자 폭을 캔버스로 재서 정한다 — 목록을 놓기 전(분해하기 전)에도 카메라가 미리 맞출 수 있게
+  const LIST_MIN = 900, LIST_X = 28, LIST_LH = 17, LIST_GAP = 22, LIST_COLW = 190;
+  const listOn = () => innerWidth >= LIST_MIN && !!cur;   // (v70: 모든 테마 — 처음엔 AR 라인에만 있었다)
+  const LST = { on: false, key: '', plan: null }, listCtx = document.createElement('canvas').getContext('2d');
+  function listPlan() {
+    const key = [cur.def.key, innerWidth, innerHeight, headBottom, curTheme().id].join();
+    if (LST.plan && LST.plan.key === key) return LST.plan;
+    const types = [...new Set(cur.parts.map(p => p.t))].sort((a, b) => a - b), names = types.map(t => cur.def.types[t].ko);
+    const top = headBottom + 16, fit = Math.max(6, Math.floor((innerHeight - 30 - top) / LIST_LH)), cols = Math.ceil(names.length / fit), rows = Math.ceil(names.length / cols);
+    listCtx.font = `300 12px ${getComputedStyle(document.body).fontFamily}`;
+    let w = LIST_X - LIST_GAP;
+    for (let c = 0; c < cols; c++) w += LIST_GAP + Math.min(LIST_COLW, Math.max(...names.slice(c * rows, (c + 1) * rows).map(n => listCtx.measureText(n).width)));
+    return LST.plan = { key, types, names, top, rows, w: Math.ceil(w) + 32 };   // (w = 목록 오른쪽 끝 + 3D와의 틈)
+  }
+  const listW = st => st === 'exploded' && listOn() ? listPlan().w : 0;
   // settled = 움직임이 다 끝난 뒤의 자리로 잰다(분해 튕김 거리를 화면 크기로 정할 때)
   function camGoal(st = state, settled = false) {
     if (st === 'site') {
@@ -6827,7 +6817,7 @@ loader.run(() => {
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로 조금 멀리서 본다 (가운데는 그대로 — 분해할 때 화면이 위아래로 움직이지 않게)
     const card = !asm && isField(cur);
     const [my, mx0] = asm ? [1.5, 1.35] : card ? [1.55, 1.15] : [1.36, 1.1];
-    const mx = !asm && hudWanted() ? Math.max(mx0, innerWidth / (innerWidth - 2 * HUD_COL)) : mx0;
+    const lw = listW(st), mx = mx0 * innerWidth / Math.max(innerWidth - lw, innerWidth * .4);   // (목록이 있으면 남은 폭 안에서 같은 여백)
     // 부품 하나를 볼 때(focus)는 그 부품이 따로 자리를 잡으므로(focusPose) 띠 맞춤을 하지 않는다
     const band = st === 'assembled' || st === 'exploded' ? bandFit(my) : { my, dy: 0 };
     if (st === state) goalDy = band.dy;
@@ -6939,7 +6929,7 @@ loader.run(() => {
   const chorus = (n, at, pan) => [...cur.parts].sort((p, q) => q.r - p.r).slice(0, n).map((pt, i) => [at + i * .025, pt, pan(pt)]);
 
   function explode() {
-    if (state !== 'assembled' || trans) return;
+    if (state !== 'assembled' || trans || dfly) return;
     homeRun++;
     homing = false;
     state = 'exploded';
@@ -7124,7 +7114,8 @@ loader.run(() => {
     document.title = d.title;
     try { history.replaceState(null, '', '#' + SLUG[d.key]); } catch (err) { /* 주소를 못 바꾸는 환경이면 화면만 바꾼다 */ }
   }
-  function select(key) {
+  function select(key, quiet = false) {
+    if (dfly) dflyEnd(false);   // (드론 비행 도중에 다른 화면으로 가면 비행을 걷는다)
     if (key === 'home') { showMain(); return; }
     homeRun++;
     homing = false;
@@ -7158,7 +7149,7 @@ loader.run(() => {
     if (!reduced) stage.rotation.y = -.7;
     header();
     ui();
-    SFX.enter(key);   // 현장이면 대표 소리 (선박 = 뱃고동, 해양플랜트 = 플레어 불길, 화학공장 = 경적), 박스면 하던 소리만 끈다
+    if (!quiet) SFX.enter(key);   // 현장이면 대표 소리 (선박 = 뱃고동, 해양플랜트 = 플레어 불길, 화학공장 = 경적), 박스면 하던 소리만 끈다
     // 다른 화면으로 오면 이스터에그 물체(착륙해 있던 헬리콥터 등)를 치우고, 이 현장의 이스터에그를 다시 볼 수 있게
     for (const kk in eggMade) eggMade[kk].root.visible = false;
     eggOut.length = 0;
@@ -7245,7 +7236,7 @@ loader.run(() => {
   function goHome() {
     const run = ++homeRun;
     homing = false;
-    if (homeOn || trans) return;
+    if (homeOn || trans || dfly) return;
     const shrink = () => { if (run === homeRun) toMain(); };
     // 현장이 다 모이기 조금 전에 줄어들기 시작해서 끊김 없이 이어지게 한다 (assemble과 같은 시간)
     const settle = b => reduced ? 0 : Math.max(0, asmTime(b) - 250);
@@ -7298,7 +7289,7 @@ loader.run(() => {
 
   // ---------- 메인 화면: 현장 세 곳을 한 화면에 (넓은 화면 = 왼쪽·가운데·오른쪽, 세로 화면 = 위·가운데·아래) ----------
   const tallMQ = matchMedia('(max-aspect-ratio: 85/100)'), homeEl = $('home');
-  const panelState = FIELD_KEYS.map(() => ({ rx: 0, ry: 0, z: 1 }));   // 칸마다 기울기와 확대 정도(마우스를 올리면 살짝 다가온다)
+  const panelState = FIELD_KEYS.map(() => ({ rx: 0, ry: 0, z: 1, s0: -1, spin: 0 }));   // 칸마다 기울기와 확대 정도(마우스를 올리면 살짝 다가온다), 한 바퀴 돌기(s0 = 출발 시각, spin = 지금 더 돈 각도)
   const setAll = (f, a) => {
     for (const pt of f.parts) {
       pt.a = a;
@@ -7354,6 +7345,117 @@ loader.run(() => {
     // 칸도 마우스를 따라 기울어지므로, 기울인 각도로 재서 현장이 칸 밖으로 나가지 않게 한다
     return { d: fitPts(f.apts, look, fq.setFromEuler(eu.set(ps.rx, ps.ry, 0)), my, mx, a) * zoom, x: look.x, y: look.y, z: 0 };
   }
+  // ---------- 메인 화면: 마우스를 올린 칸만 모노 포인트로 (모노 라인 테마, v70) ----------
+  // 사용자: "마우스 오버를 안 했을 땐 모노라인, 마우스 오버를 했을 때는 모노 포인트 효과, 클릭을 했을 땐 모노라인 — 모노포인트는 마우스 오버 했을 때만 쓰이고 나머지 전체적인 테마는 모노라인".
+  // 그 칸만 모노 포인트 테마의 모습(회색 바탕 · 어두운 흑백 면 · 방폭박스가 든 건물만 주황으로 깜빡임)으로 서서히 바뀌고, 마우스가 떠나거나 누르면(드론 비행) 서서히 모노 라인으로 돌아온다.
+  // 테마 전체를 바꾸지 않는다: 그 현장의 면 재질마다 모노 포인트로 칠한 사본을 한 번 만들어 두고(monoKit), 그 칸을 그릴 때만
+  //   ① 회색 바탕 → ② 사본으로 바꿔 끼운 면(조명도 모노 포인트의 것) → ③ 페이지 바탕색으로 (1 − a)만큼 덮기 → ④ 깊이를 비우고 원래의 선을 (1 − a)의 진하기로.
+  //   a = 0 → 1로 약 0.3초. 다른 칸 · 다른 화면은 그대로다
+  const MONO_HOVER = 'monoline', monoTheme = themeOf('mono');
+  const quadScene = new THREE.Scene(), quadCam = new THREE.Camera(), quadMesh = Object.assign(new THREE.Mesh(new THREE.PlaneGeometry(2, 2)), { frustumCulled: false });
+  quadScene.add(quadMesh);
+  const monoBg = (() => {   // 모노 포인트의 바탕(CSS의 --bg: 위쪽 42%에 중심을 둔 원형 그러데이션)
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const x = c.getContext('2d'), g = x.createRadialGradient(128, 107.5, 0, 128, 107.5, 196);
+    g.addColorStop(0, '#868684');
+    g.addColorStop(.58, '#5E5E5C');
+    g.addColorStop(1, '#3F3F3D');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c);
+    t.minFilter = t.magFilter = THREE.LinearFilter;
+    return t;
+  })();
+  // (셰이더 재질은 색을 바꾸지 않고 그대로 내보낸다 → CSS 색과 똑같이 칠해진다)
+  const bgMat = new THREE.ShaderMaterial({ uniforms: { map: { value: monoBg } }, depthTest: false, depthWrite: false, vertexShader: rayVert,
+    fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main() { gl_FragColor = texture2D(map, vUv); }' });
+  const fadeMat = new THREE.ShaderMaterial({ uniforms: { c: { value: new THREE.Color() }, a: { value: 0 } }, depthTest: false, depthWrite: false, transparent: true, vertexShader: rayVert,
+    fragmentShader: 'uniform vec3 c; uniform float a; void main() { gl_FragColor = vec4(c, a); }' });
+  // 모노 포인트로 칠한 사본: 현장 하나의 면 재질마다(선은 빼고). 박스가 든 건물(박스가 달린 부품과 같은 묶음 — 안에 붙은 박스는 빼고)의 사본은 따로 모아 깜빡인다
+  function monoKit(b) {
+    if (b.mono) return b.mono;
+    const pairs = [], blink = [], made = new Map(), g = hostOf(b.def.box).group;
+    const copyOf = m => {
+      let c = made.get(m);
+      if (c) return c;
+      c = m.clone();
+      const r = ORIG.get(m);   // (지금 테마로 바뀌어 있는 재질이므로 원래 값부터 되돌려 놓고 칠한다)
+      if (r) {
+        c.color.copy(r.color);
+        c.map = r.map;
+        if (r.rough !== undefined) { c.roughness = r.rough; c.metalness = r.metal; c.envMapIntensity = r.env; }
+        if (r.emis) c.emissive.copy(r.emis);
+        Object.assign(c, { polygonOffset: r.po, polygonOffsetFactor: r.pf, polygonOffsetUnits: r.pu, vertexColors: r.vc, opacity: r.op, transparent: r.tr, depthWrite: r.dw, depthFunc: r.df, blending: r.bl });
+        c.userData.base = r.base;
+      }
+      c.colorWrite = true;
+      c.userData.glass = false;
+      delete c.onBeforeCompile;
+      styleMat(c, monoTheme.mat);
+      made.set(m, c);
+      return c;
+    };
+    const walk = (o, lit) => {
+      if ((o.isMesh || o.isSprite) && !o.userData.line && o.material && !Array.isArray(o.material) && o.material !== HIT && o.material.visible !== false) {
+        const c = copyOf(o.material);
+        pairs.push([o, o.material, c]);
+        if (lit && !blink.includes(c)) blink.push(c);
+      }
+      for (const ch of o.children) walk(ch, lit && !(ch.userData.nestRoot));
+    };
+    for (const pt of b.parts) {
+      if (pt.nest) pt.nest.root.userData.nestRoot = true;
+      walk(pt.obj, pt.group === g);
+    }
+    return b.mono = { pairs, blink };
+  }
+  const monoLight = (() => { const l = monoTheme.l; return { key: col(l.key[0]), keyI: l.key[1], rim: col(l.rim[0]), rimI: l.rim[1], fill: col(l.fill[0]), fillI: l.fill[1], sky: col(l.sky), ground: col(l.ground), hemi: l.hemi, exp: l.exp }; })();
+  const monoBlinkC = col(monoTheme.mat.blink), lightSave = { key: new THREE.Color(), rim: new THREE.Color(), fill: new THREE.Color(), sky: new THREE.Color(), ground: new THREE.Color() };
+  // 칸 하나를 모노 포인트(a = 0 ~ 1)로 그린다 — 카메라 · 무대 · 그릴 구역은 soloRender가 맞춰 둔 그대로
+  function monoRender(b, a) {
+    const kit = monoKit(b), ac = renderer.autoClear, S = lightSave, M = monoLight;
+    quadMesh.material = bgMat;
+    renderer.render(quadScene, quadCam);   // ① 회색 바탕 (이 칸을 비우고 칠한다)
+    renderer.autoClear = false;
+    // ② 모노 포인트의 면
+    for (const [o, , c] of kit.pairs) o.material = c;
+    const lines = [];
+    b.root.traverse(o => { if (o.userData.line && o.visible) { lines.push(o); o.visible = false; } });
+    S.key.copy(keyLight.color); S.rim.copy(rimLight.color); S.fill.copy(fillLight.color); S.sky.copy(hemi.color); S.ground.copy(hemi.groundColor);
+    const si = [keyLight.intensity, rimLight.intensity, fillLight.intensity, hemi.intensity, renderer.toneMappingExposure];
+    keyLight.color.copy(M.key); keyLight.intensity = M.keyI; rimLight.color.copy(M.rim); rimLight.intensity = M.rimI; fillLight.color.copy(M.fill); fillLight.intensity = M.fillI;
+    hemi.color.copy(M.sky); hemi.groundColor.copy(M.ground); hemi.intensity = M.hemi; renderer.toneMappingExposure = M.exp;
+    // 방폭박스가 든 건물만 주황으로 깜빡 (모노 포인트 테마와 같은 박자 · 같은 방식 — 박스를 찾은 현장은 깜빡이지 않는다)
+    const p = FOUND[b.def.box] ? 0 : .08 + .92 * (.5 + .5 * Math.cos(performance.now() / 1150 * Math.PI * 2)) ** 1.6;
+    for (const m of kit.blink) { const r = ORIG.get(m); m.color.copy(r.now).lerp(monoBlinkC, .92 * p); if (r.emis) m.emissive.copy(monoBlinkC).multiplyScalar(.55 * p); }
+    renderer.render(scene, camera);
+    for (const [o, m] of kit.pairs) o.material = m;
+    keyLight.color.copy(S.key); rimLight.color.copy(S.rim); fillLight.color.copy(S.fill); hemi.color.copy(S.sky); hemi.groundColor.copy(S.ground);
+    [keyLight.intensity, rimLight.intensity, fillLight.intensity, hemi.intensity, renderer.toneMappingExposure] = si;
+    if (a < .999) {
+      // ③ 페이지 바탕색으로 (1 − a)만큼 덮고 ④ 모노 라인의 선을 (1 − a)의 진하기로
+      fadeMat.uniforms.c.value.set(getComputedStyle(document.documentElement).getPropertyValue('--base').trim() || '#111110');
+      fadeMat.uniforms.a.value = 1 - a;
+      quadMesh.material = fadeMat;
+      renderer.render(quadScene, quadCam);
+      renderer.clearDepth();
+      const op = lines.map(o => o.material.opacity);
+      lines.forEach(o => { o.visible = true; o.material.opacity *= 1 - a; });
+      renderer.render(scene, camera);
+      lines.forEach((o, j) => { o.material.opacity = op[j]; });
+    } else lines.forEach(o => { o.visible = true; });
+    renderer.autoClear = ac;
+  }
+  // 칸마다 모노 포인트로 바뀐 정도: 모노 라인 테마의 메인 화면에서 마우스를 올린 칸만 1로(약 0.3초), 아니면 0으로. (칸마다 한 프레임에 한 번 그려지므로 여기서 따라간다)
+  function monoAmount(b) {
+    if (curTheme().id !== MONO_HOVER) return b.monoA = 0;
+    const i = FIELD_KEYS.indexOf(b.def.key), want = i >= 0 && homeOn && !trans && !cutOn && !reduced && homeHover === i ? 1 : 0;
+    b.monoA = (b.monoA || 0) + (want - (b.monoA || 0)) * k(want ? 8 : 6);
+    if (!want && b.monoA < .003) b.monoA = 0;
+    return b.monoA;
+  }
+
   // 캔버스의 한 구역(r)에 현장 하나만 그린다. c = 카메라 {d, x, y, z}, rx·ry = 그 현장의 기울기
   // from · mix: 현장 페이지가 제 칸으로 줄어드는 동안에만 준다 — 줄어들기 시작할 때 현장 페이지가 쓰던 초점 흐림(from, 당겨 보던 중이면 기본값과 다르다)에서 칸의 값으로 이어 간다(mix 1 → 0)
   function soloRender(b, r, c, rx, ry, from = null, mix = 0) {
@@ -7376,15 +7478,56 @@ loader.run(() => {
     stage.rotation.set(rx, ry, 0);
     pivot.set(c.x, c.y, c.z);
     stage.position.copy(pivot).sub(tmp.copy(pivot).applyEuler(stage.rotation));
-    renderer.render(scene, camera);
+    const a = monoAmount(b);
+    if (a > 0) monoRender(b, a);
+    else renderer.render(scene, camera);
     stage.rotation.copy(rot);
     stage.position.copy(pos);
     stage.children.forEach((o, j) => { o.visible = vis[j]; });
     camera.aspect = asp;
     camera.updateProjectionMatrix();
   }
-  const drawPanel = i => soloRender(built[FIELD_KEYS[i]], panelRect(i), panelCam(i, panelState[i].z), panelState[i].rx, panelState[i].ry);
+  const drawPanel = i => {
+    const ps = panelState[i], c = panelCam(i, ps.z);
+    if (ps.spin) c.d = c.z + (c.d - c.z) * (1 + (ps.sf - 1) * ps.w);   // (한 바퀴 도는 동안은 살짝 물러난다 — 아래 spinFit)
+    soloRender(built[FIELD_KEYS[i]], panelRect(i), c, ps.rx, ps.ry + ps.spin);
+  };
+  // 메인 화면의 세 현장이 가끔 한 바퀴씩: 30초마다 현장마다 따로 동전을 던져(50%) 나온 현장만 세로축으로 부드럽게 한 바퀴 돈다(v70, 사용자: "세 현장이 공통되지 않은 각각의 랜덤성으로").
+  // 마우스를 올려 둔 칸도 똑같이 돈다(칸 셋이 화면을 다 채워서, 건너뛰게 하면 마우스 밑의 칸은 거의 돌지 않았다).
+  // 돌다 보면 길쭉한 현장(화학공장 부지 · 배)이 비스듬히 설 때 칸보다 넓어지고, 앞으로 나온 쪽은 원근 때문에 커 보인다 → 도는 동안만 그만큼 살짝 물러났다가(spinFit) 다 돌면 제자리로
+  const SPIN = { every: 30000, dur: 3600, start: 0 };
+  function spinFit(i) {   // 16방향으로 돌려 잰 거리 중 가장 먼 것 ÷ 지금 방향의 거리 (1 이상)
+    const r = panelRect(i), a = r.w / r.h, f = built[FIELD_KEYS[i]], c = panelCam(i, 1), look = V(c.x, c.y, 0), ps = panelState[i], [my, mx] = !tallMQ.matches ? [1.9, 1.12] : [1.35, 1.3];
+    const at = th => fitPts(f.apts, look, fq.setFromEuler(eu.set(ps.rx, ps.ry + th, 0)), my, mx, a);
+    let m = 0;
+    for (let j = 0; j < 16; j++) m = Math.max(m, at(j * Math.PI / 8));
+    return Math.max(1, m / at(0));
+  }
+  function spinStep(now) {
+    if (reduced) return;
+    // 현장마다 제 시계(사용자: "세 현장이 공통되지 않은 각각의 랜덤성으로" — 한 시계로 셋이 같이 동전을 던지면 같이 도는 것처럼 보였다).
+    // 메인 화면에 오면 30초를 셋으로 나눈 자리(차례는 섞어서)에 조금씩 무작위를 더해 현장마다 첫 차례를 정하고, 그 뒤로는 현장마다 30초마다 따로 50%.
+    // 걸리면 0 ~ 0.6초 안에 출발해 3.6초에 한 바퀴 — 도는 방향도 그때그때 무작위(왼쪽 · 오른쪽)
+    if (!SPIN.start) {
+      SPIN.start = now;
+      const slot = [0, 1, 2].sort(() => Math.random() - .5);
+      panelState.forEach((ps, i) => { ps.next = now + SPIN.every * (slot[i] + .15 + .7 * Math.random()) / 3; });
+    }
+    panelState.forEach((ps, i) => {
+      if (now < ps.next) return;
+      ps.next += SPIN.every;
+      if (ps.s0 < 0 && Math.random() < .5) { ps.s0 = now + Math.random() * 600; ps.dir = Math.random() < .5 ? 1 : -1; ps.sf = spinFit(i); }
+    });
+    for (const ps of panelState) {
+      if (ps.s0 < 0 || now < ps.s0) continue;
+      const u = (now - ps.s0) / SPIN.dur;
+      if (u >= 1) { ps.s0 = -1; ps.spin = 0; ps.w = 0; continue; }
+      ps.spin = smoother(u) * Math.PI * 2 * ps.dir;
+      ps.w = smooth(clamp(u / .25, 0, 1)) * (1 - smooth(clamp((u - .75) / .25, 0, 1)));   // 물러나는 정도: 처음 4분의 1 동안 물러났다가 마지막 4분의 1 동안 돌아온다
+    }
+  }
   function showMain() {
+    if (dfly) dflyEnd(false);
     homeRun++;
     homing = false;
     resetOrbit();
@@ -7398,6 +7541,7 @@ loader.run(() => {
     state = 'assembled';
     focused = hovered = site = null;
     boxHover = false;
+    SPIN.start = 0;   // (한 바퀴 돌기의 시계는 메인 화면에 온 때부터)
     header();
     ui();
   }
@@ -7405,19 +7549,223 @@ loader.run(() => {
     homeOn = false;
     for (const key of FIELD_KEYS) if (built[key]) built[key].root.visible = false;
   }
-  // 칸을 누르면: 그 칸이 화면 전체로 커지면서 카메라가 현장 페이지 자리로 다가간다
+  // ---------- 메인 화면 → 현장: 드론 비행 (v70, 사용자: "드론 비행 컷신처럼 화학 → 해양 → 선박 순으로 비행을 하지만, 화학을 누르면 바로 화학 현장에 도착") ----------
+  // 드론 컷신의 세상(바다 · 섬 위의 화학공장 · 해양플랜트 · 유조선 — cutBuild(true))을 그대로 쓴다. 칸을 누르면 메인 화면이 잠깐(0.22초) 어두워졌다가
+  //   섬 위 하늘에서 출발해 화학공장 → 해양플랜트 → 선박 차례로 날아가며, 누른 현장에서 멈춘다(화학 = 바로 화학공장 / 해양 = 화학공장 곁을 지나 / 선박 = 둘을 지나).
+  // 도착하는 자리 = 그 현장 페이지의 카메라를 세상 속 그 현장의 자리 · 돌림 · 크기 그대로 옮긴 것 → 화면에서 현장 페이지와 똑같다.
+  //   마지막 0.52초 동안 세상(바다 · 섬 · 다른 현장)이 걷히고(세상 전체 한 장을 '그 현장만 제자리에 둔 그림' 위에서 서서히 지운다) 현장 페이지가 그대로 남는다 — 바로 누를 수 있다.
+  // 세상은 처음 한 번 만들어 두고 다시 쓴다(테마가 바뀌면 새로 — 재질이 그 테마로 칠해져 있다). 메인 화면이 한가한 때 미리 만들어 그래픽카드에 올려 둔다(dfWarm)
+  const DF = { out: 220, fadeIn: 300, fade: 520, leg: 1, land: 1.6, sched: false };   // 어두워지는 · 밝아지는 · 끝에 세상이 걷히는 시간(ms), 지나가는 한 구간 · 마지막 내려앉는 구간(초)
+  let dfly = null, dfW = null;
+  function dfWorld() {
+    const id = curTheme().id;
+    if (dfW && dfW.theme === id) return dfW;
+    if (dfW) dfDispose(dfW);
+    for (const key of FIELD_KEYS) ensureField(key);
+    dfW = cutBuild(true);
+    dfW.theme = id;
+    return dfW;
+  }
+  function dfDispose(W) {
+    if (W.G.parent) W.G.parent.remove(W.G);
+    W.G.traverse(o => { if (o.geometry && !o.userData.shared) o.geometry.dispose(); });
+    for (const m of [...W.mats, W.seaMat, W.slogan.material, ...W.lineMats]) m.dispose();
+    for (const tx of W.texs) {
+      for (const [key, v] of texVar) if (key.startsWith(tx.uuid)) { v.dispose(); texVar.delete(key); }
+      tx.dispose();
+    }
+  }
+  // 메인 화면이 한가할 때: 세상을 미리 만들고 셰이더를 그래픽카드에 올려 둔다(누른 순간 멈칫하지 않게)
+  function dfWarm() {
+    DF.sched = false;
+    if (dfly || cutOn || !homeOn || (dfW && dfW.theme === curTheme().id && dfW.warm)) return;
+    try {
+      const W = dfWorld();
+      scene.add(W.G);
+      renderer.compile(scene, camera);
+      scene.remove(W.G);
+      W.warm = true;
+    } catch (err) { console.error(err); }
+  }
+  function dfWarmLater() {
+    if (DF.sched || reduced || (dfW && dfW.theme === curTheme().id && dfW.warm)) return;
+    DF.sched = true;
+    setTimeout(() => (window.requestIdleCallback || (f => setTimeout(f, 0)))(dfWarm), 1200);
+  }
   function enterFromMain(i) {
-    if (!homeOn || trans) return;
-    const ps = panelState[i], from = panelCam(i, ps.z);
-    select(FIELD_KEYS[i]);
-    cam = { ...from };
-    dofOff = 0; zoomR = 1;   // (투명 케이스의 초점: 새로 들어가는 현장 페이지는 기본값에서 시작)
-    stage.rotation.set(ps.rx, ps.ry, 0);
-    trans = { i, dir: 1, t0: performance.now(), dur: reduced ? 1 : 900, from };
+    if (!homeOn || trans || dfly) return;
+    const key = FIELD_KEYS[i];
+    panelState[i].s0 = -1;
+    panelState[i].spin = 0;
+    if (reduced) { select(key); return; }   // (움직임 줄이기: 날지 않고 바로 현장 페이지)
+    select(key, true);   // 머리글 · 버튼은 곧바로 그 현장의 것으로(대표 소리는 도착할 때)
+    dfly = { key, phase: 'out', t0: performance.now() };
+  }
+  // 어두워진 뒤: 세 현장을 드론 컷신의 세상에 놓고, 날아갈 길(열쇠 장면)을 정한다
+  function dflyGo(now) {
+    const D = dfly, W = dfWorld(), P = CW.plat, I = CW.isle, QW = W.QW;
+    const place = (b, x, y, z, yaw, s) => {
+      b.root.quaternion.copy(QW).multiply(Q(0, yaw, 0)).multiply(b.def.asm.q.clone().invert());
+      b.root.position.set(x, y, z).applyQuaternion(QW);
+      b.root.scale.setScalar(s);
+      b.root.visible = true;
+    };
+    place(built.ship, 0, -CW.WL, 0, 0, 1);   // (배는 서 있다 — 컷신에서 세 현장이 한눈에 들어오는 때의 자리)
+    place(built.offshore, P.x, P.sea * P.s, P.z, P.yaw, P.s);
+    place(built.chem, I.x, (I.h + .225) * I.s, I.z, I.yaw, I.s);
+    W.shipG.position.x = 0;
+    W.long.visible = false;
+    W.real.visible = true;
+    if (!W.G.parent) scene.add(W.G);
+    stage.position.set(0, 0, 0);
+    stage.rotation.set(0, 0, 0);
+    if (camera.view && camera.view.enabled) camera.clearViewOffset();
+    shift.x = shift.y = 0;
+    scene.updateMatrixWorld(true);
+    // 도착: 현장 페이지의 카메라(무대를 돌리지 않은 그대로)를 세상 속 그 현장의 자리로 옮긴 것
+    const g = camGoal('assembled', true), M = cur.root.matrixWorld;
+    const end = { p: V(g.x, g.y, g.d).applyMatrix4(M), l: V(g.x, g.y, g.z).applyMatrix4(M), up: V(0, 1, 0).applyQuaternion(cur.root.quaternion) };
+    // 지나가는 장면(드론 컷신의 첫 두 장면 — 섬 위 화학공장 · 바다의 해양플랜트 — 을 조금 고친 것). 세상 좌표로 정해 무대 좌표로 옮긴다
+    const fwd = V(0, 0, -1).applyQuaternion(QW.clone().invert()).setY(0).normalize(), right = V(-fwd.z, 0, fwd.x), upW = V(0, 1, 0).applyQuaternion(QW);
+    const pose = (lx, ly, lz, d, pitch, yaw) => {
+      const el = deg(pitch), a = deg(yaw), h = fwd.clone().multiplyScalar(Math.cos(a)).addScaledVector(right, Math.sin(a)), l = V(lx, ly, lz);
+      return { p: l.clone().addScaledVector(h, -Math.cos(el) * d).add(V(0, Math.sin(el) * d, 0)).applyQuaternion(QW), l: l.applyQuaternion(QW), up: upW.clone() };
+    };
+    // (드론 컷신처럼: 16:9보다 좁은 화면 — 세로 휴대폰 등 — 에서는 가로로 같은 범위가 담기도록 그만큼 물러난다. 도착 자리는 그 화면의 현장 페이지 그대로)
+    const fit = Math.max(1, Math.min(1.78 * innerHeight / innerWidth, 2.4));
+    const S = pose(23, 1.7, 8.6, 17 * fit, 38, 60), K0 = pose(23, 1.7, 8.6, 9.5 * fit, 27, 42), K1 = pose(17.5, 2.1, 4.8, 15.5 * fit, 18.5, -3);
+    const legs = { chem: [S], offshore: [S, K0], ship: [S, K0, K1] }[D.key];
+    const keys = [...legs, end].map((k, j) => ({ ...k, t: j < legs.length ? j * DF.leg : (legs.length - 1) * DF.leg + DF.land }));
+    // 열쇠 장면 사이는 3차 곡선(드론 컷신과 같은 식): 지나가는 장면에서는 앞뒤 장면을 잇는 빠르기로 멈추지 않고 지나가고, 출발과 도착은 속도 0
+    keys.forEach((kf, j) => {
+      const a = keys[j - 1], b = keys[j + 1];
+      for (const f of ['p', 'l']) kf['m' + f] = a && b ? b[f].clone().sub(a[f]).divideScalar(b.t - a.t) : V();
+    });
+    Object.assign(D, { phase: 'fly', t1: now, keys, dur: keys[keys.length - 1].t * 1000, g, qwInv: QW.clone().invert() });
+    SFX.air(D.dur / 1000 + .3, 220, 800, .1, .4, -.2);   // 날아가는 바람
+  }
+  // 길 위의 한 점(s초): 카메라 자리 p · 바라보는 점 l · 위쪽 up
+  function dflyPose(D, s) {
+    const K = D.keys;
+    let i = 0;
+    while (i < K.length - 2 && s >= K[i + 1].t) i++;
+    const a = K[i], b = K[i + 1], T = b.t - a.t, u = clamp((s - a.t) / T, 0, 1), u2 = u * u, u3 = u2 * u;
+    const h00 = 2 * u3 - 3 * u2 + 1, h10 = (u3 - 2 * u2 + u) * T, h01 = -2 * u3 + 3 * u2, h11 = (u3 - u2) * T, out = {};
+    for (const f of ['p', 'l']) out[f] = V().addScaledVector(a[f], h00).addScaledVector(a['m' + f], h10).addScaledVector(b[f], h01).addScaledVector(b['m' + f], h11);
+    out.up = a.up.clone().lerp(b.up, smooth(u)).normalize();
+    return out;
+  }
+  // 끝에 세상을 걷는 동안: ① 세상 전체를 그림 한 장에 ② 화면에는 누른 현장만 — 현장 페이지에서처럼 제자리(무대 원점 · 원래 크기)에 두고 카메라를 현장에 대한 자리 그대로 옮겨서
+  // (그래서 조명도 현장 페이지와 같다) ③ ①을 a만큼 덮는다. a가 0이 되는 순간 화면은 현장 페이지 그대로다
+  const dfRT = { rt: null, size: V2(0, 0) };
+  const dfMix = new THREE.ShaderMaterial({ uniforms: { map: { value: null }, a: { value: 1 } }, depthTest: false, depthWrite: false, transparent: true,
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+    vertexShader: rayVert, fragmentShader: 'uniform sampler2D map; uniform float a; varying vec2 vUv; void main() { gl_FragColor = texture2D(map, vUv) * a; }' });
+  function dflyBlend(a) {
+    const W = dfW, site = cur.root, sz = renderer.getDrawingBufferSize(dfRT.size);
+    if (!dfRT.rt) {
+      dfRT.rt = new (renderer.capabilities.isWebGL2 ? THREE.WebGLMultisampleRenderTarget : THREE.WebGLRenderTarget)(sz.x, sz.y);
+      dfRT.rt.texture.encoding = THREE.sRGBEncoding;   // (화면과 같은 색으로 담긴다 — 덮을 때 그대로 옮긴다)
+    }
+    if (dfRT.rt.width !== sz.x || dfRT.rt.height !== sz.y) dfRT.rt.setSize(sz.x, sz.y);
+    renderer.setRenderTarget(dfRT.rt);
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    const vis = stage.children.map(o => o.visible), keep = { p: site.position.clone(), q: site.quaternion.clone(), s: site.scale.x }, inv = site.matrixWorld.clone().invert();
+    stage.children.forEach(o => { o.visible = o === site; });
+    W.G.visible = false;
+    camera.matrixAutoUpdate = false;
+    camera.matrix.multiplyMatrices(inv, camera.matrixWorld);
+    camera.matrixWorldNeedsUpdate = true;
+    site.position.set(0, 0, 0);
+    site.quaternion.identity();
+    site.scale.setScalar(1);
+    renderer.render(scene, camera);
+    quadMesh.material = dfMix;
+    dfMix.uniforms.map.value = dfRT.rt.texture;
+    dfMix.uniforms.a.value = a;
+    const ac = renderer.autoClear;
+    renderer.autoClear = false;
+    renderer.render(quadScene, quadCam);
+    renderer.autoClear = ac;
+    site.position.copy(keep.p);
+    site.quaternion.copy(keep.q);
+    site.scale.setScalar(keep.s);
+    stage.children.forEach((o, j) => { o.visible = vis[j]; });
+    W.G.visible = true;
+    camera.matrixAutoUpdate = true;
+    camera.updateMatrixWorld();
+  }
+  function dflyFrame(now, t) {
+    const D = dfly;
+    if (D.phase === 'out') {   // 메인 화면이 그대로 그려진 채 어두워진다
+      const u = clamp((now - D.t0) / DF.out, 0, 1);
+      canvas.style.opacity = (1 - ease(u)).toFixed(3);
+      homeFrame(now, t);
+      prismRays();
+      if (u >= 1) dflyGo(now);
+      return;
+    }
+    const T = now - D.t1, u = clamp(T / D.dur, 0, 1), P = dflyPose(D, T / 1000);
+    canvas.style.opacity = ease(clamp(T / DF.fadeIn, 0, 1)).toFixed(3);
+    // 드론의 몸: 방향을 트는 만큼 기울고, 아주 느리게 흔들린다 — 내려앉는 마지막 0.9초 동안 잦아들어 도착할 때는 0
+    const calm = 1 - smooth(clamp((T - D.dur + 900) / 900, 0, 1)), Q0 = dflyPose(D, Math.max(T / 1000 - .12, 0));
+    const hd = o => { const v = o.l.clone().sub(o.p).applyQuaternion(D.qwInv); return Math.atan2(v.x, v.z); }, dh = hd(P) - hd(Q0), dist = P.p.distanceTo(P.l);
+    const roll = clamp(Math.atan2(Math.sin(dh), Math.cos(dh)) / .12 * .16, -.07, .07) * calm;
+    P.p.addScaledVector(P.up, .006 * dist * calm * Math.sin(T / 1000 * .83 + 1.2));
+    camera.up.copy(P.up);
+    camera.position.copy(P.p);
+    camera.lookAt(P.l);
+    camera.rotateZ(roll);
+    camera.fov = 30;
+    camera.near = clamp(dist * .04, .05, 1.6);
+    camera.far = 900;
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+    floatAmt += -floatAmt * k(1.5);
+    for (const key of FIELD_KEYS) tick(built[key], now, t, false);
+    for (const key of FIELD_KEYS) animateField(built[key], t);
+    const f = clamp((T - (D.dur - DF.fade)) / DF.fade, 0, 1);
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, innerWidth, innerHeight);
+    if (f <= 0) renderer.render(scene, camera);
+    else dflyBlend(1 - smooth(f));
+    prismRays();
+    if (u >= 1) dflyEnd(true);
+  }
+  // 끝(도착 · 또는 도중에 다른 화면으로 갈 때): 세상을 걷고 세 현장을 제자리로, 카메라를 보통으로. 도착했으면 현장 페이지의 카메라 그대로 이어 간다
+  function dflyEnd(arrived) {
+    const D = dfly;
+    dfly = null;
+    if (dfW && dfW.G.parent) scene.remove(dfW.G);
+    for (const key of FIELD_KEYS) {
+      const b = built[key];
+      if (!b) continue;
+      b.root.position.set(0, 0, 0);
+      b.root.quaternion.identity();
+      b.root.scale.setScalar(1);
+      b.root.visible = b === cur || b === field;
+    }
+    camera.up.set(0, 1, 0);
+    camera.fov = 30;
+    camera.far = 200;
+    camera.matrixAutoUpdate = true;
+    camera.updateProjectionMatrix();
+    stage.position.set(0, 0, 0);
+    stage.rotation.set(0, 0, 0);
+    canvas.style.opacity = '';
+    lineLodKey = null;
+    if (arrived && D && D.g) {
+      cam = { ...D.g };
+      dofOff = 0; zoomR = 1;
+      SFX.enter(D.key);
+      idleAt = performance.now();
+    }
   }
   // 반대로: 화면 전체였던 현장이 제 칸으로 줄어들고, 나머지 두 칸이 드러난다
   function toMain() {
-    if (homeOn || trans || !isField(cur)) return;
+    if (homeOn || trans || dfly || !isField(cur)) return;
     resetOrbit();
     for (const key of FIELD_KEYS) if (key !== cur.def.key) { const f = ensureField(key); rest(f); setAll(f, 1); }
     focused = hovered = site = null;
@@ -7425,20 +7773,21 @@ loader.run(() => {
     SFX.air(.95, 900, 250, .1);
     ui();
   }
-  // 전환 중 한 장면: 다른 두 칸은 제자리에 그대로, 움직이는 칸은 칸 크기 ↔ 화면 전체 사이
+  // 전환 중 한 장면(현장 페이지 → 메인 화면): 다른 두 칸은 제자리에 그대로, 움직이는 칸은 화면 전체 → 칸 크기
   function drawTrans(now) {
-    const u = clamp((now - trans.t0) / trans.dur, 0, 1), g = trans.dir > 0 ? ease(u) : 1 - ease(u), p = panelRect(trans.i), W = innerWidth, H = innerHeight;
+    const u = clamp((now - trans.t0) / trans.dur, 0, 1), g = 1 - ease(u), p = panelRect(trans.i), W = innerWidth, H = innerHeight;
     renderer.setScissorTest(true);
     FIELD_KEYS.forEach((key, j) => { if (j !== trans.i) drawPanel(j); });
     soloRender(cur, { x: p.x * (1 - g), y: p.y * (1 - g), w: p.w + (W - p.w) * g, h: p.h + (H - p.h) * g }, cam, stage.rotation.x, stage.rotation.y, trans.dof, g);
     if (u < 1) return;
-    if (trans.dir > 0) { trans = null; return; }
-    Object.assign(panelState[trans.i], { rx: stage.rotation.x, ry: stage.rotation.y, z: 1 });
+    Object.assign(panelState[trans.i], { rx: stage.rotation.x, ry: stage.rotation.y, z: 1, s0: -1, spin: 0 });
     showMain();
   }
   function homeFrame(now, t) {
     floatAmt += -floatAmt * k(1.5);
     const W = innerWidth, H = innerHeight;
+    spinStep(now);
+    if (homeOn) dfWarmLater();
     FIELD_KEYS.forEach((key, i) => {
       const ps = panelState[i], on = homeHover === i && !reduced, r = panelRect(i);
       tick(built[key], now, t, false);
@@ -7458,6 +7807,131 @@ loader.run(() => {
     $('title').setAttribute('aria-expanded', open);
   }
 
+  // ---------- 매트릭스 글자(선 테마의 설명 · AR 라인의 부품 이름): 글자가 왼쪽부터 주루룩 ----------
+  // 나타날 때: 한 글자씩 왼쪽부터, 무작위 글자(가타카나 · 숫자)가 위에서 떨어져 내려 몇 번 바뀌다가 제 글자로 멎는다.
+  // 사라질 때도 왼쪽부터: 제 글자가 무작위 글자로 바뀌며 아래로 흘러내려 없어진다. 글줄(줄마다 요소 하나)은 위에서부터 조금씩 늦게.
+  // 글자는 처음부터 제자리에 놓아 두고(안 보이게) 무작위 글자는 그 위에 겹쳐 그린다(CSS ::after) — 그래서 줄바꿈이 흔들리지 않는다.
+  // to(상자, 글줄들 | null): 지금 보이는 글이 있으면 먼저 사라지게 한 뒤 새 글을 나타낸다(그사이 또 바뀌면 마지막 것으로). null이면 사라지기만
+  const mxOn = () => (curTheme().mat || {}).kind === 'line' && !reduced;
+  const MX = (() => {
+    const GLY = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+    const IN = 190, OUT = 120, TICK = 55;   // 무작위 글자로 보이는 시간(나타날 때 · 사라질 때), 무작위 글자가 바뀌는 간격(ms)
+    const box = new Map();   // 상자 → { want: 새 글줄들(undefined = 없음), run: 지금 하는 일 { dir, t0, lines, end }, done }
+    let raf = 0;
+    function lay(el, text) {   // 글을 글자마다 나눠 안 보이게 놓는다 (빈칸 · 줄바꿈은 그대로 글)
+      el.textContent = '';
+      const cs = [];
+      for (const ch of String(text || '')) {
+        if (/\s/.test(ch)) { el.append(ch); continue; }
+        const s = document.createElement('span');
+        s.className = 'mx-c h';
+        s.textContent = ch;
+        s.st = 0;
+        el.append(s);
+        cs.push(s);
+      }
+      return cs;
+    }
+    function start(b, dir, lines) {
+      // 글줄마다 출발을 조금씩 늦춘다(위에서부터). 한 줄 안의 글자 간격은 글이 길수록 촘촘하게(긴 설명도 0.6초 안팎에 다 흐르게)
+      let d = 0;
+      const gap = dir > 0 ? b.gap ?? 75 : b.gap != null ? b.gap * .5 : 35;   // 글줄 사이 늦춤(ms) — 부른 쪽이 줄 수 있다(긴 목록은 촘촘하게)
+      for (const L of lines) { L.d0 = d; L.step = clamp((dir > 0 ? 520 : 330) / Math.max(L.cs.length, 1), dir > 0 ? 7 : 4, dir > 0 ? 34 : 22); d += gap; }
+      // (나타나다 만 채로 사라지게 되면, 아직 안 나온 글자는 그대로 안 보이게 둔다 — 안 그러면 사라지기 직전에 번쩍 나타난다)
+      if (dir < 0) for (const L of lines) for (const s of L.cs) s.skip = s.st === 0;
+      b.run = { dir, t0: performance.now(), lines, end: 0 };
+      b.run.end = Math.max(0, ...lines.map(L => L.d0 + L.step * L.cs.length)) + (dir > 0 ? IN : OUT);
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+    function next(el, b) {   // 지금 일이 끝났거나 새 글이 왔을 때: 바꿀 것이 있으면 — 보이는 글이 있으면 먼저 사라지게, 없으면 새 글을 나타낸다
+      if (b.want === undefined) return;
+      if (b.shown && b.shown.length) {
+        const lines = b.shown;
+        b.shown = null;
+        el.classList.remove('mx-show');
+        start(b, -1, lines);
+        return;
+      }
+      const want = b.want;
+      b.want = undefined;
+      if (want === undefined) return;
+      if (b.done) b.done(want);   // (상자를 보이고 감추는 일은 부른 쪽이 정한다)
+      if (!want) return;
+      el.getBoundingClientRect();   // (방금 감춤을 푼 상자면 '안 보이는 모습'을 한 번 셈하게 해야 CSS가 서서히 나타낸다 — 안 그러면 번호 · 버튼이 단번에 뜬다)
+      el.classList.add('mx-show');
+      const lines = want.map(([e, text]) => ({ el: e, cs: lay(e, text) }));
+      b.shown = lines;
+      start(b, 1, lines);
+    }
+    function tick(now) {
+      raf = 0;
+      let busy = false;
+      for (const [el, b] of box) {
+        const r = b.run;
+        if (!r) continue;
+        const u0 = now - r.t0;
+        for (const L of r.lines) {
+          // 이 줄에 글자가 있는 동안만 줄 뒤의 흐림을 깐다(CSS .mx-on)
+          const on = L.cs.length > 0 && (r.dir > 0 ? u0 >= L.d0 : u0 < L.d0 + L.step * L.cs.length + OUT * .7);
+          if (on !== L.on) { L.on = on; L.el.classList.toggle('mx-on', on); }
+          for (let i = 0; i < L.cs.length; i++) {
+            const s = L.cs[i], u = u0 - L.d0 - i * L.step;
+            if (r.dir < 0 && s.skip) continue;
+            // 0 = 안 보임 · 1 = 무작위 글자(나타나는 중) · 2 = 제 글자 · 3 = 무작위 글자(사라지는 중)
+            const st = r.dir > 0 ? (u < 0 ? 0 : u < IN ? 1 : 2) : (u < 0 ? 2 : u < OUT ? 3 : 0);
+            if (st !== s.st) {
+              s.st = st;
+              s.className = st === 2 ? 'mx-c' : st === 3 ? 'mx-c h o' : 'mx-c h';
+              if (st === 0 || st === 2) s.removeAttribute('data-g');
+            }
+            if (st === 1 || st === 3) { const k = Math.floor(u / TICK); if (k !== s.k || !s.dataset.g) { s.k = k; s.dataset.g = GLY[Math.random() * GLY.length | 0]; } }
+          }
+        }
+        if (u0 >= r.end) { b.run = null; next(el, b); }
+        if (b.run) busy = true;
+      }
+      if (busy) raf = requestAnimationFrame(tick);
+    }
+    return {
+      // lines = [[요소, 글], …] 또는 null(사라지기만). done(lines | null) = 사라질 것이 다 사라지고 새 글을 놓기 직전(또는 다 사라진 뒤)에 불린다. gap = 글줄 사이 늦춤(ms)
+      to(el, lines, done, gap) {
+        const b = box.get(el) || { want: undefined, run: null, shown: null, done: null };
+        box.set(el, b);
+        b.want = lines;
+        b.done = done || null;
+        b.gap = gap;
+        if (!b.run) next(el, b);
+        else if (b.run.dir > 0) {   // 나타나는 중에 바뀌면: 지금까지 나온 만큼에서 바로 사라지기 시작한다
+          const lines0 = b.run.lines;
+          b.run = null;
+          b.shown = lines0;
+          next(el, b);
+        }
+      },
+      // 효과 없이 지금 것을 그만둔다(다른 테마로 바꿨을 때 등): 글은 부른 쪽이 다시 넣는다
+      stop(el) { const b = box.get(el); if (b) { b.run = null; b.want = undefined; b.shown = null; } el.classList.remove('mx-show'); el.querySelectorAll('.mx-on').forEach(e => e.classList.remove('mx-on')); },
+      busy: el => { const b = box.get(el); return !!(b && b.run); },
+    };
+  })();
+  // 설명 상자의 글: 선 테마면 매트릭스 글자로 바꿔 넣고, 그 밖의 테마는 예전처럼 상자째 바로 바꾼다
+  const INFO_KEYS = ['no', 'count', 'ko', 'en', 'desc', 'how'];
+  let infoNow = null;   // 지금 보이는(또는 보이게 될) 글 { no, count, ko, en, desc, how } — 같은 글이면 다시 흘리지 않는다
+  function infoSet(txt) {
+    const el = $('info');
+    if (txt && infoNow && INFO_KEYS.every(k => txt[k] === infoNow[k]) && (!el.hidden || MX.busy(el))) return;
+    if (!txt && !infoNow) return;
+    infoNow = txt;
+    if (!mxOn()) {
+      MX.stop(el);
+      if (txt) for (const k of INFO_KEYS) $('i-' + k).textContent = txt[k];
+      el.hidden = !txt;
+      return;
+    }
+    if (txt && el.hidden) { for (const k of INFO_KEYS) $('i-' + k).textContent = ''; el.hidden = false; }
+    // 새 글이 놓이기 직전(또는 다 사라진 뒤): 사라지기만 했으면 상자를 감춘다
+    MX.to(el, txt && INFO_KEYS.map(k => [$('i-' + k), txt[k]]), w => { if (!w && !infoNow) { el.hidden = true; measureUI(); } });
+  }
+
   function ui() {
     zoom = null;
     zoomAt = -1e9;
@@ -7467,7 +7941,8 @@ loader.run(() => {
     SFX.scene(homeOn ? 'home' : isField(cur) ? cur.def.key : 'box');
     if (homeOn) {
       document.body.className = 'mainview';
-      $('info').hidden = $('tip').hidden = true;
+      $('tip').hidden = true;
+      infoSet(null);
       measureUI();
       return;
     }
@@ -7477,27 +7952,17 @@ loader.run(() => {
     // 손가락(터치) 화면에서는 "클릭" 대신 "누르면", 휠·우클릭 대신 두 손가락(벌려 확대 · 끌어 옮기기)
     $('hint').textContent = tap(f ? cur.def.hint : state === 'assembled' ? '박스를 클릭하면 분해돼요' : '부품을 클릭하면 가운데로 가져와 둘러볼 수 있어요')
       + (fine ? ' · 끌어서 돌리기 · 휠로 확대·축소' + (state === 'exploded' ? ' · 우클릭으로 끌어 옮기기' : '') : ' · 끌어서 돌리기 · 두 손가락으로 확대' + (state === 'exploded' ? '·옮기기' : ''));
-    $('info').hidden = !focused && !s;
     $('tip').hidden = true;
     // 현장마다 박스 자리가 하나라서, 장소를 볼 때는 이전·다음 버튼을 숨긴다
     $('prev').hidden = $('next').hidden = !!s;
     $('back').textContent = s ? '현장 전체' : '전체 부품';
-    $('i-how').textContent = s ? tap('박스를 클릭하면 화면 가운데로 크게 가져와요. 빈 곳을 끌면 돌려 볼 수 있고, 빈 곳을 누르면 현장 전체로 돌아가요.')
+    const how = s ? tap('박스를 클릭하면 화면 가운데로 크게 가져와요. 빈 곳을 끌면 돌려 볼 수 있고, 빈 곳을 누르면 현장 전체로 돌아가요.')
       : fine ? '마우스를 움직이거나 드래그해서 둘러보세요. 빈 곳을 누르면 돌아가요.' : '끌어서 돌려 보고, 두 손가락으로 벌려 확대해 보세요. 빈 곳을 누르면 돌아가요.';
-    if (s) {
-      $('i-no').textContent = 'Ex';
-      $('i-count').textContent = s.place;
-      $('i-ko').textContent = s.ko;
-      $('i-en').textContent = s.en;
-      $('i-desc').textContent = s.desc;
-    } else if (focused) {
+    if (s) infoSet({ no: 'Ex', count: s.place, ko: s.ko, en: s.en, desc: s.desc, how });
+    else if (focused) {
       const t = cur.def.types[focused.t], idx = focused.gn > 1 ? `${focused.gk + 1} / ${focused.gn}` : '';
-      $('i-no').textContent = focused.t + 1;
-      $('i-count').textContent = focused.group ? [focused.group, idx].filter(Boolean).join(' · ') : idx && `같은 부품 ${idx}`;
-      $('i-ko').textContent = t.ko;
-      $('i-en').textContent = t.en;
-      $('i-desc').textContent = t.desc;
-    }
+      infoSet({ no: String(focused.t + 1), count: focused.group ? [focused.group, idx].filter(Boolean).join(' · ') : idx && `같은 부품 ${idx}`, ko: t.ko, en: t.en, desc: t.desc, how });
+    } else infoSet(null);
     measureUI();   // 카드 글이 다 들어간 뒤에 잰다 (카드 높이 → 테마 버튼 비켜 서기)
   }
 
@@ -7848,102 +8313,88 @@ loader.run(() => {
     pin.style.top = (1 - tmp.y) / 2 * innerHeight + 'px';
   }
 
-  // ---------- 이름표(테마의 callout — AR 라인): 분해하면 부품 종류마다 이름표가 화면 양옆에 줄지어 서고, 부품에서 이름표까지 선이 뻗어 나간다 ----------
-  // 이름표 자리는 '다 펼쳐진 뒤의 자리'로 미리 정한다(부품이 날아다니는 동안 이름표가 자리를 바꾸지 않게): 왼쪽 절반의 종류는 왼쪽 줄, 오른쪽 절반은 오른쪽 줄,
-  // 줄 안의 차례는 선이 서로 엇갈리지 않게 고른다. 같은 종류가 여럿이면(볼트 14개) 그 줄에 가장 가까운 하나에 선을 잇고 개수를 적는다. 번호 = 부품 카드의 번호.
-  // 선과 글자는 분해와 같은 시계로 자란다: 선이 부품에서 뻗어 나가 이름표 밑줄 끝까지 닿고, 그 뒤 반 동안 글자가 찍힌다. 마우스를 올린 부품의 이름표는 강조색
-  const hud = $('hud'), hx = hud.getContext('2d');
-  const HUD = { a: 0, on: false, slow: false, thin: false, prev: '', key: '', items: [], ink: '#fff', hot: '#f80', font: 'sans-serif' };
-  function hudPlan(dockTop) {
-    const W = innerWidth, H = innerHeight, q = new THREE.Quaternion().setFromEuler(eu.set(orbit.x, orbit.y, 0)), types = new Map(), old = new Map(HUD.items.map(it => [it.t, it]));
-    HUD.ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#fff';
-    HUD.hot = (curTheme().mat || {}).blink || HUD.ink;
-    HUD.font = getComputedStyle(document.body).fontFamily;
-    // 다 펼쳐진 뒤 부품이 화면의 어디에 놓일지(px): 분해 화면의 카메라 자리(camGoal)에서, 지금 돌려 놓은 각도로
-    const g = camGoal('exploded', true);
-    for (const pt of cur.parts) {
-      const p = fv.copy(C(pt).p).sub(tmp.set(g.x, g.y, 0)).applyQuaternion(q), k = H / (2 * TAN * (g.d - p.z)), ty = types.get(pt.t) || { t: pt.t, x: 0, list: [] };
-      ty.list.push({ pt, x: W / 2 + p.x * k, y: H / 2 - p.y * k + goalDy });
-      ty.x += ty.list[ty.list.length - 1].x;
-      types.set(pt.t, ty);
-    }
-    const all = [...types.values()].sort((a, b) => a.x / a.list.length - b.x / b.list.length), half = Math.ceil(all.length / 2);
-    HUD.items = [];
-    HUD.thin = all.length > 60;   // 이름표가 아주 많으면(현장) 선을 더 옅게
-    [all.slice(0, half), all.slice(half)].forEach((col, side) => {   // side 0 = 왼쪽 줄, 1 = 오른쪽 줄
-      for (const ty of col) ty.rep = ty.list.reduce((a, b) => (side ? b.x > a.x : b.x < a.x) ? b : a);
-      col.sort((a, b) => a.rep.y - b.rep.y);
-      // 줄이 설 자리: 왼쪽은 머리글 아래부터, 오른쪽은 버튼 아래부터 스타일 도크 위까지. 선이 꺾이는 점(ex)은 줄마다 한 세로줄에 맞춘다(글자는 그 바깥쪽으로)
-      const top = side ? 84 : headBottom + 14, bot = side ? dockTop - 18 : H - 30, ex = side ? W - HUD_COL + 16 : HUD_COL - 16;
-      const pitch = clamp((bot - top) / col.length, 10.5, 26), y0 = (top + bot) / 2 - pitch * (col.length - 1) / 2, fs = clamp(pitch - 2.5, 8.5, 12), uy = fs * .5 + 3;
-      // 선이 엇갈리지 않게: 두 이름표의 자리를 맞바꿔서 선 길이의 합이 줄면(= 두 선이 엇갈려 있었으면) 바꾼다 — 더 바꿀 것이 없을 때까지
-      const len = (ty, i) => Math.hypot(ty.rep.x - ex, ty.rep.y - (y0 + i * pitch + uy));
-      for (let pass = 0, moved = true; moved && pass < 40; pass++) {
-        moved = false;
-        for (let i = 0; i < col.length; i++) for (let j = i + 1; j < col.length; j++) {
-          if (len(col[i], i) + len(col[j], j) > len(col[i], j) + len(col[j], i) + .01) { [col[i], col[j]] = [col[j], col[i]]; moved = true; }
-        }
-      }
-      hx.font = `500 ${fs}px ${HUD.font}`;
-      col.forEach((ty, i) => {
-        let text = `${String(ty.t + 1).padStart(2, '0')}  ${cur.def.types[ty.t].ko}${ty.list.length > 1 ? ' ×' + ty.list.length : ''}`;
-        while (text.length > 6 && hx.measureText(text).width > HUD_COL - 54) text = text.slice(0, -2) + '…';
-        const y = y0 + i * pitch, o = old.get(ty.t);
-        HUD.items.push({ t: ty.t, rep: ty.rep.pt, side, ex, y, cy: o && o.side === side ? o.cy : y, fs, uy, text, w: hx.measureText(text).width });
+  // ---------- 부품 이름 목록(모든 테마 — v70): 분해하면 화면 왼쪽에 부품 이름이 한 줄에 하나씩(번호 없이 글만) 위에서 아래로 놓인다 ----------
+  // (v70, 사용자: "분해된 오브젝트들의 각각의 부품 이름들이 왼쪽에 정렬해 있고, 그 이름을 클릭하면 그 이름과 그 이름에 맞는 부품이 로고 색상으로 깜빡거려야 함,
+  //  깜빡거리는 오브젝트를 클릭하고 화면으로 크게 오게 된다면 자연스럽게 깜빡거리는 것은 사라져야 함" — 처음에는 AR 라인 테마에만 넣었다가, 기본 화면(모노 라인)에서 안 보인다고 해서 모든 테마로)
+  // 선 테마에서는 설명과 같은 매트릭스 글자(MX)로 위에서부터 차례로 흘러나오고 흘러내려 사라진다. 다른 테마는 서서히 나타나고 사라진다. 이름의 차례 = 부품 카드의 번호 순(정의된 차례).
+  // 이름이 많으면(현장 = 부품마다 이름이 달라 100개 안팎) 화면 높이만큼 내려가다 옆 단으로 넘친다(listPlan). 3D는 목록 오른쪽 빈자리에 담긴다(camGoal · frame)
+  const plist = $('plist');
+  function listStep() {
+    const want = listOn() && state === 'exploded' && !homeOn && !cutOn && !trans && !handoff && !dfly;
+    if (want) {
+      const P = listPlan();
+      if (LST.on && LST.key === P.key) return;
+      LST.on = true;
+      LST.key = P.key;
+      plist.style.top = P.top + 'px';
+      plist.style.setProperty('--rows', P.rows);
+      plist.textContent = '';
+      const lines = P.types.map((t, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pn';
+        b.dataset.t = t;
+        b.title = P.names[i];
+        plist.append(b);
+        return [b, P.names[i]];
       });
-    });
-  }
-  function hudStep(now) {
-    const want = hudWanted() && !homeOn && !cutOn && !trans && !handoff && state === 'exploded', prev = HUD.prev;
-    HUD.prev = state;
-    if (!want && !HUD.a) return;
-    if (want && !HUD.on) HUD.slow = prev === 'assembled';   // 분해가 시작될 때는 분해와 같은 길이로, 부품 보기에서 돌아올 때는 빠르게
-    HUD.on = want;
-    HUD.a = reduced ? +want : clamp(HUD.a + (want ? dt / (HUD.slow ? (cur.def.dur || 1650) / MOTION.speed / 1000 : .45) : -dt / .22), 0, 1);
-    const pr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
-    if (hud.width !== Math.round(W * pr) || hud.height !== Math.round(H * pr)) { hud.width = Math.round(W * pr); hud.height = Math.round(H * pr); }
-    hx.setTransform(pr, 0, 0, pr, 0, 0);
-    hx.clearRect(0, 0, W, H);
-    if (!HUD.a) return;
-    // (돌려서 좌우가 바뀌면 — 4분의 1바퀴마다 — 자리를 다시 정한다. 이름표는 새 자리로 미끄러져 간다)
-    // (스타일 도크는 아래 안내가 바뀌면 비켜 서므로 그 자리도 본다 — 오른쪽 줄이 도크 위까지만 서게)
-    const dockTop = want ? Math.round($('dock').getBoundingClientRect().top) : 0;
-    const key = [cur.def.key, mode, W, H, curTheme().id, Math.round(orbit.y / (Math.PI / 2)), dockTop].join();
-    if (want && key !== HUD.key) { HUD.key = key; hudPlan(dockTop); }
-    const g = ease(HUD.a), typed = clamp((HUD.a - .5) / .45, 0, 1);
-    hx.lineWidth = 1;
-    hx.textBaseline = 'middle';
-    for (const it of HUD.items) {
-      it.cy += (it.y - it.cy) * k(8);
-      const hot = want && !!hovered && hovered.t === it.t, s = it.side ? 1 : -1;
-      (hot ? hovered : it.rep).obj.getWorldPosition(tmp).project(camera);
-      const ax = (tmp.x + 1) / 2 * W, ay = (1 - tmp.y) / 2 * H, uy = it.cy + it.uy, ex = it.ex, L = Math.hypot(ax - ex, ay - uy) + it.w + 14;
-      hx.strokeStyle = hx.fillStyle = hot ? HUD.hot : HUD.ink;
-      // 선: 부품 → 꺾이는 점 → 이름 밑줄의 바깥 끝. 지금까지 자란 길이만큼만 긋는다
-      hx.globalAlpha = hot ? 1 : HUD.thin ? .3 : .45;
-      hx.setLineDash([g * L, L + 9]);
-      hx.beginPath();
-      hx.moveTo(ax, ay);
-      hx.lineTo(ex, uy);
-      hx.lineTo(ex + s * (it.w + 14), uy);
-      hx.stroke();
-      hx.setLineDash([]);
-      // 부품 쪽 끝의 점과 고리
-      hx.globalAlpha = Math.min(1, HUD.a * 5);
-      hx.beginPath();
-      hx.arc(ax, ay, 1.5, 0, 6.2832);
-      hx.fill();
-      hx.beginPath();
-      hx.arc(ax, ay, hot ? 6 : 4, 0, 6.2832);
-      hx.stroke();
-      const n = Math.round(it.text.length * typed);
-      if (!n) continue;
-      hx.globalAlpha = hot ? 1 : .92;
-      hx.font = `${hot ? 700 : 500} ${it.fs}px ${HUD.font}`;
-      hx.textAlign = it.side ? 'left' : 'right';
-      hx.fillText(it.side ? it.text.slice(0, n) : it.text.slice(-n), ex + s * 8, it.cy);
+      plist.hidden = false;
+      plist.classList.remove('off', 'fade');
+      // 다 흘러나오는 데 분해 시간의 절반쯤(이름이 많아도 1초 안팎). 매트릭스 글자를 쓰지 않는 테마는 이름을 바로 넣고 목록째 서서히
+      if (mxOn()) MX.to(plist, lines, null, Math.min(45, 650 / lines.length));
+      else { MX.stop(plist); for (const [b, text] of lines) b.textContent = text; void plist.offsetWidth; plist.classList.add('fade'); }   // (다시 붙여야 다시 나타난다)
+      pickMark();
+    } else if (LST.on) {
+      LST.on = false;
+      if (mxOn()) MX.to(plist, null, w => { if (!w && !LST.on) plist.hidden = true; }, Math.min(20, 300 / Math.max(plist.childElementCount, 1)));
+      else { plist.classList.add('off'); setTimeout(() => { if (!LST.on) plist.hidden = true; }, 260); }
     }
-    hx.globalAlpha = 1;
+  }
+  // 이름을 누르면 그 이름(부품 종류)의 부품들이 로고 색으로 깜빡인다(같은 이름을 다시 누르면 꺼진다). 다른 깜빡임(blinkStep)과 같은 박자.
+  //   선 테마 = 그 부품들의 선(유리 테마는 유리 면도 살짝), 면을 칠하는 테마 = 그 부품들의 면 색
+  // 분해 화면을 떠나면(그 부품을 눌러 가운데로 가져오면 · 장소로 가면 · 조립하면) 서서히 꺼지고 고르기가 풀린다. 테마를 바꾸면 바로 풀린다
+  const PICK = { t: -1, of: null, theme: '', amp: 0, want: 0, line: [], glass: [], face: [], c: col('#D6690F'), ink: [166, 166, 163] };
+  function pickRestore() {
+    const mode = curTheme().mat || {};
+    for (const m of PICK.line) { m.userData.base = m.opacity = m.userData.rest; if (mode.kind === 'line') m.color.copy(col(mode.c)); }
+    for (const m of PICK.glass) if (m.emissive && m.userData.glass && mode.glass) m.emissive.copy(col(mode.glass));
+    for (const m of PICK.face) { const o = ORIG.get(m); if (!o) continue; m.color.copy(o.now); if (o.emis) m.emissive.copy(o.emis); }
+    PICK.line = [];
+    PICK.glass = [];
+    PICK.face = [];
+  }
+  function pickSet(t) {
+    pickRestore();
+    const mode = curTheme().mat || {}, line = mode.kind === 'line';
+    Object.assign(PICK, { t, of: cur, theme: curTheme().id, amp: 0, want: t >= 0 ? 1 : 0 });
+    if (t >= 0) for (const pt of cur.parts) if (pt.t === t) {
+      if (line) {
+        PICK.line.push(...(pt.lineMats || []));
+        PICK.glass.push(...pt.mats.filter(m => m.userData.glass));
+      } else PICK.face.push(...pt.mats.filter(m => !m.userData.line && !m.userData.isAO && ORIG.has(m)));
+    }
+    // 목록 글자의 평소 색(테마의 흐린 글자색 --muted)에서 로고 색 사이를 오간다
+    const mu = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#a6a6a3');
+    PICK.ink = [mu.r * 255, mu.g * 255, mu.b * 255];
+    pickMark();
+  }
+  function pickMark() { plist.querySelectorAll('.pn').forEach(b => { if (+b.dataset.t !== PICK.t) b.style.color = ''; }); }
+  plist.addEventListener('click', e => { const b = e.target.closest('.pn'); if (b) { const t = +b.dataset.t; pickSet(PICK.t === t ? -1 : t); } });
+  function pickStep(now) {
+    if (PICK.t < 0) return;
+    if (PICK.of !== cur || PICK.theme !== curTheme().id) { pickSet(-1); return; }
+    if (state !== 'exploded') PICK.want = 0;   // (깜빡이던 부품을 눌러 가운데로 가져왔으면 여기서 서서히 꺼진다)
+    PICK.amp += (PICK.want - PICK.amp) * k(PICK.want ? 6 : 3.2);
+    if (!PICK.want && PICK.amp < .02) { pickSet(-1); return; }
+    const p = (.08 + .92 * (.5 + .5 * Math.cos(now / 1150 * Math.PI * 2)) ** 1.6) * PICK.amp, mode = curTheme().mat || {};
+    if (PICK.line.length) {
+      const base = col(mode.c), g = mode.glass ? col(mode.glass) : null;
+      for (const m of PICK.line) { m.color.copy(base).lerp(PICK.c, p); m.userData.base = m.userData.rest + (1 - m.userData.rest) * p; }   // (투명도는 이어지는 tick이 부품의 투명도를 곱해 정한다)
+      if (g) for (const m of PICK.glass) if (m.emissive && m.userData.glass) m.emissive.copy(g).lerp(PICK.c, p * .55);
+    }
+    for (const m of PICK.face) { const o = ORIG.get(m); m.color.copy(o.now).lerp(PICK.c, .92 * p); if (o.emis) m.emissive.copy(PICK.c).multiplyScalar(.55 * p); }
+    const el = plist.querySelector(`.pn[data-t="${PICK.t}"]`), L = [214, 105, 15];
+    if (el) el.style.color = `rgb(${PICK.ink.map((v, i) => Math.round(v + (L[i] - v) * Math.min(1, p * 1.15)))})`;
   }
 
   function frame() {
@@ -7954,21 +8405,29 @@ loader.run(() => {
     lightStep(k(4.5));
     lineLodStep();   // 선 테마: 선을 부품마다 그릴지 모델째 묶어 그릴지
     prismTime.value = t;   // 프리즘 라인: 무지개가 저절로 도는 시간
-    { const m = curTheme().mat || {}; LINE_U.glintT.value = t; LINE_U.glint.value = m.glint || 0; LINE_U.dof.value = cutOn && !CUT.torn ? 0 : m.dof || 0; }   // 투명 케이스: 빛 흐름 · 초점 흐림(시작 컷신이 나는 동안은 흐리지 않는다)
+    { const m = curTheme().mat || {}; LINE_U.glintT.value = t; LINE_U.glint.value = m.glint || 0; LINE_U.dof.value = cutOn && !CUT.torn || dfly && dfly.phase === 'fly' ? 0 : m.dof || 0; }   // 투명 케이스: 빛 흐름 · 초점 흐림(시작 컷신이 나는 동안은 흐리지 않는다)
     // 시작 컷신 동안에는 컷신이 화면을 맡는다
     if (cutOn) {
       try { (cutKind === 'globe' ? globeFrame : cutFrame)(now, t); } catch (err) { cutFail(err); }
-      hudStep(now);
+      listStep();
       requestAnimationFrame(frame);
       return;
     }
     blinkStep(now);   // 흑백 강조 테마: 방폭박스가 있는 곳을 깜빡인다
+    pickStep(now);    // 부품 이름 목록에서 고른 이름의 부품을 깜빡인다 (둘 다 이어지는 tick보다 먼저 — tick이 부품의 투명도를 곱한다)
+    // 메인 화면 → 현장의 드론 비행 동안에는 비행이 화면을 맡는다
+    if (dfly) {
+      try { dflyFrame(now, t); } catch (err) { console.error(err); dflyEnd(true); }
+      listStep();
+      requestAnimationFrame(frame);
+      return;
+    }
     if (homeOn) {
       if (camera.view && camera.view.enabled) camera.clearViewOffset();   // 메인 화면은 칸마다 따로 그리므로 그림 옮기기를 끈다
       shift.x = shift.y = 0;
       homeFrame(now, t);
       prismRays();
-      hudStep(now);
+      listStep();
       requestAnimationFrame(frame);
       return;
     }
@@ -7976,8 +8435,9 @@ loader.run(() => {
     if (!cam) { cam = { d: g.d * (reduced ? 1 : 1.35), x: g.x, y: g.y, z: g.z }; dofOff = 0; zoomR = 1; }
     let zf = k(6);   // (휠 확대 비율 zoomR이 따라가는 빠르기 — 카메라가 평소처럼 따라갈 때는 카메라와 같은 값)
     if (trans) {
-      // 칸 ↔ 화면 전체 전환: 카메라도 같은 속도 곡선으로 칸 카메라와 현장 카메라 사이를 오간다
-      const e = ease(clamp((now - trans.t0) / trans.dur, 0, 1)), to = trans.dir > 0 ? g : panelCam(trans.i);
+      const u = clamp((now - trans.t0) / trans.dur, 0, 1);
+      // 현장 페이지 → 칸: 카메라도 같은 속도 곡선으로 현장 카메라와 칸 카메라 사이를 오간다
+      const e = ease(u), to = panelCam(trans.i);
       for (const key of ['d', 'x', 'y', 'z']) cam[key] = trans.from[key] + (to[key] - trans.from[key]) * e;
     } else if (handoff) {
       // 박스가 날아가는 동안에는 카메라도 박스와 같은 속도 곡선으로 움직여, 박스가 화면 가운데로 다가오는 것처럼 보이게 한다
@@ -8018,7 +8478,7 @@ loader.run(() => {
     // 그림 옮기기(카메라 view offset): 휴대폰에서 모델을 머리글·아래 안내(goalDy)나 옆 카드(cardRight)를 피한 빈 자리 가운데로.
     // 그림만 옮기므로 돌리는 축·클릭 판정·휠 확대는 그대로 맞는다. 칸 전환 중에는 쓰지 않는다(칸마다 따로 그림)
     const side = cardRight > 0 && (state === 'focus' || state === 'site');
-    shift.x += ((trans || !side ? 0 : cardRight / 2) - shift.x) * k(4);
+    shift.x += ((trans ? 0 : side ? cardRight / 2 : listW(state) / 2) - shift.x) * k(4);   // (AR 라인의 분해 화면: 왼쪽 목록을 비켜 그 오른쪽 빈자리 가운데로)
     shift.y += ((trans ? 0 : side ? headBottom / 2 : goalDy) - shift.y) * k(4);
     if (!trans && Math.abs(shift.x) + Math.abs(shift.y) > .3) camera.setViewOffset(innerWidth, innerHeight, -shift.x, -shift.y, innerWidth, innerHeight);
     else if (camera.view && camera.view.enabled) camera.clearViewOffset();
@@ -8078,7 +8538,7 @@ loader.run(() => {
     }
     prismRays();   // 프리즘 라인: 다 그린 화면 위에 빛 안개를 덧그린다
     if (isField(cur) && state === 'exploded') placePin();
-    hudStep(now);   // 이름표(AR 라인): 방금 그린 자리 그대로 부품을 따라가게 그린 뒤에
+    listStep();   // 부품 이름 목록(AR 라인): 분해 화면에서만
     requestAnimationFrame(frame);
   }
 
@@ -8102,10 +8562,10 @@ loader.run(() => {
   const CUT_AUTO = true;   // 검사 도구(sim.ps1)는 이 줄을 false로 바꿔 컷신 없이 연다 — 컷신 검사는 steps에서 startCut()을 직접 부른다
   const CUT = { e: 0, last: 0, click: -1, skip: -1, out: -1, nudge: -9, torn: false, swapped: false, cue: {}, hold: false, pan: null };
   let cutOn = false, cutW = null;   // cutW = 만들어 둔 컷신 세계(바다·섬·긴 선체·슬로건 + 겹쳐 놓는 DOM)
-  // 컷신은 두 가지: 'drone' = 이 드론 컷신(기본), 'globe' = 선으로 그린 지구본 컷신(아래 '시작 컷신 2'). 오른쪽 아래 '컷신' 칸에서 고르면 바로 틀어 보여 주고,
-  // 고른 것을 기억해(localStorage 'exbox-cut') 다음에 사이트를 열 때 그 컷신이 나온다. cutKind = 지금 틀고 있는(마지막으로 튼) 컷신
-  const CUTS = { drone: '드론 비행', globe: '지구본' };
-  const cutPick = () => { try { return localStorage.getItem('exbox-cut') === 'globe' ? 'globe' : 'drone'; } catch (e) { return 'drone'; } };
+  // 컷신은 두 가지: 'drone' = 이 드론 컷신, 'globe' = 선으로 그린 지구본 컷신(아래 '시작 컷신 2' — v70부터 기본). 오른쪽 아래 '컷신' 칸에서 고르면 바로 틀어 보여 주고,
+  // 고른 것을 기억해(localStorage 'exbox-cut2' — 기본이 지구본으로 바뀌면서 전에 기억한 'exbox-cut'은 한 번 비웠다) 다음에 사이트를 열 때 그 컷신이 나온다. cutKind = 지금 틀고 있는(마지막으로 튼) 컷신
+  const CUTS = { globe: '지구본', drone: '드론 비행' };
+  const cutPick = () => { try { return localStorage.getItem('exbox-cut2') === 'drone' ? 'drone' : 'globe'; } catch (e) { return 'globe'; } };
   // 사이트를 열 때 틀 컷신: 주소에 ?cut=globe(또는 drone)가 있으면 그것(발표용 바로가기가 쓴다 — 기억해 둔 것과 상관없이), 없으면 기억해 둔 것
   const cutOpen = () => (/[?&]cut=(globe|drone)(&|$)/.exec(location.search) || [])[1] || cutPick();
   let cutKind = 'drone';
@@ -8156,8 +8616,9 @@ loader.run(() => {
   // 배가 나아간 거리(세계 x): 마지막 열쇠 장면 뒤로는 세워 두고 바다를 흘린다
   const cutShipX = e => CW.v * (Math.min(e, CUT_KEYS[CUT_KEYS.length - 1][0]) - CW.tRef);
 
-  // 컷신 세계를 만든다(한 번). 돌려주는 것: G = 무대에 올릴 묶음, QW = 세계 → 무대 회전, 그 밖에 장면마다 건드릴 것들
-  function cutBuild() {
+  // 컷신 세계를 만든다(한 번). 돌려주는 것: G = 무대에 올릴 묶음, QW = 세계 → 무대 회전, 그 밖에 장면마다 건드릴 것들.
+  // lite = 메인 화면 → 현장의 드론 비행(v70)용: 바다 · 섬 · 배 둘레만 쓰므로, 슬로건 장면에만 필요한 것(긴 선체의 선 · 슬로건 선 · 로고 겹층)은 만들지 않는다
+  function cutBuild(lite = false) {
     const ship = built.ship, QW = ship.def.asm.q.clone(), G = new THREE.Group(), mats = [], texs = [], mode = curTheme().mat;
     const reg = m => { mats.push(m); return m; };
     G.quaternion.copy(QW);
@@ -8511,6 +8972,7 @@ loader.run(() => {
         return pos;
       };
       draw(real, lineSegs(bandLines(-L2, L2, wAt)));
+      if (!lite) {
       // 선체 토막이 만나는 자리의 단면 테두리: 진짜 선체는 토막이 만나는 자리마다 두 토막의 끝 테두리(같은 자리에 둘)와 자른 면 둘(.01씩 물러나 있다)의 테두리가 선으로 보인다
       // — 긴 선체에도 같은 자리에 같은 수만큼 그어, 바꿔칠 때 그 선이 사라지거나 옅어지지 않게
       const rings = [];
@@ -8525,6 +8987,7 @@ loader.run(() => {
       for (const sh of shapes) { ring(sh.getPoints(10)); for (const h of sh.holes) ring(h.getPoints(10)); }
       slogan.visible = false;
       [sloganObjs, sloganMats] = draw(long, lineSegs(sp));
+      }
     }
     // 점의 네 귀(배 기준 자리, 슬로건이 들어오기 전): 왼쪽 위 · 오른쪽 위 · 오른쪽 아래 · 왼쪽 아래
     const dot = [3, 2, 1, 0].map(i => V(sx + data.dot[i][0] * sk, SL.y + data.dot[i][1] * sk - WL, HB + .004));
@@ -8549,7 +9012,7 @@ loader.run(() => {
       for (const f of ['p', 'l']) kf['m' + f] = a && b ? b[f].clone().sub(a[f]).divideScalar(b.t - a.t) : a ? V(CW.v, 0, 0) : V();
       kf.mfov = a && b ? (b.fov - a.fov) / (b.t - a.t) : 0;
     });
-    return { G, QW, mats, texs, seaMat, foamMat, shipG, real, long, slogan, sloganObjs, sloganMats, lineMats, dot, span, stay, keys, dom: cutDomBuild(data) };
+    return { G, QW, mats, texs, seaMat, foamMat, shipG, real, long, slogan, sloganObjs, sloganMats, lineMats, dot, span, stay, keys, dom: lite ? null : cutDomBuild(data) };
   }
   // 겹쳐 놓는 층(DOM)을 채운다: 로고 상자 안의 흰 막대 12개(윗선 + 밑단), 워드마크 글자
   function cutDomBuild(data) {
@@ -8863,7 +9326,7 @@ loader.run(() => {
     camera.fov = 30;
     camera.far = 200;
     camera.updateProjectionMatrix();
-    panelState.forEach(ps => Object.assign(ps, { rx: 0, ry: 0, z: 1 }));
+    panelState.forEach(ps => Object.assign(ps, { rx: 0, ry: 0, z: 1, s0: -1, spin: 0 }));
     showMain();
   }
   function cutEnd() {
@@ -8926,47 +9389,50 @@ loader.run(() => {
   $('cut').addEventListener('pointerdown', ev => { if (!ev.target.closest('button')) CUT.nudge = CUT.e; });
 
   // ---------- 시작 컷신 2: 지구본 ----------
-  // 사용자가 준 참고 영상(10초, 선으로만 그린 영상)과 스토리보드 '지구본 컷신.pdf'를 따른다. 빠르기와 음악(#snd-data의 "globe")도 그 영상 그대로:
-  //   검은 화면 → 선 하나가 왼쪽에서 자람 → 작은 점들이 돋아 가로선으로 늘어남 → 화면 가득한 가로줄 → 줄이 휘며 지구본의 위도선이 됨
-  //   → (음악의 "쿵") 바다 위의 선이 걷히고 땅 위의 선만 남음 = 선으로 된 지구본 → 지구본이 돌아 아메리카 · 아프리카 · 아시아를 지나 부산으로 확대
-  //   → 선이 부산의 점 쪽으로 접혀 사라지고 점도 꺼짐 → 검은 화면 → 선(호) 몇 개가 그어져 나와 가운데로 감겨 들어 로고 상자의 테두리가 됨 → 흰 상자에 검은 막대(흑백 로고)
-  //   → ("쿵") 워드마크 → 색이 부드럽게 브랜드 색으로 바뀌며 지금 테마의 바탕이 드러남 → 메인 화면.
-  //   (처음에는 참고 영상처럼 부산 다음에 화면이 뚝 끊기고 선이 가득 들어왔는데, 사용자가 "선이 너무 많게 뚝 끊기듯이 나온다"고 해서 지금처럼 바꿈 — 스토리보드의 흐름: 선이 없어졌다가 검은 화면에서 선들이 나오며 로고)
+  // 사용자가 준 참고 영상(10초, 선으로만 그린 영상)과 스토리보드 '지구본 컷신.pdf'에서 시작해 v70에서 사용자의 새 흐름으로 바꿨다. 빠르기는 음악(#snd-data의 "globe", 9.6초)의 박자 그대로:
+  //   검은 화면 → 배 · 해양플랜트 · 화학공장이 지구본처럼 빗금 같은 수많은 가로선으로 왼쪽부터 주루룩 나타났다 쓸려 가며 다음 현장으로 바뀜(globeSites)
+  //   → 화학공장의 선이 양옆으로 뻗어 화면 가득한 가로줄 → 줄이 휘며 지구본의 위도선이 됨 → (음악의 첫 "쿵" 2.25초) 바다 위의 선이 걷히고 땅 위의 선만 남음 = 선으로 된 지구본
+  //   → 지구본이 돌아 아메리카 · 아프리카 · 아시아를 지나 부산으로 확대 → 부산에 로고 색 점이 다섯 번 깜빡임 → 그 점 안으로 뛰어듦(점이 화면을 덮음)
+  //   → (음악의 "쿵" 7.5초) 주황이 로고 상자로 줄어들고 막대가 그어짐 → ("쿵" 8초) 워드마크 → 검은 바탕이 걷히며 지금 테마의 바탕 → 메인 화면.
+  //   (v70, 사용자: "지구본 이전에 배, 해양플랜트, 화학 공장이 현재 지구본처럼 빗금 같은 여러 수많은 선들로 나타났다 사라졌다 하면서 지구본으로 바뀌고, 부산 쪽을 비추고
+  //    부산에 로고 색상이 다섯 번 깜빡거렸다가, 그 깜빡거리는 것 안으로 들어가서 로고가 나오고 메인 페이지가 나오게")
+  //   세 현장은 음악의 첫 "쿵"(지구본이 나타나는 때) 앞 2초 안에 지나간다 — 음악은 그대로 두고 박자에 맞췄다.
   // 지구본의 선은 모두 '위도선'이다: 위도선마다 "그릴 경도 구간"만 정하면 된다 — 가로줄 = 평평하게 편 지구(m = 0), 휘는 줄 = 지구가 둥글게 말리는 중(m 0 → 1),
   //   지구본 = 땅인 구간만(#globe-data: 위도선마다 미리 계산해 둔 땅 구간. Natural Earth 1:50m, 도구 globe/build_land.js).
+  //   세 현장도 같은 가로줄로 그린다: 평평한 지구의 위도선 자리(화면 높이의 1/152마다)에, 현장 모델의 실루엣(globeMasks)이 덮는 구간만 긋는다 — 그래서 마지막 현장의 굵은 줄이 그대로 지구의 위도선이 된다.
   // 그림은 2D 캔버스(#cut-film) 한 장에 그린다. 3D 캔버스는 그동안 가려 두고, 끝에서 메인 화면이 드러난다.
   // 시간은 컷신 시계 CUT.e 하나(초). 음악이 나오면 음악의 자리에 시계를 맞춘다(화면이 잠깐 버벅여도 소리와 어긋나지 않게)
   const GLOBE_BUSAN = [129.04, 35.1];
-  // 때(초) — 참고 영상에서 잰 값. rev0 = 음악의 "쿵"(2.27초), fold0 = 음악이 뚝 끊기는 곳(5.4초) 바로 앞, lock0 = 마지막 "쿵"(8.0초)
+  // 때(초) — 음악에서 잰 값(도구 inside/p_music.js): 2.25초 = 첫 "쿵", 6.8 ~ 7.45초 = 소리가 잦아드는 틈, 7.5 · 7.7 · 8.0초 = 끝의 "쿵" 세 번
   const GT = {
-    line0: .03, seed0: .55, full: 1.47,        // 첫 선이 자라기 시작 · 점이 돋기 시작 · 모든 줄이 끝까지 참
+    wipe: [.02, .6, 1.16], wipeDur: .3,        // 세 현장(배 · 해양플랜트 · 화학공장)이 나타나는 때 — 다음 현장이 나타나는 쓸기가 앞 현장을 지운다, 쓸기 한 번의 길이
+    flat0: 1.52, flatDur: .22, flat1: 1.84,    // 화학공장의 굵은 줄이 양옆으로 뻗어 화면 가득한 가로줄이 되는 동안(잔 줄은 쓸려 사라짐) · 줄이 휘기 시작
     rev0: 2.27, rev1: 2.62,                    // 바다 위의 선이 걷힘
-    dot0: 4.98, fold0: 5.36, fold1: 5.8,       // 부산의 점 · 선이 부산의 점 쪽으로 접혀 사라짐 · 다 사라짐(이어서 점도 꺼져 검은 화면)
-    arcs0: 6, swirl0: 6.42, ring0: 6.8,        // 검은 화면에서 선(호)들이 그어져 나옴 · 가운데로 감겨 듦 · 원이 네모(상자의 테두리)로
-    edge0: 6.84, fill0: 7.02, bars0: 7.1,      // 위아래 긴 선 · 상자가 흰색으로 참 · 막대
-    edge1: 7.94, lock0: 8, lockDur: .32,       // 긴 선이 물러남 · 상자가 올라가고 워드마크가 나타남
-    tint0: 9.15, tint1: 9.95,                  // 흑백 → 브랜드 색, 검은 바탕 → 테마 바탕
+    dot0: 4.98, blink0: 5.3, blinks: 5, blinkT: .38,   // 부산의 점 · 깜빡임 시작 · 깜빡이는 횟수 · 한 번의 길이(초)
+    dive0: 7.2, dive1: 7.5, iris1: 7.74,       // 깜빡이던 점 안으로 뛰어듦(점이 점점 빨리 커져 "쿵"에 화면을 덮음) · 화면을 덮은 주황이 로고 상자로 줄어듦
+    bars0: 7.6, lock0: 8, lockDur: .32,        // 막대 · 상자가 올라가고 워드마크가 나타남
+    tint0: 9.15, tint1: 9.95,                  // 검은 바탕 → 테마 바탕
     out0: 10.45, outDur: 1.2,                  // 로고가 사라지고 메인 화면이 나타남
   };
-  const GLOBE_ARCS = 12;   // 검은 화면에서 나와 로고로 모이는 선(호)의 수
   // 카메라 열쇠 장면: [때, 가운데 경도, 가운데 위도, 확대(1 = 지구본이 화면에 알맞게 차는 크기), 기울임(도, + = 시계 방향), 말림 m(0 = 평평하게 편 것, 1 = 공)].
   // zf = 가로줄 38줄이 화면에 들어가는 확대값, fl = 공이 화면 구석까지 덮는 확대값 — 땅이 드러나기 전(~ rev0)에는 화면이 선으로 꽉 차 있어야 한다(공의 둥근 가장자리가 미리 보이지 않게).
-  //   그래서 공은 덜 말린 채로(m < 1) 다가오고, 바다 위의 선이 걷히는 동안 마저 말리며 물러나 지구본이 된다
+  //   그래서 공은 덜 말린 채로(m < 1) 다가오고, 바다 위의 선이 걷히는 동안 마저 말리며 물러나 지구본이 된다. 부산에 다 온 뒤로는 깜빡이는 동안 천천히 더 다가가고, 끝에 점 속으로 뛰어든다
   const GLOBE_A = (zf, fl) => [
-    [0,    -168, 0,  zf,       0,   0],
-    [1.27, -168, 0,  zf,       0,   0],
-    [1.6,  -166, 3,  zf * .93, 9,   .45],
-    [1.92, -160, 7,  1.25,     22,  .62],
-    [2.27, -148, 10, Math.max(1.08, fl * .81), -13, .78],
-    [2.62, -134, 10, 1.06,     -9,  1],
-    [2.95, -112, 9,  1,        -7,  1],
-    [3.5,  -80,  7,  1,        -5,  1],      // 아메리카
-    [4,    -32,  8,  1.03,     -2,  1],      // 대서양
-    [4.5,  14,   12, 1.12,     0,   1],      // 유럽 · 아프리카
-    [4.94, 108,  30, 1.5,      5,   1],      // 아시아
-    [5.08, GLOBE_BUSAN[0], GLOBE_BUSAN[1], 2.1, 8, 1],
-    [5.4,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 17, 14, 1],    // 부산으로
-    [5.9,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 24, 16, 1],    // 선이 접혀 사라지는 동안 천천히 더 다가간다
+    [0,     -168, 0,  zf,       0,   0],
+    [GT.flat1, -168, 0, zf,     0,   0],
+    [1.99,  -166, 3,  zf * .93, 9,   .45],
+    [2.14,  -160, 7,  1.25,     22,  .62],
+    [2.27,  -148, 10, Math.max(1.08, fl * .81), -13, .78],
+    [2.62,  -134, 10, 1.06,     -9,  1],
+    [2.95,  -112, 9,  1,        -7,  1],
+    [3.5,   -80,  7,  1,        -5,  1],      // 아메리카
+    [4,     -32,  8,  1.03,     -2,  1],      // 대서양
+    [4.5,   14,   12, 1.12,     0,   1],      // 유럽 · 아프리카
+    [4.94,  108,  30, 1.5,      5,   1],      // 아시아
+    [5.08,  GLOBE_BUSAN[0], GLOBE_BUSAN[1], 2.1, 8, 1],
+    [5.4,   GLOBE_BUSAN[0], GLOBE_BUSAN[1], 17, 14, 1],    // 부산으로
+    [GT.dive0, GLOBE_BUSAN[0], GLOBE_BUSAN[1], 30, 18, 1], // 깜빡이는 동안 천천히 더 다가간다
+    [GT.dive1, GLOBE_BUSAN[0], GLOBE_BUSAN[1], 2400, 18, 1],   // 점 속으로 (점점 빨라지며)
   ];
   const globeWrap = v => ((v + 180) % 360 + 360) % 360 - 180;
   // 위도선: 단계 L의 k번째 선의 위도 = a·k + b (0단계 = 1.5°마다, 확대할수록 사이사이에 선이 더 들어간다 — build_land.js와 같은 식)
@@ -8990,7 +9456,118 @@ loader.run(() => {
     const v = c => a[c] * (2 * u3 - 3 * u2 + 1) + a.m[c] * (u3 - 2 * u2 + u) * T + b[c] * (-2 * u3 + 3 * u2) + b.m[c] * (u3 - u2) * T;
     return { lon: v(1), lat: v(2), z: 2 ** v(3), roll: v(4), m: v(5) };
   }
-  // 선 그림 한 장: 컷신 시계 e에서의 위도선들을 x(2D 캔버스)에 그린다. G = globeMake()가 만든 것
+
+  // ---- 세 현장의 실루엣: 현장 모델을 흰색 한 가지로 그려(조립된 모습, 현장 페이지와 같은 쪽에서 조금 낮게) 칠해진 곳을 줄마다 구간으로 적어 둔다 ----
+  // 2D 캔버스의 가로줄이 이 구간 위에만 그어지면 선으로 된 현장이 된다(지구본의 땅과 같은 방식). 모델을 고쳐도 따로 손댈 것이 없다.
+  // 선 · 바닥 그림자 · 불빛(번지는 판)은 빼고 그린다. 컷신을 틀 때 한 번(세 장에 0.1초 안팎)
+  const GLOBE_SITES = [['ship', -.12], ['offshore', -.06], ['chem', -.34]];   // [현장, 보는 높이를 낮추는 각도(라디안 — 바닥판이 덜 보이게)]
+  function globeMasks() {
+    const MW = 720, MH = 405, rt = new THREE.WebGLRenderTarget(MW, MH), buf = new Uint8Array(MW * MH * 4), white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const keep = { vis: stage.children.map(o => o.visible), rot: stage.rotation.clone(), pos: stage.position.clone(), aspect: camera.aspect, near: camera.near, far: camera.far, fov: camera.fov,
+      up: camera.up.clone(), p: camera.position.clone(), q: camera.quaternion.clone(), rt: renderer.getRenderTarget(), sc: renderer.getScissorTest(), cc: renderer.getClearColor(new THREE.Color()), ca: renderer.getClearAlpha() };
+    const out = [];
+    try {
+      for (const [key, tilt] of GLOBE_SITES) {
+        const b = built[key];
+        if (!b) { out.push(null); continue; }
+        stage.children.forEach(o => { o.visible = o === b.root; });
+        const hid = [];
+        b.root.traverse(o => { if (o.visible && (o.userData.line || o.userData.glow || o.isSprite || (o.material && o.material.userData && o.material.userData.isAO))) { hid.push(o); o.visible = false; } });
+        const c = b.abox.getCenter(V());
+        stage.rotation.set(tilt, 0, 0);
+        stage.position.copy(c).sub(tmp.copy(c).applyEuler(stage.rotation));   // (모델 가운데를 축으로 숙인다)
+        const d = fitPts(b.apts, c, fq.setFromEuler(stage.rotation), 1.06, 1.06, MW / MH);
+        camera.up.set(0, 1, 0);
+        camera.aspect = MW / MH;
+        camera.fov = 30;
+        camera.near = Math.max(.1, d * .05);
+        camera.far = d * 4;
+        camera.position.set(c.x, c.y, c.z + d);
+        camera.lookAt(c);
+        camera.updateProjectionMatrix();
+        scene.overrideMaterial = white;
+        renderer.setRenderTarget(rt);
+        renderer.setScissorTest(false);
+        renderer.setClearColor(0x000000, 0);
+        renderer.clear();
+        renderer.render(scene, camera);
+        renderer.readRenderTargetPixels(rt, 0, 0, MW, MH, buf);
+        scene.overrideMaterial = null;
+        hid.forEach(o => { o.visible = true; });
+        // 줄마다 칠해진 구간(위 줄부터 — 읽은 그림은 아래 줄부터 온다)과 실루엣을 감싸는 상자
+        const rows = [];
+        let x0 = MW, x1 = 0, y0 = MH, y1 = 0;
+        for (let y = 0; y < MH; y++) {
+          const r = [], base = (MH - 1 - y) * MW * 4;
+          let run = -1;
+          for (let x = 0; x <= MW; x++) {
+            const on = x < MW && buf[base + x * 4 + 3] > 127;
+            if (on && run < 0) run = x;
+            if (!on && run >= 0) { r.push(run, x); run = -1; }
+          }
+          rows.push(r);
+          if (r.length) { y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1); x0 = Math.min(x0, r[0]); x1 = Math.max(x1, r[r.length - 1]); }
+        }
+        out.push(y1 > y0 ? { rows, box: [x0, y0, x1, y1] } : null);
+      }
+    } finally {
+      scene.overrideMaterial = null;
+      stage.children.forEach((o, j) => { o.visible = keep.vis[j]; });
+      stage.rotation.copy(keep.rot);
+      stage.position.copy(keep.pos);
+      Object.assign(camera, { aspect: keep.aspect, near: keep.near, far: keep.far, fov: keep.fov });
+      camera.up.copy(keep.up);
+      camera.position.copy(keep.p);
+      camera.quaternion.copy(keep.q);
+      camera.updateProjectionMatrix();
+      renderer.setRenderTarget(keep.rt);
+      renderer.setScissorTest(keep.sc);
+      renderer.setClearColor(keep.cc, keep.ca);
+      rt.dispose();
+      white.dispose();
+    }
+    return out;
+  }
+  // 실루엣을 화면에 놓을 자리: 가로 82% · 세로 54% 안에 들어가게(세로 화면은 92% · 40%), 가운데보다 살짝 위. k = 그림(px) 1칸이 화면에서 몇 px인지
+  function globeSiteRect(m, vw, vh) {
+    const [x0, y0, x1, y1] = m.box, tall = vw < vh, k = Math.min(vw * (tall ? .92 : .82) / (x1 - x0), vh * (tall ? .4 : .54) / (y1 - y0));
+    return { x: vw / 2 - (x1 - x0) * k / 2, y: vh * .48 - (y1 - y0) * k / 2, w: (x1 - x0) * k, h: (y1 - y0) * k, k };
+  }
+  // 세 현장 장면(e < flat1): 평평한 지구의 위도선 자리마다(화면 높이의 1/152 간격 — 0 ~ 2단계 위도선을 다 합친 것) 실루엣이 덮는 구간만 긋는다.
+  //   나타나기 · 바뀌기 = 왼쪽에서 오른쪽으로 쓸고 지나가는 앞(줄마다 조금씩 어긋나게): 앞의 왼쪽에는 새 현장, 오른쪽에는 앞 현장이 남는다.
+  //   끝: 화학공장의 굵은 줄(0단계 — 지구본이 될 위도선)은 양옆으로 뻗어 화면 가득한 가로줄이 되고, 사이사이의 잔 줄은 왼쪽부터 쓸려 사라진다 → 이어서 globeLines가 그 줄을 휜다
+  function globeSites(x, e, vw, vh, G) {
+    const M = G.masks, rowH = vh / 152, L = -12, R = vw + 12, rects = M.map(m => m && globeSiteRect(m, vw, vh));
+    const sweep = (t0, n) => L + (R - L) * cutEE(clamp((e - t0 - cutRnd(n, 71) * .09) / GT.wipeDur, 0, 1));   // 그 줄에서 쓸기의 앞(px)
+    x.beginPath();
+    for (let n = -80; n <= 80; n++) {
+      const y = vh / 2 - n * rowH;
+      if (y < -2 || y > vh + 2) continue;
+      const main = ((n % 4) + 4) % 4 === 2;   // 0단계 위도선(지구본에서도 남는 줄)
+      const segs = [];
+      for (let s = 0; s < 3; s++) {
+        const m = M[s], r = rects[s];
+        if (!m || e < GT.wipe[s]) continue;
+        const xin = sweep(GT.wipe[s], n), xout = s < 2 ? (e < GT.wipe[s + 1] ? L : sweep(GT.wipe[s + 1], n)) : !main && e >= GT.flat0 ? sweep(GT.flat0, n) : L;
+        if (xin <= L || xout >= R) continue;
+        const my = Math.floor(m.box[1] + (y - r.y) / r.k);
+        if (my < m.box[1] || my >= m.box[3]) continue;
+        const row = m.rows[my];
+        // 화학공장의 굵은 줄: 구간이 양옆으로 늘어나 이어진다
+        const grow = s === 2 && main && e >= GT.flat0 ? cutEE(clamp((e - GT.flat0 - cutRnd(n, 72) * .06) / (GT.flatDur - .06), 0, 1)) * vw : 0;
+        for (let i = 0; i < row.length; i += 2) {
+          const a = r.x + (row[i] - m.box[0]) * r.k - grow, b = r.x + (row[i + 1] - m.box[0]) * r.k + grow;
+          const aa = Math.max(a, xout), bb = Math.min(b, xin);
+          if (bb > aa + .5) segs.push(aa, bb);
+        }
+      }
+      // 실루엣에 걸리지 않은 굵은 줄도 화면 가득한 가로줄이 되도록: 왼쪽에서부터 그어진다
+      if (main && e >= GT.flat0) segs.push(L, L + (R - L) * cutEE(clamp((e - GT.flat0 - cutRnd(n, 73) * .06) / (GT.flatDur - .06), 0, 1)));
+      for (let i = 0; i < segs.length; i += 2) { x.moveTo(segs[i], y); x.lineTo(segs[i + 1], y); }
+    }
+    x.stroke();
+  }
+  // 선 그림 한 장(flat1 ~ dive1): 컷신 시계 e에서의 위도선들을 x(2D 캔버스)에 그린다. G = globeStart가 만든 것
   function globeLines(x, e, vw, vh, G) {
     // 지구본의 기본 크기(확대 1): 화면이 넓든 길든 비슷한 몫이 보이게 가로 · 세로를 섞어 잡는다(참고 영상은 세로 4:5 화면에 반지름이 높이의 0.6배쯤)
     const B = .6 * vh ** .74 * vw ** .26, flatR = vh / 38 / deg(G.d), key = vw + 'x' + vh;
@@ -9007,6 +9584,8 @@ loader.run(() => {
       const a1 = globeWrap(a - cam.lon), b1 = a1 + b - a;
       if (b1 <= 180) out.push(a1, b1); else out.push(a1, 180, -180, b1 - 360);
     };
+    // 부산이 깜빡이는 동안 선은 조금 가라앉힌다(점이 또렷하게)
+    x.globalAlpha = 1 - .35 * smooth(clamp((e - GT.blink0 + .25) / .5, 0, 1));
     x.beginPath();
     const line = (lat, k) => {
       if (!out.length) return;
@@ -9032,31 +9611,10 @@ loader.run(() => {
       const [sa, sb] = globeStep(L, G.d), lv = G.lv[L];
       for (let k = Math.ceil((latA - sb) / sa); k <= Math.floor((latB - sb) / sa); k++) { out.length = 0; fn(k, sa * k + sb, lv.rows[k - lv.k0]); line(sa * k + sb, k); }
     };
-    if (e < GT.full) {
-      // ---- 가로줄: 첫 선이 왼쪽에서 자라고, 줄마다 점이 돋아 양옆으로 늘어나 서로 이어진다 (자리는 화면 폭을 1로 본 값 → 경도로 바꿔 지구에 붙여 둔다: 휘기 시작해도 그대로 따라 휜다) ----
-      const sc = vw / flatR / deg(1), lon0 = G.A[0][1], grow = Math.max(0, (e - 1.12) / .34) ** 2 * 1.2, dot = 1.2 / vw;
-      const [sa, sb] = globeStep(0, G.d), first = Math.round((-.18 * vh / flatR / deg(1) - sb) / sa);   // 첫 선 = 화면 높이의 68% 자리에 가장 가까운 줄
-      each(0, k => {
-        const iv = [];
-        if (k === first && e > GT.line0) iv.push([-.5, -.5 + .92 * (1 - (1 - clamp((e - GT.line0) / .66, 0, 1)) ** 2.2) + grow]);
-        for (let j = 0, n = 1 + Math.floor(cutRnd(k, 1) * 2.6); j < n; j++) {
-          const tau = e - GT.seed0 - .62 * cutRnd(k, 20 + j) ** 1.25;
-          if (tau <= 0) continue;
-          const u = (cutRnd(k, 10 + j) - .5) * 1.04, a = (.5 + 2.2 * cutRnd(k, 30 + j)) * tau * tau, side = cutRnd(k, 40 + j);   // (셋 중 하나는 한쪽으로만 자란다)
-          iv.push([u - a * (side < .3 ? .15 : 1) - grow - dot, u + a * (side > .75 ? .2 : 1) + grow + dot]);
-        }
-        // 겹치는 것끼리 합친 뒤 지구의 경도로 옮긴다 (화면 밖으로 한참 나간 것은 잘라 둔다)
-        iv.sort((p, q) => p[0] - q[0]);
-        let a = null, b = 0;
-        const put = () => { if (a !== null && a < .62 && b > -.62) rel(lon0 + Math.max(a, -.62) * sc, lon0 + Math.min(b, .62) * sc); };
-        for (const [p, q] of iv) { if (a !== null && p <= b) b = Math.max(b, q); else { put(); a = p; b = q; } }
-        put();
-      });
-    } else if (e < GT.rev0) each(0, () => out.push(-180, 180));   // ---- 휘는 줄: 위도선을 통째로 ----
+    if (e < GT.rev0) each(0, () => out.push(-180, 180));   // ---- 휘는 줄: 위도선을 통째로 (세 현장 장면의 끝에서 화면 가득해진 가로줄) ----
     else {
       // ---- 지구본: 땅인 구간만. 처음(rev0 ~ rev1)에는 바다 위의 선이 한 점에서부터 양옆으로 걷혀 나간다(줄마다 조금씩 달리) ----
       const z = Math.log2(cam.z), hr = e < GT.rev1 ? 250 * ((e - GT.rev0) / (GT.rev1 - GT.rev0)) ** 1.7 : 1e9, hole = G.hole || (G.hole = (h => [h.lon + 14, h.lat - 4])(globePose(G.A, GT.rev0)));
-      const fold = clamp((e - GT.fold0) / (GT.fold1 - GT.fold0), 0, 1);
       for (let L = 0; L < G.lv.length; L++) {
         // 확대하면 사이사이의 선이 땅 가운데에서부터 자라 나온다 (화면에서 선 사이가 늘 비슷하게)
         const g = L ? smooth(clamp((z - (L - 1) - .55) / .45, 0, 1)) : 1;
@@ -9064,12 +9622,9 @@ loader.run(() => {
         each(L, (k, lat, row) => {
           const w2 = hr * hr - 4 * (lat - hole[1]) ** 2;
           if (w2 <= 0) { out.push(-180, 180); return; }
-          // 부산에 다 들어가면(fold0 ~ fold1): 선이 부산의 경도 쪽으로 접혀 들어가 사라진다 — 점에서 먼 줄부터, 점 곁의 줄이 맨 나중에(모두 점으로 빨려 드는 것처럼)
-          const q = fold > 0 ? smooth(clamp((fold - .45 * (1 - Math.min(1, Math.abs(lat - GLOBE_BUSAN[1]) / ext))) / .55, 0, 1)) : 0;
-          if (q >= 1) return;
           for (let i = 0; row && i < row.length; i += 2) {
-            const c = (row[i] + row[i + 1]) / 200, h = (row[i + 1] - row[i]) / 200 * g, to = clamp(GLOBE_BUSAN[0], c - h, c + h);
-            rel(c - h + (to - c + h) * q, c + h + (to - c - h) * q);
+            const c = (row[i] + row[i + 1]) / 200, h = (row[i + 1] - row[i]) / 200 * g;
+            rel(c - h, c + h);
           }
           const w = Math.sqrt(w2), wl = w * (.6 + .8 * cutRnd(k, 31)), wr = w * (.6 + .8 * cutRnd(k, 32));
           if (wl + wr < 360) rel(hole[0] + wr, hole[0] - wl + 360);
@@ -9077,106 +9632,57 @@ loader.run(() => {
       }
     }
     x.stroke();
-    // 부산: 작은 점 하나와 퍼져 나가는 고리 (지구본이 부산에 다 와 갈 때부터. 선이 다 접혀 들어간 뒤 점도 작아지며 꺼진다)
+    x.globalAlpha = 1;
+    // 부산: 로고 색의 작은 네모 점 (지구본이 부산에 다 와 갈 때부터). 깜빡임 다섯 번 — 깜빡일 때마다 고리가 퍼진다. 끝에 그 점 안으로 뛰어든다(점이 커져 화면을 덮는다)
     if (e > GT.dot0) {
       const dl = deg(globeWrap(GLOBE_BUSAN[0] - cam.lon)) * m, ph = deg(GLOBE_BUSAN[1]) * m, sx = rho * Math.cos(ph) * Math.sin(dl), sy = -rho * (Math.sin(ph) * c0 - Math.cos(ph) * s0 * Math.cos(dl));
-      const X = X0 + sx * cr - sy * sr, Y = Y0 + sx * sr + sy * cr, a = clamp((e - GT.dot0) / .08, 0, 1), r = Math.max(2.5, vh / 260) * (1 - smooth(clamp((e - GT.fold1) / .1, 0, 1))), w = ((e - GT.dot0) / .3) % 1;
+      const X = X0 + sx * cr - sy * sr, Y = Y0 + sx * sr + sy * cr, h0 = Math.max(5, vh / 95), b = (e - GT.blink0) / GT.blinkT;
+      const dive = clamp((e - GT.dive0) / (GT.dive1 - GT.dive0), 0, 1), h = h0 * (Math.hypot(vw, vh) / h0 * .75) ** (dive * dive);
+      // 밝기: 나타나 켜져 있다가(dot0 ~), 다섯 번 꺼졌다 켜지고(blink0 ~), 뛰어들 때는 켜진 채로
+      const on = b < 0 || dive > 0 || b >= GT.blinks ? clamp((e - GT.dot0) / .08, 0, 1) : .12 + .88 * Math.cos(Math.PI * (b % 1)) ** 2;
       x.save();
-      x.globalAlpha = a;
-      x.beginPath();
-      x.arc(X, Y, r, 0, Math.PI * 2);
-      x.fill();
-      x.globalAlpha = a * (1 - w);
-      x.beginPath();
-      x.arc(X, Y, r * (1.6 + 4.5 * w), 0, Math.PI * 2);
-      x.stroke();
+      x.fillStyle = x.strokeStyle = GLOBE_BRAND;
+      x.globalAlpha = on;
+      x.fillRect(X - h, Y - h, 2 * h, 2 * h);
+      if (b >= 0 && b < GT.blinks && !dive) {
+        const w = b % 1;
+        x.globalAlpha = .85 * (1 - w) ** 1.4;
+        x.lineWidth = 2;
+        x.strokeRect(X - h * (1.5 + 4 * w), Y - h * (1.5 + 4 * w), 2 * h * (1.5 + 4 * w), 2 * h * (1.5 + 4 * w));
+      }
       x.restore();
     }
   }
-  // 모서리가 둥근 네모(가운데 cx · cy, 반폭 a · 반높이 b, 모서리 반지름 c)의 둘레를 따라 f0 ~ f1(둘레를 1로 본 자리, 오른쪽 가운데에서 시계 방향) 구간을 그린다.
-  // c = a = b면 원, c = 0이면 네모 → 원이 로고 상자의 테두리로 바뀌는 데 쓴다
-  function globeRing(x, cx, cy, a, b, c, f0, f1) {
-    const pts = [[cx + a, cy]], N = 20;
-    for (let j = 0; j < 4; j++) {
-      const ox = cx + (j === 0 || j === 3 ? 1 : -1) * (a - c), oy = cy + (j < 2 ? 1 : -1) * (b - c);
-      for (let i = 0; i <= N; i++) { const t = (j + i / N) * Math.PI / 2; pts.push([ox + c * Math.cos(t), oy + c * Math.sin(t)]); }
-    }
-    pts.push([cx + a, cy]);
-    const len = [0];
-    for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    const total = len[len.length - 1];
-    const at = s => {
-      let i = 1;
-      while (i < len.length - 1 && len[i] < s) i++;
-      const u = len[i] > len[i - 1] ? (s - len[i - 1]) / (len[i] - len[i - 1]) : 0;
-      return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u, i];
-    };
-    const part = (s0, s1) => {   // 둘레 위 s0 ~ s1 (0 ≤ s0 < s1 ≤ total)
-      const p = at(s0), q = at(s1);
-      x.moveTo(p[0], p[1]);
-      for (let i = p[2]; i < q[2]; i++) x.lineTo(pts[i][0], pts[i][1]);
-      x.lineTo(q[0], q[1]);
-    };
-    const base = Math.floor(f0);   // (f0 < f1 ≤ f0 + 1로 받는다. 한 바퀴를 넘어가면 둘로 나눠 그린다)
-    f0 -= base;
-    f1 -= base;
-    if (f1 <= 1) part(f0 * total, f1 * total); else { part(f0 * total, total); part(0, (f1 - 1) * total); }
-  }
-  // 로고가 만들어지는 장면부터 끝까지(arcs0 ~): 검은 화면에 그어져 나오는 선(호)들 → 가운데로 감겨 듦 → 상자 테두리 · 위아래 긴 선 → 흰 상자 → 검은 막대 → 워드마크 → 색 바뀜
-  function globeLogo(x, e, vw, vh, G, lineW) {
+  const GLOBE_BRAND = '#D6690F';   // 로고 색 (v69)
+  // 로고(dive1 ~): 화면을 덮은 주황(뛰어든 점 속)이 로고 상자 크기로 줄어들고 → 흰 막대가 그어지고 → ("쿵") 상자가 올라가며 워드마크 → 바탕이 걷힌다.
+  // 처음부터 로고 색 그대로(깜빡이던 점이 곧 상자다) — 전처럼 흑백 로고가 나중에 물드는 단계는 없다
+  function globeLogo(x, e, vw, vh, G) {
     // 로고 묶음의 폭: 드론 컷신과 같다(cutLockW — 사용자: "로고 크기가 너무 크니깐 반절 정도 줄여줘")
     const lg = G.logo, LW = cutLockW(vw, vh), u = LW / CUT_LOCK.w, bw = lg.box[0] * u, bh = lg.box[1] * u;
     const lock = e < GT.lock0 ? 0 : 1 - (1 - clamp((e - GT.lock0) / GT.lockDur, 0, 1)) ** 4;   // 상자만 한가운데 → 묶음(상자 + 워드마크)의 자리로: "쿵"과 함께 빠르게 떠나 부드럽게 선다
-    const L1 = (vw - LW) / 2, T1 = (vh - CUT_LOCK.h * u) / 2, bx = (vw - bw) / 2 + (L1 - (vw - bw) / 2) * lock, by = (vh - bh) / 2 + (T1 - (vh - bh) / 2) * lock, cx = bx + bw / 2, cy = by + bh / 2;
-    const tint = smoother(clamp((e - GT.tint0) / (GT.tint1 - GT.tint0), 0, 1)), mix = (a, b) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * tint))})`;
-    const WHITE = [255, 255, 255], BRAND = [214, 105, 15], INK = [0, 0, 0];
-    x.lineWidth = lineW;
-    x.beginPath();
-    // 검은 화면에서 선(호)들이 하나씩 그어져 나온다: 가운데를 둘러싼 크고 작은 원의 조각들이 제 가운데에서 양쪽으로 자라며 천천히 돈다(arcs0 ~).
-    // 이어서 소용돌이처럼 가운데로 감겨 들어(swirl0 ~) 마주 보는 두 줄로 겹치고, 원이 네모로 바뀌며(ring0 ~) 서로 이어져 상자의 테두리가 된다
-    if (e < GT.fill0 + .2) {
-      const far = Math.hypot(vw, vh) / 2, g = smoother(clamp((e - GT.swirl0) / .52, 0, 1)), q = smooth(clamp((e - GT.ring0) / .3, 0, 1));
-      for (let i = 0; i < GLOBE_ARCS; i++) {
-        const grow = 1 - (1 - clamp((e - GT.arcs0 - .03 * (i * 5 % GLOBE_ARCS)) / .34, 0, 1)) ** 3;   // 하나씩(순서는 섞어서) 부드럽게 자란다
-        if (grow <= 0) continue;
-        const r = bh * .62 + (far * (.3 + .95 * (i + .5 * cutRnd(i, 61)) / GLOBE_ARCS) - bh * .62) * (1 - g);   // 화면 안쪽 ~ 구석 너머까지 고르게 흩어진 반지름 → 모두 같은 원으로
-        const at = 1 + i % 2 / 2 - (.35 + .5 * cutRnd(i, 62) - .04 * (e - GT.swirl0)) * (1 - g), half = grow * (.04 + .09 * cutRnd(i, 63)) * (1 - g) + (.13 + .12 * q) * g;   // 자리 · 길이(둘레를 1로 본 값)
-        globeRing(x, cx, cy, r + (bw / 2 - r) * q, r + (bh / 2 - r) * q, r * (1 - q), at - half, at + half);
-      }
-    }
-    // 위아래 긴 선: 상자의 윗변은 왼쪽 끝에서, 아랫변은 오른쪽 끝에서 자라 화면을 가로지르고, 워드마크가 나오기 직전에 반대쪽으로 물러난다
-    if (e > GT.edge0 && e < GT.edge1 + .16) {
-      const p = cutEE(clamp((e - GT.edge0) / .2, 0, 1)), o = cutEE(clamp((e - GT.edge1) / .16, 0, 1));
-      x.moveTo(vw * o, by);
-      x.lineTo(vw * p, by);
-      x.moveTo(vw * (1 - p), by + bh);
-      x.lineTo(vw * (1 - o), by + bh);
-    }
-    x.stroke();
-    // 상자: 왼쪽에서 오른쪽으로 흰색이 찬다
-    const f = cutEE(clamp((e - GT.fill0) / .2, 0, 1));
-    if (f > 0) {
-      x.fillStyle = mix(WHITE, BRAND);
-      x.fillRect(bx, by, bw * f, bh);
-      // 막대: 로딩창 로고처럼 윗선이 왼쪽에서 자라고 밑단이 이어 자란다(열 · 줄마다 조금씩 늦게) — 다만 훨씬 빠르게
-      x.fillStyle = mix(INK, WHITE);
-      lg.bars.forEach(([px, py, notch], i) => {
-        const t = e - GT.bars0 - Math.floor(i / 4) * .045 - (i % 4) * .028, top = cutEE(clamp(t / .16, 0, 1)), low = cutEE(clamp((t - .12) / .1, 0, 1));
-        if (top > 0) x.fillRect(bx + px * u, by + py * u, CUT_BAR.w * u * top, CUT_BAR.top * u);
-        if (low > 0) x.fillRect(bx + px * u, by + (py + CUT_BAR.top) * u - .6, notch * u * low, CUT_BAR.notch * u + .6);
-      });
-    }
+    const L1 = (vw - LW) / 2, T1 = (vh - CUT_LOCK.h * u) / 2, bx = (vw - bw) / 2 + (L1 - (vw - bw) / 2) * lock, by = (vh - bh) / 2 + (T1 - (vh - bh) / 2) * lock;
+    // 상자: 화면 전체 → 로고 상자로 (빠르게 줄었다가 부드럽게 멎는다)
+    const t = 1 - (1 - clamp((e - GT.dive1 - .04) / (GT.iris1 - GT.dive1 - .04), 0, 1)) ** 3;   // (화면 가득한 주황을 한순간 보여 준 뒤)
+    x.fillStyle = GLOBE_BRAND;
+    x.fillRect(bx * t, by * t, vw + (bw - vw) * t, vh + (bh - vh) * t);
+    // 막대: 로딩창 로고처럼 윗선이 왼쪽에서 자라고 밑단이 이어 자란다(열 · 줄마다 조금씩 늦게) — 다만 훨씬 빠르게
+    x.fillStyle = '#fff';
+    lg.bars.forEach(([px, py, notch], i) => {
+      const s = e - GT.bars0 - Math.floor(i / 4) * .045 - (i % 4) * .028, top = cutEE(clamp(s / .16, 0, 1)), low = cutEE(clamp((s - .12) / .1, 0, 1));
+      if (top > 0) x.fillRect(bx + px * u, by + py * u, CUT_BAR.w * u * top, CUT_BAR.top * u);
+      if (low > 0) x.fillRect(bx + px * u, by + (py + CUT_BAR.top) * u - .6, notch * u * low, CUT_BAR.notch * u + .6);
+    });
     // 워드마크: "쿵"에 맞춰 한 번에 나타나 아래에서 제자리로 올라온다
     if (e >= GT.lock0) {
       x.save();
       x.translate(L1, T1 + (1 - lock) * bh * .42);
       x.scale(u, u);
-      x.fillStyle = mix(WHITE, BRAND);
+      x.fillStyle = GLOBE_BRAND;
       x.fill(G.word);
       x.restore();
     }
   }
-  // 영상 한 장 전체. bg = 검은 바탕의 진하기(색이 바뀔 때 0으로 → 뒤의 테마 바탕이 드러난다)
+  // 영상 한 장 전체. bg = 검은 바탕의 진하기(끝에서 0으로 → 뒤의 테마 바탕이 드러난다)
   function globeFilm(x, e, vw, vh, G) {
     const lineW = clamp(vh / 720, 1, 1.6), bg = 1 - smoother(clamp((e - GT.tint0) / (GT.tint1 - GT.tint0), 0, 1));
     x.clearRect(0, 0, vw, vh);
@@ -9184,8 +9690,9 @@ loader.run(() => {
     x.strokeStyle = x.fillStyle = '#cfcfcf';
     x.lineWidth = lineW;
     x.lineJoin = 'round';
-    if (e < GT.fold1 + .1) globeLines(x, e, vw, vh, G);
-    if (e >= GT.arcs0) globeLogo(x, e, vw, vh, G, lineW);
+    if (e < GT.flat1) { if (G.masks) globeSites(x, e, vw, vh, G); }
+    else if (e < GT.dive1) globeLines(x, e, vw, vh, G);
+    else globeLogo(x, e, vw, vh, G);
   }
 
   // ---------- 지구본 컷신: 틀기 ----------
@@ -9204,6 +9711,8 @@ loader.run(() => {
       GL.G = { d: land.d, lv: land.lv, logo, word: new Path2D(logo.word.join('')) };
       GL.x = film.getContext('2d');
     }
+    // 세 현장의 실루엣(한 번) — 못 만들면 그 장면만 빈 화면으로 지나간다
+    if (GL.G.masks === undefined) { try { GL.G.masks = globeMasks(); } catch (err) { console.error(err); GL.G.masks = null; } }
     // hold: 로딩창이 아직 가리고 있으면 시계를 세워 둔다 — 걷힐 때 풀린다(맨 아래 '로딩창 닫기'). torn = 3D 세계를 따로 짓지 않는다(메인 화면 그대로)
     Object.assign(CUT, { e: -.25, last: performance.now(), click: -1, skip: -1, out: -1, nudge: -9, torn: true, swapped: false, cue: {}, pan: null,
       hold: !lo.classList.contains('hide') && getComputedStyle(lo).display !== 'none' });
@@ -9316,7 +9825,7 @@ loader.run(() => {
   const mid = () => { let x = 0, y = 0; for (const p of ptrs.values()) { x += p.x; y += p.y; } return { x: x / ptrs.size, y: y / ptrs.size }; };
   const spread = () => { const [a, b] = ptrs.values(); return b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };   // 두 손가락 사이 거리
   // 옮기기(우클릭 끌기·두 손가락)는 분해된 화면에서만
-  const canPan = () => state === 'exploded' && !trans && !homeOn && !handoff;
+  const canPan = () => state === 'exploded' && !trans && !homeOn && !handoff && !dfly;
   // 화면에서 끈 만큼(px) 바라보는 점을 반대로 옮긴다. 바라보는 깊이에서 1px = 2·TAN·거리/화면 높이, 돌려 놓은 각도를 풀어 무대 좌표로
   function panBy(dx, dy) {
     const s = 2 * TAN * (cam.d - cam.z) / innerHeight, h = cur.lbox[mode].getSize(V()).multiplyScalar(.5);
@@ -9343,7 +9852,7 @@ loader.run(() => {
     px = e.clientX / innerWidth;
     py = e.clientY / innerHeight;
     const tip = $('tip');
-    if (homeOn || trans) return;
+    if (homeOn || trans || dfly) return;
     const touch = e.pointerType === 'touch';   // 손가락에는 "마우스를 올렸을 때"가 없다: 이름표·강조는 건너뛴다
     // 끌기: 부품 하나를 볼 때는 그 부품을 돌리고, 그 밖에는 현장·박스 전체를 돌린다 (좌우는 끝없이, 위아래는 ±66°)
     if (down) {
@@ -9426,7 +9935,7 @@ loader.run(() => {
       return;
     }
     down = null;
-    if (!d || d.drag || trans || homeOn) return;
+    if (!d || d.drag || trans || homeOn || dfly) return;
     if (state === 'focus') { if (!onFocused(e)) unfocus(); return; }
     if (isField(cur)) {
       const h = pickField(e);
@@ -9452,7 +9961,7 @@ loader.run(() => {
   const fine = matchMedia('(pointer: fine)').matches;
   const tap = s => fine ? s : s.replace(/클릭하면/g, '누르면');   // 터치 화면용 안내 문구
   const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
-  const canZoom = () => !homeOn && !trans && !handoff && !!cam;
+  const canZoom = () => !homeOn && !trans && !handoff && !dfly && !!cam;
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     if (!canZoom()) return;
@@ -9497,7 +10006,7 @@ loader.run(() => {
       stepStyle(e.code === 'KeyT' ? 'theme' : 'font', e.shiftKey ? -1 : 1);
       return;
     }
-    if (el.closest('#picker') || el.closest('.dock, .sheet') || homeOn || trans) return;
+    if (el.closest('#picker') || el.closest('.dock, .sheet') || homeOn || trans || dfly) return;
     // 개발자 명령: 왼쪽 Ctrl(맥은 Command, ⌘)을 1초 안에 5번 연속 누르면 이 현장의 이스터에그를 바로 실행 (테스트용, 30초 대기를 건너뜀)
     if (e.code === 'ControlLeft' || e.code === 'MetaLeft' || e.code === 'MetaRight') {
       const now = performance.now();
@@ -9533,7 +10042,7 @@ loader.run(() => {
   // ---------- 스타일 고르기: 테마 35 · 글꼴 26 (오른쪽 아래, 모든 화면) ----------
   // 고르면 바로 바뀐다(창은 열린 채 → 계속 넘겨 보며 비교). 바꿀 때는 필요한 글꼴이 준비되길 잠깐(최대 1.5초) 기다렸다가
   // 화면 전체를 0.6초 동안 겹쳐 바꾼다(View Transition — 글꼴·모양·무늬·3D까지 한꺼번에, 깜빡임 없이). 그 기능이 없는 브라우저는 색만 0.7초에 걸쳐.
-  // 고른 것은 기억한다(localStorage 'exbox-theme'·'exbox-font' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용)
+  // 고른 것은 기억한다(localStorage 'exbox-theme2'·'exbox-font2' — 머리의 작은 스크립트가 다음 방문 때 그리기 전에 적용. 기본 = 모노 라인이라 그것은 따로 적지 않는다)
   const docEl = document.documentElement;
   const FONT_IDS = ['theme', ...Object.keys(STYLE.FONTS).filter(id => STYLE.FONTS[id].ko)];
   const curFont = () => (STYLE.FONTS[docEl.dataset.font] ? docEl.dataset.font : 'theme');
@@ -9564,10 +10073,10 @@ loader.run(() => {
     if (req !== styleReq) return;   // 기다리는 사이 다른 것을 골랐으면 그쪽으로
     morph(() => {
       const changed = t !== curTheme();
-      if (t.id === 'studio') delete docEl.dataset.theme; else docEl.dataset.theme = t.id;
+      docEl.dataset.theme = t.id;
       if (fontId === 'theme') delete docEl.dataset.font; else docEl.dataset.font = fontId;
-      remember('exbox-theme', t.id === 'studio' ? '' : t.id);
-      remember('exbox-font', fontId === 'theme' ? '' : fontId);
+      remember('exbox-theme2', t.id === 'monoline' ? '' : t.id);
+      remember('exbox-font2', fontId === 'theme' ? '' : fontId);
       if (changed) {
         lightGoal(t);
         if (document.startViewTransition) lightStep(1);   // 겹쳐 바꾸기면 조명도 한 번에 (가려진 채 바뀐다)
@@ -9586,7 +10095,7 @@ loader.run(() => {
     const t = pick(THEMES.filter(x => x.id !== wantTheme)).id;
     setStyle(t, Math.random() < .35 ? 'theme' : pick(FONT_IDS.filter(id => id !== 'theme' && id !== wantFont)));
   }
-  const sheets = { theme: $('sheet-theme'), cut: $('sheet-cut'), font: $('sheet-font'), motion: $('sheet-motion') }, docks = { theme: $('dock-theme'), cut: $('dock-cut'), font: $('dock-font'), motion: $('dock-motion') };
+  const sheets = { theme: $('sheet-theme'), cut: $('sheet-cut'), font: $('sheet-font') }, docks = { theme: $('dock-theme'), cut: $('dock-cut'), font: $('dock-font') };
   let openSheet = null, sheetsMade = false;
   function makeSheets() {
     if (sheetsMade) return;
@@ -9629,7 +10138,6 @@ loader.run(() => {
     openSheet = open;
     for (const k in sheets) { sheets[k].hidden = k !== open; docks[k].setAttribute('aria-expanded', String(k === open)); }
     if (!open) return;
-    if (open === 'motion') { if (keyboard) $('m-burst').focus(); return; }
     if (open === 'cut') { if (keyboard) sheets.cut.querySelector('[aria-checked="true"]').focus(); return; }
     makeSheets();
     syncStyle();
@@ -9663,43 +10171,6 @@ loader.run(() => {
   // 창 밖을 누르면 닫는다 (3D를 누른 것은 그대로 3D로도 간다)
   document.addEventListener('pointerdown', e => { if (openSheet && !e.target.closest('.sheet, .dock')) showSheet(null); }, true);
   syncStyle();
-  // ---------- 분해 모션 조절: 퍼짐(%) · 속도(배). 컨트롤바에서 손을 떼면(change) 그 값으로 바로 다시 분해해서 보여 준다 ----------
-  const mBurst = $('m-burst'), mSpeed = $('m-speed');
-  function syncMotion() {
-    const b = MOTION.burst + '%', s = MOTION.speed.toFixed(1) + '×';
-    mBurst.value = MOTION.burst;
-    mSpeed.value = MOTION.speed;
-    mBurst.setAttribute('aria-valuetext', `${MOTION.burst}퍼센트`);
-    mSpeed.setAttribute('aria-valuetext', `${MOTION.speed.toFixed(1)}배`);
-    $('m-burst-v').textContent = b;
-    $('m-speed-v').textContent = s;
-    $('dock-motion-v').textContent = `${b} · ${s}`;
-    docks.motion.setAttribute('aria-label', `분해 모션 조절 — 지금 퍼짐 ${b}, 속도 ${MOTION.speed.toFixed(1)}배`);
-  }
-  const saveMotion = () => { try { localStorage.setItem('exbox-motion', JSON.stringify(MOTION)); } catch (e) { /* 저장 못 하는 환경이면 이번 방문에만 */ } };
-  // 다시 보기: 지금 화면(현장·박스)을 조립된 모습으로 되돌린 뒤 바로 다시 분해한다 (메인 화면·화면 전환 중·처음으로 가는 중에는 하지 않는다)
-  function replayExplode() {
-    if (!cur || homeOn || trans || handoff || homing) return;
-    if (state !== 'assembled') {
-      rest(cur);
-      state = 'assembled';
-      focused = hovered = site = null;
-      // 카메라도 조립된 모습 크기로 바로 — 처음 분해할 때와 같은 모습에서 다시 터진다
-      zoom = null;
-      pan.set(0, 0, 0);
-      if (cam) Object.assign(cam, camGoal());
-    }
-    explode();
-  }
-  mBurst.addEventListener('input', () => { MOTION.burst = +mBurst.value; syncMotion(); });
-  mSpeed.addEventListener('input', () => { MOTION.speed = +mSpeed.value; syncMotion(); });
-  for (const el of [mBurst, mSpeed]) el.addEventListener('change', () => { saveMotion(); replayExplode(); });
-  for (const el of [$('m-play'), sheets.motion.querySelector('.sheet-play')]) el.addEventListener('click', replayExplode);
-  $('m-reset').addEventListener('click', () => { Object.assign(MOTION, MOTION_DEF); syncMotion(); saveMotion(); replayExplode(); });
-  docks.motion.addEventListener('click', e => showSheet('motion', e.detail === 0));
-  sheets.motion.querySelector('.sheet-x').addEventListener('click', () => { showSheet(null); docks.motion.focus(); });
-  sheets.motion.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); showSheet(null); docks.motion.focus(); } });
-  syncMotion();
   // ---------- 컷신 고르기: 드론 · 지구본. 고르면 기억하고(다음에 사이트를 열 때 그 컷신) 바로 틀어 보여 준다 — 어느 화면에서든 메인 화면으로 가서 처음부터 ----------
   function syncCut() {
     const id = cutPick(), ids = Object.keys(CUTS);
@@ -9709,7 +10180,7 @@ loader.run(() => {
     sheets.cut.querySelectorAll('.fopt').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === id)));
   }
   function playCut(id) {
-    remember('exbox-cut', id === 'globe' ? id : '');
+    remember('exbox-cut2', id === 'drone' ? id : '');
     syncCut();
     showSheet(null);
     if (cutOn) cutEnd();
