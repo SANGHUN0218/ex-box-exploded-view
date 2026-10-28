@@ -77,6 +77,9 @@ try {
   --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
   --kr: "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;           /* 한글 대체 글꼴 */
+  /* 브랜드 서체(v77, 사용자: "국문서체는 본고딕(noto sans), 영문서체는 아큐민(Acumin Variable Concept)"): 영문이 앞 — 아큐민에는 한글이 없어 한글은 자동으로 본고딕.
+     아큐민은 Adobe Fonts 글꼴이라 파일을 사이트에 싣지 않는다: 이 글꼴이 깔린 컴퓨터에서만 아큐민으로 보이고, 아니면 비슷한 Helvetica 계열(ponytail: Adobe Fonts 웹 프로젝트 주소를 받으면 <link>로 불러 모두에게) */
+  --brand: "Acumin Variable Concept", "Helvetica Neue", Helvetica, Arial, "Noto Sans KR", var(--kr);
   --krs: "AppleMyungjo", "Batang", serif;                                          /* 한글 명조 대체 */
   /* 종이 결(잔 알갱이)과 한지 섬유(가로로 긴 결): 코드로 그린 무늬(SVG), 밝은 바탕 위에 아주 옅게 */
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .075 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -655,7 +658,7 @@ try {
   --bg: #F6EBDF; --base: #F6EBDF;
   --r-pill: 0; --r-card: 0; --r-small: 0; --blur: 0px;
   --sh-card: none; --sh-btn: none; --sh-pop: none;
-  --f-body: var(--sans); --f-display: var(--sans); --f-label: var(--mono);
+  --f-body: var(--brand); --f-display: var(--brand); --f-label: var(--brand);
   --t-w: 300; --t-ls: .01em; --l-ls: .2em; --l-w: 400;
   --halo: rgb(246 235 223 / .62);   /* 설명 글줄 뒤에 까는 흐림의 색(바탕색) */
 }
@@ -688,7 +691,7 @@ try {
   --bg: #111110; --base: #111110;
   --r-pill: 0; --r-card: 0; --r-small: 0; --blur: 0px;
   --sh-card: none; --sh-btn: none; --sh-pop: none;
-  --f-body: var(--sans); --f-display: var(--sans); --f-label: var(--mono);
+  --f-body: var(--brand); --f-display: var(--brand); --f-label: var(--brand);
   --t-w: 300; --t-ls: .01em; --l-ls: .2em; --l-w: 400;
   --halo: rgb(10 10 9 / .4);   /* 설명 글줄 뒤에 까는 흐림의 색 */
   color-scheme: dark;
@@ -760,6 +763,8 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   gap: 16px;
   pointer-events: none;
 }
+.head { z-index: 6; }   /* 이름 목록(.plist, 뒤에 놓인 요소) 위로 — 메뉴가 열렸을 때 목록 글자가 비쳐 겹치지 않게 (dock 10 · 고르기 창 11보다는 아래) */
+body:has(.picker.open) .plist { visibility: hidden; }   /* 메뉴가 열려 있는 동안은 목록을 가린다 */
 .head > * { pointer-events: auto; }
 .head > :first-child { min-width: 0; }
 .eyebrow {
@@ -1664,7 +1669,7 @@ const STYLE = (() => {
   // gf = 통째로 부를 때의 이름·굵기, pv = 미리보기(글자 몇 개만 담은 작은 글꼴)용 굵기, one = 굵기가 하나뿐(제목을 가짜로 굵게 만들지 않게 400)
   const FONTS = {
     plex:       { ko: 'IBM 플렉스 산스', en: 'IBM Plex Sans KR', fam: `'IBM Plex Sans KR', ${S}`, gf: 'IBM+Plex+Sans+KR:wght@300;400;500;600;700', pv: 'IBM+Plex+Sans+KR:wght@600', tag: '기술 고딕' },   // (300 = 선 테마의 가는 제목)
-    noto:       { ko: '본고딕', en: 'Noto Sans KR', fam: `'Noto Sans KR', ${S}`, gf: 'Noto+Sans+KR:wght@400;500;700', pv: 'Noto+Sans+KR:wght@700', tag: '반듯한 고딕' },
+    noto:       { ko: '본고딕', en: 'Noto Sans KR', fam: `'Noto Sans KR', ${S}`, gf: 'Noto+Sans+KR:wght@300;400;500;700', pv: 'Noto+Sans+KR:wght@700', tag: '반듯한 고딕' },
     gothic:     { ko: '고딕 A1', en: 'Gothic A1', fam: `'Gothic A1', ${S}`, gf: 'Gothic+A1:wght@400;500;700;800', pv: 'Gothic+A1:wght@700', tag: '또렷한 고딕' },
     nanum:      { ko: '나눔고딕', en: 'Nanum Gothic', fam: `'Nanum Gothic', ${S}`, gf: 'Nanum+Gothic:wght@400;700;800', pv: 'Nanum+Gothic:wght@700', tag: '익숙한 고딕' },
     gowun:      { ko: '고운돋움', en: 'Gowun Dodum', fam: `'Gowun Dodum', ${S}`, gf: 'Gowun+Dodum', tag: '부드러운 돋움', one: 1 },
@@ -1698,8 +1703,8 @@ const STYLE = (() => {
     aurora: ['gothic'], kit: ['plex', 'sunflower', 'plexmono'], retro: ['nanum'], noir: ['myeongjo', 'hahmlet', 'noto'],
     aqua: ['nanum'], riso: ['plex', 'gasoek', 'plexmono'], chalk: ['gaegu'], sketch: ['gowun', 'himelody'],
     steel: ['plex', 'plexmono'], celadon: ['batang', 'diphylleia'], thermal: ['plex', 'plexmono'], chart: ['noto', 'serif'],
-    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['plex', 'plexmono'], mono: ['plex', 'plexmono'], monoline: ['plex', 'plexmono'], glassline: ['plex', 'plexmono'], arline: ['plex', 'plexmono'], prismline: ['plex', 'plexmono'], dataland: ['plex', 'plexmono'],
-    phonecase: ['plex', 'plexmono'],
+    holo: ['noto', 'gugi'], memphis: ['noto', 'bagel'], line: ['noto'], mono: ['plex', 'plexmono'], monoline: ['noto'], glassline: ['noto'], arline: ['noto'], prismline: ['noto'], dataland: ['noto'],
+    phonecase: ['noto'],
   };
   const root = document.documentElement, full = new Set(), peek = new Set(), loads = {};
   const link = href => document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }));
@@ -6756,16 +6761,18 @@ loader.run(() => {
     return fitPts(b.apts, c.setZ(0), fq.setFromEuler(eu.set(rx, ry, 0)), bandFit(1.5).my, 1.35, innerWidth / innerHeight);
   }
   let goalDy = 0;   // 지금 화면의 camGoal이 정한 dy (frame이 그림을 그만큼 내린다)
-  // 부품 이름 목록(모든 테마): 분해 화면의 왼쪽에 목록이 서므로, 3D는 그 오른쪽 빈자리에 담는다 —
-  // 그 폭만큼 좁게 맞추고(camGoal) 그림을 그 절반만큼 오른쪽으로 옮긴다(frame의 그림 옮기기). 좁은 화면(LIST_MIN 미만 — 휴대폰)에는 목록을 두지 않는다.
+  // 부품 이름 목록(모든 테마): 분해 화면의 왼쪽에 목록이 서고, 3D는 화면 한가운데에 둔다(v77, 사용자: "파란 박스를 화면 중앙에") —
+  // 목록 폭의 두 배만큼 좁게 맞춰(camGoal) 좌우 대칭으로 목록과 안 겹치게 한다. 좁은 화면(LIST_MIN 미만 — 휴대폰)에는 목록을 두지 않는다.
   // 목록의 배치(몇 줄 몇 단 · 폭)는 글자 폭을 캔버스로 재서 정한다 — 목록을 놓기 전(분해하기 전)에도 카메라가 미리 맞출 수 있게
   const LIST_MIN = 900, LIST_X = 28, LIST_LH = 17, LIST_GAP = 22, LIST_COLW = 190;
+  // 목록의 출처: 박스 화면 = 그 박스의 부품 이름. 현장 화면 = 그 현장에 달린 박스의 부품 이름(박스 화면의 목록과 똑같이 — v77, 사용자: "방폭박스 분해도의 글을 똑같이 복붙")
+  const listSrc = () => (isField(cur) && hostOf(cur.def.box).nest) || cur;
   const listOn = () => innerWidth >= LIST_MIN && !!cur;   // (v70: 모든 테마 — 처음엔 AR 라인에만 있었다)
   const LST = { on: false, key: '', plan: null }, listCtx = document.createElement('canvas').getContext('2d');
   function listPlan() {
-    const key = [cur.def.key, innerWidth, innerHeight, headBottom, curTheme().id].join();
+    const key = [cur.def.key, listSrc().def.key, innerWidth, innerHeight, headBottom, curTheme().id].join();
     if (LST.plan && LST.plan.key === key) return LST.plan;
-    const types = [...new Set(cur.parts.map(p => p.t))].sort((a, b) => a - b), names = types.map(t => cur.def.types[t].ko);
+    const src = listSrc(), types = [...new Set(src.parts.map(p => p.t))].sort((a, b) => a - b), names = types.map(t => src.def.types[t].ko);
     const top = headBottom + 16, fit = Math.max(6, Math.floor((innerHeight - 30 - top) / LIST_LH)), cols = Math.ceil(names.length / fit), rows = Math.ceil(names.length / cols);
     listCtx.font = `300 12px ${getComputedStyle(document.body).fontFamily}`;
     let w = LIST_X - LIST_GAP;
@@ -6786,7 +6793,7 @@ loader.run(() => {
     // 현장 분해 화면은 아래쪽에 박스 카드가 뜨므로 조금 멀리서 본다 (가운데는 그대로 — 분해할 때 화면이 위아래로 움직이지 않게)
     const card = !asm && isField(cur);
     const [my, mx0] = asm ? [1.5, 1.35] : card ? [1.55, 1.15] : [1.36, 1.1];
-    const lw = listW(st), mx = mx0 * innerWidth / Math.max(innerWidth - lw, innerWidth * .4);   // (목록이 있으면 남은 폭 안에서 같은 여백)
+    const lw = listW(st), mx = mx0 * innerWidth / Math.max(innerWidth - 2 * lw, innerWidth * .4);   // (목록이 있으면 남은 폭 안에서 같은 여백)
     // 부품 하나를 볼 때(focus)는 그 부품이 따로 자리를 잡으므로(focusPose) 띠 맞춤을 하지 않는다
     const band = st === 'assembled' || st === 'exploded' ? bandFit(my) : { my, dy: 0 };
     if (st === state) goalDy = band.dy;
@@ -8322,7 +8329,21 @@ loader.run(() => {
   // 이름을 누르면 그 이름(부품 종류)의 부품들이 로고 색으로 깜빡인다(같은 이름을 다시 누르면 꺼진다). 다른 깜빡임(blinkStep)과 같은 박자.
   //   선 테마 = 그 부품들의 선(유리 테마는 유리 면도 살짝), 면을 칠하는 테마 = 그 부품들의 면 색
   // 분해 화면을 떠나면(그 부품을 눌러 가운데로 가져오면 · 장소로 가면 · 조립하면) 서서히 꺼지고 고르기가 풀린다. 테마를 바꾸면 바로 풀린다
-  const PICK = { t: -1, of: null, theme: '', amp: 0, want: 0, line: [], glass: [], face: [], c: col('#D6690F'), ink: [166, 166, 163] };
+  const PICK = { t: -1, of: null, theme: '', amp: 0, want: 0, line: [], glass: [], face: [], ov: [], c: col('#D6690F'), ink: [166, 166, 163] };
+  // 선 테마: 깜빡이는 부품의 면(v78, 사용자: "선은 100%로 보이고 면은 50% 불투명도") — 선 테마의 면은 색을 안 칠하고 깊이만 남기므로(restyle),
+  // 그 부품의 면 모양 위에 로고 색 덮개를 얹는다. 덮개 재질은 하나(pickOv) — 불투명도 = 0.5 × 깜빡임(선은 같은 깜빡임으로 100%까지). 선(renderOrder 1 · 2)보다 먼저 그려 선이 가려지지 않는다
+  const pickOv = new THREE.MeshBasicMaterial({ color: PICK.c, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  function pickCover(pt) {
+    const faces = [];
+    pt.obj.traverse(o => { if (o.isMesh && pt.mats.includes(o.material) && !o.material.userData.line && !o.material.userData.isAO && !o.material.userData.fill) faces.push(o); });
+    for (const o of faces) {
+      const v = o.isInstancedMesh ? Object.assign(new THREE.InstancedMesh(o.geometry, pickOv, o.count), { instanceMatrix: o.instanceMatrix }) : new THREE.Mesh(o.geometry, pickOv);
+      v.renderOrder = 0;
+      v.raycast = () => {};   // (눌러 보기 · 마우스 올리기에 걸리지 않게)
+      o.add(v);
+      PICK.ov.push(v);
+    }
+  }
   function pickRestore() {
     const mode = curTheme().mat || {};
     for (const m of PICK.line) { m.userData.base = m.opacity = m.userData.rest; if (mode.kind === 'line') m.color.copy(col(mode.c)); }
@@ -8331,15 +8352,20 @@ loader.run(() => {
     PICK.line = [];
     PICK.glass = [];
     PICK.face = [];
+    for (const v of PICK.ov) v.parent && v.parent.remove(v);
+    PICK.ov = [];
+    pickOv.opacity = 0;
   }
   function pickSet(t) {
     pickRestore();
     const mode = curTheme().mat || {}, line = mode.kind === 'line';
     Object.assign(PICK, { t, of: cur, theme: curTheme().id, amp: 0, want: t >= 0 ? 1 : 0 });
-    if (t >= 0) for (const pt of cur.parts) if (pt.t === t) {
+    const fld = isField(cur), nest = fld && hostOf(cur.def.box).nest;   // 현장 화면에서는 어느 이름을 눌러도 그 현장의 방폭박스 전체가 깜빡인다
+    if (t >= 0) for (const pt of fld ? (nest ? nest.parts : []) : cur.parts) if (fld || pt.t === t) {
       if (line) {
         PICK.line.push(...(pt.lineMats || []));
         PICK.glass.push(...pt.mats.filter(m => m.userData.glass));
+        pickCover(pt);
       } else PICK.face.push(...pt.mats.filter(m => !m.userData.line && !m.userData.isAO && ORIG.has(m)));
     }
     // 목록 글자의 평소 색(테마의 흐린 글자색 --muted)에서 로고 색 사이를 오간다
@@ -8360,6 +8386,7 @@ loader.run(() => {
       const base = col(mode.c), g = mode.glass ? col(mode.glass) : null;
       for (const m of PICK.line) { m.color.copy(base).lerp(PICK.c, p); m.userData.base = m.userData.rest + (1 - m.userData.rest) * p; }   // (투명도는 이어지는 tick이 부품의 투명도를 곱해 정한다)
       if (g) for (const m of PICK.glass) if (m.emissive && m.userData.glass) m.emissive.copy(g).lerp(PICK.c, p * .55);
+      pickOv.opacity = .5 * p;
     }
     for (const m of PICK.face) { const o = ORIG.get(m); m.color.copy(o.now).lerp(PICK.c, .92 * p); if (o.emis) m.emissive.copy(PICK.c).multiplyScalar(.55 * p); }
     const el = plist.querySelector(`.pn[data-t="${PICK.t}"]`), L = [214, 105, 15];
@@ -8447,7 +8474,7 @@ loader.run(() => {
     // 그림 옮기기(카메라 view offset): 휴대폰에서 모델을 머리글·아래 안내(goalDy)나 옆 카드(cardRight)를 피한 빈 자리 가운데로.
     // 그림만 옮기므로 돌리는 축·클릭 판정·휠 확대는 그대로 맞는다. 칸 전환 중에는 쓰지 않는다(칸마다 따로 그림)
     const side = cardRight > 0 && (state === 'focus' || state === 'site');
-    shift.x += ((trans ? 0 : side ? cardRight / 2 : listW(state) / 2) - shift.x) * k(4);   // (AR 라인의 분해 화면: 왼쪽 목록을 비켜 그 오른쪽 빈자리 가운데로)
+    shift.x += ((trans ? 0 : side ? cardRight / 2 : 0) - shift.x) * k(4);   // (v77: 목록은 가운데 3D에 안 겹치게 폭만 비운다 — 그림은 옮기지 않는다)
     shift.y += ((trans ? 0 : side ? headBottom / 2 : goalDy) - shift.y) * k(4);
     if (!trans && Math.abs(shift.x) + Math.abs(shift.y) > .3) camera.setViewOffset(innerWidth, innerHeight, -shift.x, -shift.y, innerWidth, innerHeight);
     else if (camera.view && camera.view.enabled) camera.clearViewOffset();
